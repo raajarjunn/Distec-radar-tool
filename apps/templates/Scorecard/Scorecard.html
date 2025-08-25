@@ -1,0 +1,395 @@
+{% load static %}
+{% get_media_prefix as MEDIA_URL %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ technology.Name }} - SAFRAN Scorecard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background-color: #ffffff;
+      padding-top: 8px;
+    }
+
+    .scorecard-container {
+      width: 297mm;
+      height: 210mm;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 2px solid #045823;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .header-section {
+      background-color: #045823;
+      color: #ffffff;
+      padding: 5px;
+      margin-bottom: 12px;
+      border-radius: 0;
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      height: 58px;
+      position: relative;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-container {
+      height: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      margin-left: -5px ;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-img {
+      height: 58px;
+      object-fit:contain;
+    }
+
+    .technology-name {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .header-right {
+      text-align: right;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 93mm 2mm  93mm 2mm 93mm;
+      gap: 2mm;
+      flex-grow: 1;
+      height: calc(100% - 120px);
+      margin: 0 auto; /* ✅ Center the grid horizontally */
+    }
+
+    .green-strip {
+      background-color: #045823; /* your green */
+      width: 2mm; /* thickness of the strip */
+      height: 100%; /* full height of the grid */
+   }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .content-box {
+      border: 1px solid #045823;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex: none;
+    }
+
+    .content-header {
+      background-color:#045823;
+      color: #ffffff;
+      padding: 8px 12px;
+      font-size: 15px;
+      font-weight: bold;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .content-body {
+      padding: 12px;
+      font-size: 11px;
+      line-height: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      word-break: break-word;
+      flex: 1;
+      max-height: 100%;
+    }
+
+    .content-body ul {
+     list-style-position: outside;  /* bullet outside text */
+     padding-left: 0.2em;           /* small left padding */
+      margin-left: 0;
+   }
+
+    .content-body ul li {
+     margin-left: 0.6em;
+    }
+   
+  .image-slot {
+  border: 1px solid #045823;
+  border-radius: 0;
+  height: 60mm;              /* or 55mm for the right column instance */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+  overflow: hidden;           /* prevents bleed */
+}
+
+.image-slot img {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;                /* keep aspect ratio */
+  height: auto;
+  object-fit: contain;        /* never overflow the slot */
+  display: block;
+}
+
+
+
+    .image-placeholder,
+    .chart-placeholder {
+      border: 1px solid #045823;
+      border-radius: 0;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8fafc;
+      color: #6b7280;
+      font-size: 14px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .chart-placeholder {
+      flex: 1;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding-top: 2px;
+      margin-top: 8px;
+    }
+
+    .footer-item {
+      margin-right: 16px;
+      white-space: nowrap;
+      
+    }
+
+    .footer-item:last-child {
+      margin-right: 0;
+    }
+  @media print {
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+
+      html, body {
+        width: 297mm;
+        height: 210mm;
+        margin: 0;
+        padding: 0;
+        background: white;
+      }
+
+      .scorecard-container {
+        width: 297mm;
+       
+        margin: 0 auto;
+        border: none;
+      }
+
+      .content-box,
+      .header-section,
+      .footer {
+        page-break-inside: avoid;
+      }
+
+      .technology-name {
+        font-size: 26px;
+      }
+    }
+    
+  </style>
+</head>
+<body>
+  <div class="scorecard-container">
+    <div class="header-section">
+     <div class="header-left">
+       <div class="logo-container">
+          <img src="{% static 'Logo.png' %}" alt="SAFRAN Logo" class="logo-img" />
+       </div>
+     </div>
+     <div class="technology-name">{{ technology.Name }}</div>
+     <div class="header-right">
+      <div>{{ technology.Macro }}</div>
+      {% if technology.Meso1 and technology.Meso2 %}
+        <div>{{ technology.Meso1 }}</div>
+        <div>{{ technology.Meso2 }}</div>
+      {% elif technology.Meso1 %}
+        <div>{{ technology.Meso1 }}</div>
+      {% elif technology.Meso %}
+        <div>{{ technology.Meso }}</div>
+      {% endif %}
+     </div>
+     </div>
+
+
+    <div class="main-grid">
+      <div class="column">
+        <div class="content-box" style="height: 75mm;">
+          <div class="content-header">Description & Applications</div>
+          <div class="content-body">{{ technology.Fields.description_application|safe }}</div>
+        </div>
+        
+        <div class="image-slot" style="height: 60mm;">
+          {% if sc1 and sc1.b64 %} 
+          <img src="{{ sc1.b64 }}" alt="SC1"> 
+          {% else %} 
+          <span>No image available</span>
+          {% endif %} 
+        </div>
+
+  <div class="content-box" style="height:43mm">
+          <div class="content-header">Enabling Technologies</div>
+          <div class="content-body">{{ technology.Fields.enabling_tech|safe }}</div>
+        </div>
+      </div>
+
+     
+       <div class="green-strip"></div>  
+     
+
+      <div class="column">
+        <div class="content-box " style="height: 55mm;">
+          <div class="content-header">Publications & Projects</div>
+          <div class="content-body">{{ technology.Fields.publications_projects|safe }}</div>
+        </div>
+        <div class="content-box" style="height: 55mm;">
+          <div class="content-header">Strategic Value & Evaluation</div>
+          <div class="content-body" >{{ technology.Fields.strategic_value|safe }}</div>
+        </div>
+        <div class="chart-placeholder" style="height: 55mm; display:flex; align-items:center; justify-content:center;">
+          {% if evaluation_img and evaluation_img.b64 %}
+          <img src="{{ evaluation_img.b64 }}" alt="Evaluation Chart" style="height:100%; width:100%; display:block;"> 
+          {% else %}
+          <span style="color:#888;">No evaluation chart image found.</span> 
+          {% endif %}
+        </div>
+
+      </div>
+       
+      
+      <div class="green-strip"></div>
+
+
+      <div class="column">
+        <div class="content-box"  style="height: 50mm;" >
+          <div class="content-header">Attributes & Performance</div>
+          <div class="content-body">{{ technology.Fields.attributes_performance|safe }}</div>
+        </div>
+
+        <div class="image-slot" style="height: 55mm;">
+          {% if sc2 and sc2.b64 %}
+          <img src="{{ sc2.b64 }}" alt="SC2">
+          {% else %}
+          <span>No image available</span>
+          {% endif %}
+        </div>
+
+        <div class="content-box"  style="height: 75mm;">
+          <div class="content-header" >Challenges & Current Status</div>
+          <div class="content-body">{{ technology.Fields.challenges_status|safe }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-item" style="font-weight: bold; margin-left: 4mm; font-size: 16px;">
+       {% if technology.confidentiality == "C1" %}
+          <span style="color: rgb(112, 173, 71);">{{ technology.confidentiality }}-PUBLIC</span>
+       {% elif technology.confidentiality == "C2" %}
+          <span style="color: rgb(255, 140, 0);">{{ technology.confidentiality }}-CONFIDENTIAL</span>
+       {% elif technology.confidentiality == "C3" %}
+          <span style="color: rgb(255, 0, 0);">{{ technology.confidentiality }}-STRATEGIC</span>
+       {% else %}
+          <span>{{ technology.confidentiality }}</span>
+       {% endif %}
+     </div>
+   
+
+      <div class="footer-item" >
+        DISTECH Report Generated {{ generated_on|date:"d.m.Y" }}
+      </div>
+      <div class="footer-item">
+        Initial-Last Data Input {{ technology.initial_date|date:"d.m.Y" }} - {{ technology.last_modified|date:"d.m.Y" }}
+      </div>
+      <div class="footer-item" style="font-weight: bold; color: #000; margin-right: 4mm;">
+        Energy and Propulsion Dept – SAFRAN Tech
+      </div>
+    </div>
+  </div>
+
+  <button onclick="downloadPDF()" style="
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    padding: 8px 12px;
+    background-color: #1d4ed8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 1000;
+  ">
+    Download PDF
+  </button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    function downloadPDF() {
+      const element = document.querySelector('.scorecard-container');
+
+      const opt = {
+        margin: 0,
+        filename: 'safran_scorecard.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5, useCORS: true,  backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+</body>
+</html>

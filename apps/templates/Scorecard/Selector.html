@@ -1,0 +1,72 @@
+
+{% load static %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scorecard Compendium</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; }
+    .actions { display:flex; gap:8px; margin-bottom:12px; }
+    ul#tech-list { list-style:none; padding:0; margin:0; }
+    li.item { display:flex; align-items:center; gap:10px; padding:8px; border:1px solid #e5e7eb; margin-bottom:6px; background:#fff; }
+    .drag { cursor:grab; user-select:none; padding:0 6px; border:1px solid #cbd5e1; }
+    .name { flex:1; }
+    .error { color:#b91c1c; margin-bottom:10px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+</head>
+<body>
+  <h1>Build a Scorecard Compendium</h1>
+  <p>Select technologies, drag to set order, then build.</p>
+
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  <form id="compendium-form" method="post" action="{% url 'technology_scorecard_selector' %}">
+    {% csrf_token %}
+    <div class="actions">
+      <button type="button" id="select-all">Select all</button>
+      <button type="button" id="clear-all">Clear</button>
+      <button type="submit" style="background:#045823;color:#fff;border:none;padding:8px 12px;">Build compendium</button>
+    </div>
+
+    <ul id="tech-list">
+      {% for t in techs %}
+      <li class="item" data-id="{{ t.id }}">
+        <span class="drag">☰</span>
+        <input type="checkbox" class="chk">
+        <span class="name">#{{ t.id }} — {{ t.name }}{% if t.macro %} <small>({{ t.macro }})</small>{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div id="hidden"></div>
+  </form>
+
+  <script>
+    const list = document.getElementById('tech-list');
+    new Sortable(list, { animation: 150, handle: '.drag' });
+
+    document.getElementById('select-all').onclick = () =>
+      list.querySelectorAll('.chk').forEach(c => c.checked = true);
+    document.getElementById('clear-all').onclick = () =>
+      list.querySelectorAll('.chk').forEach(c => c.checked = false);
+
+    document.getElementById('compendium-form').addEventListener('submit', (e) => {
+      const hidden = document.getElementById('hidden');
+      hidden.innerHTML = '';
+      const ids = Array.from(list.querySelectorAll('li.item'))
+        .filter(li => li.querySelector('.chk').checked)
+        .map(li => li.getAttribute('data-id'));
+      if (!ids.length) { e.preventDefault(); alert('Pick at least one.'); return; }
+      ids.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'order[]';
+        input.value = id;
+        hidden.appendChild(input);
+      });
+    });
+  </script>
+</body>
+</html>

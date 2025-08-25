@@ -1,0 +1,111 @@
+# apps/technology/models.py
+from django.db import models
+from django.urls import reverse
+from django.utils.text import slugify
+from django.utils import timezone
+import json
+
+CONF_CHOICES = (
+    ("C1", "C1 – Public"),
+    ("C2", "C2 – Internal"),
+    ("C3", "C3 – Confidential"),
+)
+CONFIDENTIALITY_CHOICES = CONF_CHOICES
+
+
+def unique_slug(model_cls, name: str, instance=None, field_name: str = "slug") -> str:
+    base = slugify(name) or "technology"
+    slug = base
+    i = 2
+    qs = model_cls.objects.all()
+    if instance and instance.pk:
+        qs = qs.exclude(pk=instance.pk)
+    while qs.filter(**{field_name: slug}).exists():
+        slug = f"{base}-{i}"
+        i += 1
+    return slug
+
+
+class Technology(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    description = models.TextField(blank=True)
+
+    # Long content sections (HTML list items produced by TinyMCE)
+    desc_and_applications = models.TextField(blank=True)
+    publications_and_projects = models.TextField(blank=True)
+    attributes_and_performance = models.TextField(blank=True)
+    strategic_value_and_evaluation = models.TextField(blank=True)
+    enabling_technologies = models.TextField(blank=True)
+    challenges_and_current_status = models.TextField(blank=True)
+
+    # Hierarchy
+    macro = models.CharField(max_length=120, blank=True, default="")
+    meso1 = models.CharField(max_length=120, blank=True, default="")
+    meso2 = models.CharField(max_length=120, blank=True, default="")
+
+    # Meta
+    initial_date = models.DateTimeField(default=timezone.now)
+    last_modified = models.DateTimeField(default=timezone.now)
+    confidentiality = models.CharField(max_length=2, choices=CONF_CHOICES, default="C2")
+
+    # JSON as text (safe for Djongo)
+    # extra_fields: [{ "name": str, "content": html }]
+    extra_fields = models.TextField(blank=True, default="[]")
+
+    # gallery: [{ "name": str, "b64": "data:image/...;base64,...", "tag": "SC1|SC2|", "type": "upload|evaluation", "uploaded_at": iso-str }]
+    gallery = models.TextField(blank=True, default="[]")
+
+    evaluation_history = models.TextField(blank=True, default="[]")
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    # slug kept unique
+    slug = models.SlugField(max_length=140, unique=True)
+
+    class Meta:
+        db_table = "technology_technology"
+        ordering = ("-created_at",)
+
+    def get_absolute_url(self):
+        return reverse("technology_detail", kwargs={"pk": self.pk})
+
+    # ---- helpers to work with JSON text fields ----
+    @staticmethod
+    def _loads(s, default):
+        try:
+            return json.loads(s or "") if s else default
+        except Exception:
+            return default
+
+    @staticmethod
+    def _dumps(obj):
+        return json.dumps(obj, ensure_ascii=False)
+
+    @property
+    def extra_fields_list(self):
+        return Technology._loads(self.extra_fields, [])
+
+    def set_extra_fields(self, items):
+        self.extra_fields = Technology._dumps(items)
+
+    @property
+    def gallery_list(self):
+        return Technology._loads(self.gallery, [])
+
+    def set_gallery(self, items):
+        self.gallery = Technology._dumps(items)
+
+    def save(self, *args, **kwargs):
+        self.last_modified = timezone.now()
+        needs_slug = not self.slug
+        if self.pk and not needs_slug:
+            try:
+                orig = Technology.objects.only("name", "slug").get(pk=self.pk)
+                if orig.name != self.name:
+                    needs_slug = True
+            except Technology.DoesNotExist:
+                needs_slug = True
+        if needs_slug:
+            self.slug = unique_slug(Technology, self.name, instance=self)
+        super().save(*args, **kwargs)

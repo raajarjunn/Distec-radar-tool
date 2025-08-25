@@ -1,0 +1,20 @@
+{# technology/partials/_content_block.html #}
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <div>
+        <h6 class="mb-1">{{ title }}</h6>
+        {% if help %}<div class="block-help">{{ help }}</div>{% endif %}
+      </div>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-primary"
+                onclick="openEditor('{{ field_id }}')">Edit</button>
+        <button type="button" class="btn btn-outline-danger"
+                onclick="clearBlock('{{ field_id }}')">Clear</button>
+      </div>
+    </div>
+    <div class="preview-box" data-preview-for="{{ field_id }}">
+      {% if preview %}{{ preview|safe }}{% else %}<span class="text-muted">No content</span>{% endif %}
+    </div>
+  </div>
+</div>

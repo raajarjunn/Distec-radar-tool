@@ -1,0 +1,38 @@
+<!-- apps/templates/Scorecard/Compendium.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scorecard Compendium</title>
+  <style>
+    @page { size: A4 landscape; margin: 0; }
+    .scorecard-container { page-break-after: always; }
+    body { margin:0; background:#fff; }
+    .toolbar { position: sticky; top:0; background:#fff; padding:8px; border-bottom:1px solid #e5e7eb; display:flex; gap:8px; }
+    button { background:#045823; color:#fff; border:none; padding:8px 12px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="download">Download PDF</button>
+  </div>
+
+  <div id="compendium">
+    {{ combined_html|safe }}
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    document.getElementById('download').onclick = function() {
+      const element = document.getElementById('compendium');
+      html2pdf().set({
+        margin: 0,
+        filename: '{{ filename }}',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      }).from(element).save();
+    };
+  </script>
+</body>
+</html>

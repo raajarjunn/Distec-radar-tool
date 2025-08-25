@@ -1,0 +1,112 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mind Map</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mind-elixir@0.8.2/dist/mind-elixir.min.css" /> 
+    <script src="{% static 'js/MindElixir.min.js' %}"></script>
+</head>
+<body>
+    <h2>Mind Map</h2>
+    <!-- <button id="saveBtn">Save Mind Map</button> -->
+    <div id="mindMapContainer" style="width: 100%; height: 1000px;; border: 1px solid #2c0101;"></div>
+
+<script>
+    let mind;
+
+    function generateUUID() {
+        return 'id-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    function getNodeDepth(root, id, depth = 0) {
+        if (root.id === id) return depth;
+        if (root.children) {
+            for (let child of root.children) {
+                const d = getNodeDepth(child, id, depth + 1);
+                if (d !== -1) return d;
+            }
+        }
+        return -1;
+    }
+
+    function assignIdsAndTypes(node, depth = 0) {
+        if (!node.id) node.id = generateUUID();
+        if (!node.data) node.data = {};
+        node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
+        if (!node.children) node.children = [];
+        node.children.forEach(child => assignIdsAndTypes(child, depth + 1));
+    }
+
+    window.onload = function () {
+        const mindmapData = JSON.parse('{{ mindmap_json|escapejs }}');
+        mind = new MindElixir({
+            el: '#mindMapContainer',
+            direction: MindElixir.RIGHT,
+            draggable: true,
+            contextMenu: true,
+            toolBar: true,
+            nodeMenu: true,
+            keypress: true,
+        });
+
+        assignIdsAndTypes(mindmapData.nodeData); // assign before init
+        mind.init(mindmapData);
+
+        mind.bus.addListener('operation', op => {
+            if (op.name === 'addChild' || op.name === 'addSibling') {
+                const node = op.obj;
+                if (!node.id) node.id = generateUUID();
+                if (!node.data) node.data = {};
+
+                const depth = getNodeDepth(mind.getData().nodeData, node.id);
+                node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
+                console.log("Assigned:", node.topic, node.id, node.data.type);
+            }
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const mindmap = mind.getData();
+            console.log("Sending mindmap:", mindmap);
+            console.log("🖨️ PAYLOAD SENT:", JSON.stringify(mind.getData(), null, 2));
+
+            fetch('/save_mindmap/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ mindmap }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Mind map saved!');
+                } else {
+                    alert('Error saving mind map: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Save failed:', error);
+                alert('Error sending mind map to server.');
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+{# apps/templates/technology/detail.html #}
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<style>
+  /* ===== Aesthetic detail page ===== */
+  .chip { display:inline-flex; align-items:center; gap:.4rem; padding:.25rem .6rem; border-radius:999px; font-size:.8rem; border:1px solid rgba(0,0,0,.08); background:#fff; }
+  .chip .dot{width:.45rem;height:.45rem;border-radius:50%; background:#5e72e4;}
+  .chip-slate{ background:#f8f9fe; border-color:#edf2f9; }
+  .meta-list{ display:flex; flex-wrap:wrap; gap:.5rem .75rem; }
+  .meta-item{ font-size:.9rem; color:#525f7f; }
+
+  .section-card{ border:1px solid rgba(0,0,0,.05); box-shadow:0 6px 20px rgba(0,0,0,.06); border-radius:.75rem; }
+  .section-card .card-header{ background:#f8f9fe; }
+  .section-title{ font-weight:800; font-size:1.1rem; letter-spacing:.2px; display:flex; align-items:center; gap:.5rem; }
+  .section-title .ni{ font-size:1.05rem; opacity:.85; }
+
+  .empty-hint{ border:1px dashed #ced4da; padding:.75rem; border-radius:.5rem; background:#fbfdff; }
+  .helper-hint{ margin-top:.75rem; padding:.6rem .75rem; border-radius:.5rem; background:#f8f9fe; border:1px solid #edf2f9; font-size:.9rem; }
+  .helper-hint .badge{ vertical-align:middle; }
+
+  /* Gallery (compact) */
+  .gallery-grid { display:grid; grid-template-columns:repeat(12,1fr); grid-gap:.75rem; }
+  @media (max-width:992px){ .gallery-grid{grid-template-columns:repeat(8,1fr);} }
+  @media (max-width:768px){ .gallery-grid{grid-template-columns:repeat(6,1fr);} }
+  @media (max-width:576px){ .gallery-grid{grid-template-columns:repeat(4,1fr);} }
+  .gallery-cell{ grid-column:span 3; }
+  @media (max-width:1200px){ .gallery-cell{grid-column:span 4;} }
+  @media (max-width:992px){  .gallery-cell{grid-column:span 6;} }
+  @media (max-width:576px){  .gallery-cell{grid-column:1 / -1;} }
+
+  .gallery-card.card{ border:1px solid rgba(0,0,0,.05); box-shadow:0 1px 8px rgba(0,0,0,.05); transition:transform .15s ease, box-shadow .15s ease; }
+  .gallery-card.card:hover{ transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.08);}
+  .gallery-thumb{ height:150px; width:100%; object-fit:cover; border-top-left-radius:.5rem;border-top-right-radius:.5rem; background:#f6f9fc; }
+  .gallery-card .card-body{ padding:.5rem .75rem; }
+  .tag-badge{ position:absolute; top:.5rem; left:.5rem; padding:.25rem .45rem; background:rgba(255,255,255,.9); border-radius:.35rem; font-size:.75rem; font-weight:600; border:1px solid rgba(0,0,0,.08); }
+  .tag-badge[data-tag="SC1"]{ color:#0d6efd; border-color:rgba(13,110,253,.35); }
+  .tag-badge[data-tag="SC2"]{ color:#198754; border-color:rgba(25,135,84,.35); }
+</style>
+
+<div class="container-fluid py-4">
+  <!-- ===== Header ===== -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card section-card">
+        <div class="card-header d-flex justify-content-between align-items-start">
+          <div>
+            <h3 class="mb-1"><span class="text-muted">Technology Name:</span> {{ object.name }}</h3>
+            <div class="mt-2 meta-list">
+              <span class="chip chip-slate"><span class="dot"></span> <strong class="ml-1">Macro:</strong>&nbsp;{{ object.macro|default:"—" }}</span>
+              <span class="chip chip-slate"><span class="dot"></span> <strong class="ml-1">Meso1:</strong>&nbsp;{{ object.meso1|default:"—" }}</span>
+              <span class="chip chip-slate"><span class="dot"></span> <strong class="ml-1">Meso2:</strong>&nbsp;{{ object.meso2|default:"—" }}</span>
+            </div>
+          </div>
+          <div class="btn-toolbar">
+            <div class="btn-group">
+              <a href="{% url 'technology_update' object.pk %}" class="btn btn-sm btn-outline-primary mr-1">
+                <i class="ni ni-settings-gear-65"></i> Edit
+              </a>
+              <a href="#" class="btn btn-sm btn-outline-danger js-open-delete"
+                 data-url="{% url 'technology_delete' object.pk %}"
+                 data-name="{{ object.name|escapejs }}">
+                 <i class="ni ni-fat-remove"></i> Delete
+              </a>
+              
+              <a class="btn btn-outline-primary"
+                href="{% url 'technology_evaluate' pk=object.pk %}"
+                target="_blank" rel="noopener">
+                Open Evaluation Tool
+              </a>
+
+              <a href="{% url 'technology_scorecard' object.pk %}" 
+                target="_blank">
+                View Scorecard
+              </a>
+
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="meta-list mb-2">
+            <div class="meta-item"><strong>Status:</strong> {% if object.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-secondary">Inactive</span>{% endif %}</div>
+            <div class="meta-item"><strong>Confidentiality:</strong> <span class="badge badge-info">{{ object.confidentiality }}</span></div>
+            <div class="meta-item"><strong>Created:</strong> {{ object.created_at|date:"Y-m-d H:i" }}</div>
+          </div>
+          {% if object.description %}
+            <p class="text-muted mb-0">{{ object.description|linebreaksbr }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Body ===== -->
+  <div class="row mt-3">
+    <!-- Left column: main sections -->
+    <div class="col-lg-8">
+
+      <!-- === Descriptions & Applications (special: “No data added.” when only empty bullets) === -->
+      <div class="card section-card mb-3">
+        <div class="card-header py-2">
+          <h4 class="section-title mb-0"><i class="ni ni-planet text-primary"></i> Descriptions &amp; Applications</h4>
+        </div>
+        <div class="card-body">
+          {# Case 1: has text content #}
+          {% if object.desc_and_applications and object.desc_and_applications|striptags|length > 0 %}
+            <div class="prose">{{ object.desc_and_applications|safe }}</div>
+
+          {# Case 2: ONLY empty bullets like <ul><li></li></ul> (any whitespace/newlines allowed) -> say "No data added." #}
+          {% elif object.desc_and_applications and "<li" in object.desc_and_applications and object.desc_and_applications|striptags|length == 0 %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No data added.
+            </div>
+
+          {# Case 3: totally empty #}
+          {% else %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No content provided.
+            </div>
+          {% endif %}
+
+          <div class="helper-hint">
+            <span class="badge badge-info mr-1">Helper hint</span>
+            Some pertinent details about the disruptive technology. State the applications. Cite and describe a baseline application. Declare a reference technology this one can be compared against.
+          </div>
+        </div>
+      </div>
+
+      <!-- === Publications & Projects === -->
+      <div class="card section-card mb-3">
+        <div class="card-header py-2">
+          <h4 class="section-title mb-0"><i class="ni ni-books text-orange"></i> Publications &amp; Projects</h4>
+        </div>
+        <div class="card-body">
+          {% if object.publications_and_projects and object.publications_and_projects|striptags|length > 0 %}
+            <div class="prose">{{ object.publications_and_projects|safe }}</div>
+          {% elif object.publications_and_projects and "<li" in object.publications_and_projects and object.publications_and_projects|striptags|length == 0 %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No data to view (only empty bullets found).
+            </div>
+          {% else %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No content provided.
+            </div>
+          {% endif %}
+          <div class="helper-hint">
+            <span class="badge badge-info mr-1">Helper hint</span>
+            Provide information about SAFRAN FdR item, survey of external publications, patents, funded projects.
+          </div>
+        </div>
+      </div>
+
+      <!-- === Attributes & Performance === -->
+      <div class="card section-card mb-3">
+        <div class="card-header py-2">
+          <h4 class="section-title mb-0"><i class="ni ni-chart-bar-32 text-success"></i> Attributes &amp; Performance</h4>
+        </div>
+        <div class="card-body">
+          {% if object.attributes_and_performance and object.attributes_and_performance|striptags|length > 0 %}
+            <div class="prose">{{ object.attributes_and_performance|safe }}</div>
+          {% elif object.attributes_and_performance and "<li" in object.attributes_and_performance and object.attributes_and_performance|striptags|length == 0 %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No data to view (only empty bullets found).
+            </div>
+          {% else %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No content provided.
+            </div>
+          {% endif %}
+          <div class="helper-hint">
+            <span class="badge badge-info mr-1">Helper hint</span>
+            Some details that further describe the said technology. Review of performance outcomes in line with current sensibilities.
+          </div>
+        </div>
+      </div>
+
+      <!-- === Strategic Value & Evaluation === -->
+      <div class="card section-card mb-3">
+        <div class="card-header py-2">
+          <h4 class="section-title mb-0"><i class="ni ni-favourite-28 text-danger"></i> Strategic Value &amp; Evaluation</h4>
+        </div>
+        <div class="card-body">
+          {% if object.strategic_value_and_evaluation and object.strategic_value_and_evaluation|striptags|length > 0 %}
+            <div class="prose">{{ object.strategic_value_and_evaluation|safe }}</div>
+          {% elif object.strategic_value_and_evaluation and "<li" in object.strategic_value_and_evaluation and object.strategic_value_and_evaluation|striptags|length == 0 %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No data to view (only empty bullets found).
+            </div>
+          {% else %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No content provided.
+            </div>
+          {% endif %}
+          <div class="helper-hint">
+            <span class="badge badge-info mr-1">Helper hint</span>
+            Text that highlights any strategic value of said technology. Provide text that analyses the evaluation chart.
+          </div>
+        </div>
+      </div>
+
+      <!-- === Enabling Technologies === -->
+      <div class="card section-card mb-3">
+        <div class="card-header py-2">
+          <h4 class="section-title mb-0"><i class="ni ni-laptop text-info"></i> Enabling Technologies</h4>
+        </div>
+        <div class="card-body">
+          {% if object.enabling_technologies and object.enabling_technologies|striptags|length > 0 %}
+            <div class="prose">{{ object.enabling_technologies|safe }}</div>
+          {% elif object.enabling_technologies and "<li" in object.enabling_technologies and object.enabling_technologies|striptags|length == 0 %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No data to view (only empty bullets found).
+            </div>
+          {% else %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No content provided.
+            </div>
+          {% endif %}
+          <div class="helper-hint">
+            <span class="badge badge-info mr-1">Helper hint</span>
+            A brief review of the enabling technologies that are key to said technology.
+          </div>
+        </div>
+      </div>
+
+      <!-- === Challenges & Current Status === -->
+      <div class="card section-card mb-3">
+        <div class="card-header py-2">
+          <h4 class="section-title mb-0"><i class="ni ni-settings text-warning"></i> Challenges &amp; Current Status</h4>
+        </div>
+        <div class="card-body">
+          {% if object.challenges_and_current_status and object.challenges_and_current_status|striptags|length > 0 %}
+            <div class="prose">{{ object.challenges_and_current_status|safe }}</div>
+          {% elif object.challenges_and_current_status and "<li" in object.challenges_and_current_status and object.challenges_and_current_status|striptags|length == 0 %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No data to view (only empty bullets found).
+            </div>
+          {% else %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No content provided.
+            </div>
+          {% endif %}
+          <div class="helper-hint">
+            <span class="badge badge-info mr-1">Helper hint</span>
+            Indicate the status of said technology, including TRL/SRL rating. If applicable, cite any reasons as to why it has been dormant. Highlight the challenges that need to be surmounted, and discuss risk amelioration strategies. 
+          </div>
+        </div>
+      </div>
+
+      {% if extra_fields %}
+      <div class="card section-card mb-3">
+        <div class="card-header py-2">
+          <h4 class="section-title mb-0"><i class="ni ni-bullet-list-67 text-default"></i> Additional Fields</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for f in extra_fields %}
+              <div class="col-md-6 mb-3">
+                <div class="border rounded p-3 h-100">
+                  <strong class="d-block mb-2">{{ f.name }}</strong>
+                  {% if f.content and f.content|striptags|length > 0 %}
+                    <div class="prose">{{ f.content|safe }}</div>
+                  {% elif f.content and "<li" in f.content and f.content|striptags|length == 0 %}
+                    <div class="empty-hint small">
+                      <span class="badge badge-light mr-1">Info</span> No data to view (only empty bullets found).
+                    </div>
+                  {% else %}
+                    <div class="empty-hint small">
+                      <span class="badge badge-light mr-1">Info</span> No content provided.
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right column: Gallery + Quick facts -->
+    <div class="col-lg-4">
+      <div class="card section-card mb-3">
+        <div class="card-header py-2 d-flex align-items-center justify-content-between">
+          <h4 class="section-title mb-0"><i class="ni ni-album-2 text-primary"></i> Gallery</h4>
+        </div>
+        <div class="card-body">
+          {% if gallery %}
+            <div class="gallery-grid">
+              {% for img in gallery %}
+                <div class="gallery-cell">
+                  <div class="card gallery-card position-relative">
+                    {% if img.tag %}
+                      <span class="tag-badge" data-tag="{{ img.tag }}">{{ img.tag }}</span>
+                    {% endif %}
+                    <a href="{% if img.b64 %}{{ img.b64 }}{% elif img.image_path %}{{ MEDIA_URL }}{{ img.image_path }}{% endif %}"
+                       class="js-open-image"
+                       data-name="{{ img.name|default:'Image' }}">
+                      <img
+                        loading="lazy"
+                        class="card-img-top gallery-thumb"
+                        src="{% if img.b64 %}{{ img.b64 }}{% elif img.image_path %}{{ MEDIA_URL }}{{ img.image_path }}{% endif %}"
+                        alt="{{ img.name|default:'Image' }}"
+                        title="{{ img.name|default:'Image' }}">
+                    </a>
+                    {% comment %} <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div class="small text-truncate" title="{{ img.name }}">{{ img.name|default:"—" }}</div>
+                        {% if img.uploaded_at %}
+                          <div class="text-muted small ml-2">{{ img.uploaded_at|slice:":10" }}</div>
+                        {% endif %}
+                      </div>
+                    </div> {% endcomment %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-hint">
+              <span class="badge badge-light mr-1">Info</span> No images uploaded.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card section-card">
+        <div class="card-header py-2"><h4 class="section-title mb-0"><i class="ni ni-single-copy-04 text-default"></i> Quick Facts</h4></div>
+        <div class="card-body">
+          <div class="mb-2"><strong>Active:</strong> {{ object.is_active|yesno:"Yes,No" }}</div>
+          <div class="mb-2"><strong>Confidentiality:</strong> {{ object.confidentiality }}</div>
+          <div class="mb-2"><strong>ID:</strong> {{ object.id }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Image Viewer Modal (BS4) ===== -->
+<div class="modal fade" id="imgModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title" id="imgModalTitle">Image</h6>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+      </div>
+      <div class="modal-body p-2">
+        <img id="imgModalPic" alt="" class="img-fluid rounded w-100" style="max-height:70vh; object-fit:contain;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Delete Modal (type name to confirm) (BS4) ===== -->
+<div class="modal fade" id="deleteTechModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+    <div class="modal-content">
+      <form id="deleteTechForm" method="post" action="">
+        {% csrf_token %}
+        <div class="modal-header py-2">
+          <h6 class="modal-title">Delete Technology</h6>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+        </div>
+        <div class="modal-body">
+          <p class="small mb-2">This action cannot be undone.</p>
+          <p class="mb-2 small">Type the technology name to confirm:</p>
+          <div class="mb-2"><span id="deleteConfirmTarget" class="badge badge-light p-2 text-dark"></span></div>
+          <input type="text" class="form-control" id="deleteConfirmInput" name="confirm_name" placeholder="">
+          <small class="text-muted">You must type the name exactly.</small>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-danger" id="deleteSubmitBtn" disabled>Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ block.super }}
+<script>
+(function(){
+  // Lightbox for gallery images
+  $(document).on('click', 'a.js-open-image', function(e){
+    e.preventDefault();
+    var src = $(this).attr('href');
+    var name = $(this).data('name') || 'Image';
+    $('#imgModalPic').attr('src', src);
+    $('#imgModalTitle').text(name);
+    $('#imgModal').modal('show');
+  });
+
+  // Delete modal (type exact name)
+  var $delModal = $('#deleteTechModal');
+  var $delForm  = $('#deleteTechForm');
+  var $delInput = $('#deleteConfirmInput');
+  var $delBtn   = $('#deleteSubmitBtn');
+  var $delChip  = $('#deleteConfirmTarget');
+
+  $(document).on('click', '.js-open-delete', function(e){
+    e.preventDefault();
+    var name = $(this).data('name') || '';
+    var url  = $(this).data('url')  || '';
+    $delForm.attr('action', url);
+    $delChip.text(name);
+    $delInput.val('').attr('placeholder', name).removeClass('is-valid is-invalid');
+    $delBtn.prop('disabled', true);
+    $delModal.modal('show');
+  });
+
+  $delModal.on('shown.bs.modal', function(){ $delInput.trigger('focus'); });
+
+  $delInput.on('input', function(){
+    var target = ($delChip.text() || '').trim();
+    var val = ($(this).val() || '').trim();
+    var match = (val === target);
+    $delBtn.prop('disabled', !match);
+    $(this).toggleClass('is-valid', match)
+           .toggleClass('is-invalid', !match && val.length > 0);
+  });
+})();
+</script>
+{% endblock %}

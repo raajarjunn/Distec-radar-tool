@@ -1,0 +1,180 @@
+{
+    "admin": [
+        "view_users",
+        "edit_users",
+        "delete_users",
+        "manage_roles",
+        "view_reports",
+        "export_reports",
+        "view_projects",
+        "create_projects",
+        "edit_projects",
+        "delete_projects",
+        "assign_tasks",
+        "view_tasks",
+        "create_tasks",
+        "edit_tasks",
+        "delete_tasks",
+        "comment",
+        "view_content",
+        "create_content",
+        "edit_content",
+        "delete_content",
+        "publish_content",
+        "view_support_tickets",
+        "create_support_tickets",
+        "edit_support_tickets",
+        "close_support_tickets",
+        "view_bugs",
+        "file_bugs",
+        "triage_bugs",
+        "verify_fixes",
+        "view_envs",
+        "deploy_builds",
+        "view_audit_logs"
+    ],
+    "api_consumer": [
+        "access_api"
+    ],
+    "auditor": [
+        "view_audit_logs",
+        "view_reports",
+        "export_reports",
+        "view_users",
+        "view_projects",
+        "view_content"
+    ],
+    "content_creator": [
+        "view_content",
+        "create_content",
+        "edit_content",
+        "publish_content"
+    ],
+    "data_entry": [
+        "view_content",
+        "create_content",
+        "edit_content"
+    ],
+    "developer": [
+        "view_projects",
+        "view_tasks",
+        "edit_tasks",
+        "view_bugs",
+        "file_bugs",
+        "view_envs",
+        "deploy_builds",
+        "comment"
+    ],
+    "guest": [
+        "view_content",
+        "view_projects",
+        "view_reports"
+    ],
+    "moderator": [
+        "view_users",
+        "view_content",
+        "edit_content",
+        "delete_content",
+        "view_support_tickets",
+        "close_support_tickets",
+        "comment"
+    ],
+    "project_manager": [
+        "view_projects",
+        "create_projects",
+        "edit_projects",
+        "delete_projects",
+        "assign_tasks",
+        "view_tasks",
+        "create_tasks",
+        "edit_tasks",
+        "delete_tasks",
+        "view_reports",
+        "export_reports",
+        "comment"
+    ],
+    "qa_tester": [
+        "view_projects",
+        "view_tasks",
+        "view_bugs",
+        "file_bugs",
+        "verify_fixes",
+        "comment"
+    ],
+    "report_viewer": [
+        "view_reports",
+        "export_reports"
+    ],
+    "staff": [
+        "view_projects",
+        "view_tasks",
+        "create_tasks",
+        "edit_tasks",
+        "comment",
+        "view_reports"
+    ],
+    "superadmin": [
+        "view_users",
+        "edit_users",
+        "delete_users",
+        "manage_roles",
+        "view_reports",
+        "export_reports",
+        "view_projects",
+        "create_projects",
+        "edit_projects",
+        "delete_projects",
+        "assign_tasks",
+        "view_tasks",
+        "create_tasks",
+        "edit_tasks",
+        "delete_tasks",
+        "comment",
+        "view_content",
+        "create_content",
+        "edit_content",
+        "delete_content",
+        "publish_content",
+        "view_support_tickets",
+        "create_support_tickets",
+        "edit_support_tickets",
+        "close_support_tickets",
+        "view_bugs",
+        "file_bugs",
+        "triage_bugs",
+        "verify_fixes",
+        "view_envs",
+        "deploy_builds",
+        "view_audit_logs",
+        "access_api",
+        "manage_api_keys",
+        "view_settings",
+        "edit_settings"
+    ],
+    "support_agent": [
+        "view_users",
+        "view_support_tickets",
+        "create_support_tickets",
+        "edit_support_tickets",
+        "close_support_tickets",
+        "view_reports"
+    ],
+    "team_lead": [
+        "view_projects",
+        "edit_projects",
+        "assign_tasks",
+        "view_tasks",
+        "create_tasks",
+        "edit_tasks",
+        "delete_tasks",
+        "view_reports",
+        "comment"
+    ],
+    "user1": [
+        "view_users",
+        "edit_users"
+    ],
+    "user2": [
+        "view_users"
+    ]
+}

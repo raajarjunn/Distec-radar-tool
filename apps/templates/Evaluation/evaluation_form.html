@@ -1,0 +1,1080 @@
+{% load static %}
+{% load list_utils %}
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Safran Project Evaluation  </title>
+   <!-- <link href="https://fonts.googleapis.com/css?family=Inter:400,700&display=swap" rel="stylesheet"> -->
+    <!-- Chart.js 4.x -->
+    <script src="{% static 'js/chart-umd-min.js' %}"></script>
+    <!-- Annotation plugin 2.x -->
+    <script src="{% static 'js/chartjs-plugin-annotation.min.js' %}"></script>
+
+    <style>
+        body {
+            background: #f3f6fb;
+            font-family: 'Inter', Arial, sans-serif;
+            color: #18284c;
+            margin: 0;
+            padding: 0;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 36px;
+            margin: 40px auto;
+            width: 98vw;
+            max-width: 1800px;
+            align-items: flex-start;
+        }
+        .panel, .chart-panel {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 32px rgba(24,40,76,0.11);
+            padding: 34px 3vw 34px 3vw;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        h2, h3 {
+            color: #204490;
+            font-weight: 700;
+            margin-top: 0;
+        }
+        .parameter-block {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ecf1fa;
+            padding: 10px 0;
+            width: 100%;
+        }
+        .parameter-block label {
+            flex: 1 0 320px;
+            color: #2c4a77;
+            font-weight: 500;
+            font-size: 15px;
+        }
+        select, input[type="number"] {
+            margin: 0 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #d7e2f8;
+            background: #f5f7fa;
+            color: #1d2957;
+            font-size: 15px;
+        }
+        select:focus, input[type="number"]:focus {
+            outline: 2px solid #3678e0;
+            border-color: #3678e0;
+        }
+        button[type="submit"], .btn {
+            background: linear-gradient(90deg,#204490 60%,#3678e0 100%);
+            color: #fff;
+            border: none;
+            border-radius: 22px;
+            padding: 12px 36px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 18px;
+            transition: background .18s;
+        }
+        button[type="submit"]:hover {
+            background: linear-gradient(90deg,#3678e0,#204490 100%);
+        }
+        .chart-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 34px;
+            align-items: stretch;
+            justify-content: flex-start;
+        }
+        .chart-row {
+            display: flex;
+            gap: 38px;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+        }
+        .chart-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 14px rgba(24,40,76,0.10);
+            padding: 24px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 480px;
+            max-width: 750px;
+        }
+        .chart-title {
+            text-align: center;
+            color: #204490;
+            font-weight: 600;
+            margin: 15px 0 0 0;
+        }
+        .bar-interval-wrap {
+            margin: 30px auto 0 auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+            background: #f6f9fe;
+            border-radius: 11px;
+            overflow: hidden;
+        }
+        th {
+            background: #204490;
+            color: #fff;
+            font-weight: 700;
+            padding: 11px 6px;
+            border-bottom: 2px solid #3678e0;
+            font-size: 15px;
+            text-align: justify;
+        }
+        td {
+            padding: 11px 6px;
+            border-bottom: 1px solid #e7eefa;
+            color: #1d2957;
+            font-size: 14px;
+            text-align: justify;
+        }
+        tr:nth-child(even) {
+            background: #e9f2fc;
+        }
+        .qualification {
+            color: #2a0449;
+            font-style: italic;
+        }
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 28px;
+            }
+            .chart-row {
+                flex-direction: column;
+                gap: 18px;
+            }
+            .panel, .chart-panel { padding: 18px 2vw; }
+        }
+        @media (max-width: 700px) {
+            .parameter-block label { font-size: 13px; }
+            table th, table td { font-size: 12px; }
+            .chart-card { min-width: 220px; max-width: 99vw; }
+        }
+    </style>
+</head>
+<body>
+    <h2 style="text-align:center; margin-top:32px; color:#204490;">Safran Project Evaluation for {{ technology.name }}</h2>
+    <div class="main-grid">
+        <div class="panel">
+
+<form method="post" autocomplete="off">
+  {% csrf_token %}
+
+  <h3>Stakes & Value Creation</h3>
+  {% for param in radar1 %}
+    {% with idx=forloop.counter0 %}
+      <div class="parameter-block">
+        <label>{{ param }}</label>
+        <select name="values[]">
+          {% for v in score_options %}
+            {% with user_val=user_values|index:idx %}
+              <option value="{{ v }}" {% if user_val == v %}selected{% endif %}>{{ v }}</option>
+            {% endwith %}
+          {% endfor %}
+        </select>
+        <select name="confidences[]">
+          {% for level in confidence_levels %}
+            {% with user_conf=user_confidences|index:idx %}
+              <option value="{{ level }}" {% if user_conf == level %}selected{% endif %}>{{ level }} confidence</option>
+            {% endwith %}
+          {% endfor %}
+        </select>
+      </div>
+    {% endwith %}
+  {% endfor %}
+
+  <h3>Feasibility & Risks</h3>
+ {% load list_utils %}
+
+{% for param, idx in radar2|zip_lists:radar2_indexes %}
+  <div class="parameter-block">
+    <label>{{ param }}</label>
+    <select name="values[]">
+      {% for v in score_options %}
+        <option value="{{ v }}" {% if user_values|index:idx == v %}selected{% endif %}>{{ v }}</option>
+      {% endfor %}
+    </select>
+    <select name="confidences[]">
+      {% for level in confidence_levels %}
+        <option value="{{ level }}" {% if user_confidences|index:idx == level %}selected{% endif %}>{{ level }} confidence</option>
+      {% endfor %}
+    </select>
+  </div>
+{% endfor %}
+
+  <div class="parameter-block">
+    <label for="amplification">Amplification Value (WAF):</label>
+    <input type="number" name="amplification" id="amplification" min="1" max="50" step="1" value="{{ amplification|default:'2' }}" style="width: 80px;">
+    <span style="color:#6c7aad;font-size:13px; margin-left:8px;">(Recommended: 2)</span>
+  </div>
+
+  <button type="submit">Evaluate</button>
+   <button type="submit" name="action" value="save" > Save Evaluation</button>
+</form>
+
+
+{% if eval_meta %}
+  <p style="margin:8px 0 0 0; color:#6c7aad;">
+    Evaluation on {{ eval_meta.when }} by {{ eval_meta.user }}
+  </p>
+{% endif %}
+
+            
+        </div>
+        {% if show_chart %}
+        <div class="chart-panel">
+            <div class="chart-row">
+                <!-- Stakes / Value Creation -->
+                <div class="chart-card" style="background:#fff;">
+                    <p class="chart-title">Stakes / Value Creation</p>
+                    <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:10px; width:100%;">
+                        <canvas id="radar1" width="340" height="340" style="background:#fff; max-width:500px;"></canvas>
+                        <!-- Confidence bar with heading above -->
+                        <div style="display:flex; flex-direction:column; align-items:center; width:120px; min-width:110px;">
+                            <div style="width:100%; text-align:left; font-size:15px; color:#204490; font-weight:700; margin-bottom:6px;">
+                                Confidence level interval (min-max)
+                            </div>
+                            <div style="position:relative; height:340px; display:flex; align-items:center;">
+                                <div style="position:absolute; left:-35px; top:0; font-size:13px; color:#204490;">High</div>
+                                <div style="position:absolute; left:-35px; bottom:0; font-size:13px; color:#204490;">Low</div>
+                                <canvas id="stakeConfidenceBar" width="60" height="300" style="display:block;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Project Position Interval Bar (below) -->
+                    <div class="bar-interval-wrap" style="max-width:370px;margin:30px auto 0 auto;">
+                        <h4 style="text-align:center;margin:10px 0 0 0;font-weight:700;color:#204490;">
+                            Project positioning - Stake ranking interval (min-max)
+                        </h4>
+                        <canvas id="stakeBarInterval" width="370" height="60"></canvas>
+                        <div style="display:flex;justify-content:space-between;font-size:14px;margin-top:3px;">
+                            <span>Low</span><span>High</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Feasibility / Risks -->
+                <div class="chart-card" style="background:#fff;">
+                    <p class="chart-title">Feasibility / Risks</p>
+                    <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:10px; width:100%;">
+                        <canvas id="radar2" width="340" height="370" style="background:#fff; max-width:500px;"></canvas>
+                        <!-- Confidence bar with heading above -->
+                        <div style="display:flex; flex-direction:column; align-items:center; width:120px; min-width:110px;">
+                            <div style="width:100%; text-align:left; font-size:15px; color:#204490; font-weight:700; margin-bottom:6px;">
+                                Confidence level interval (min-max)
+                            </div>
+                            <div style="position:relative; height:340px; display:flex; align-items:center;">
+                                <div style="position:absolute; left:-35px; top:0; font-size:13px; color:#204490;">High</div>
+                                <div style="position:absolute; left:-35px; bottom:0; font-size:13px; color:#204490;">Low</div>
+                                <canvas id="feasConfidenceBar" width="60" height="300" style="display:block;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Feasibility Position Interval Bar (below) -->
+                    <div class="bar-interval-wrap" style="max-width:370px;margin:30px auto 0 auto;">
+                        <h4 style="text-align:center;margin:10px 0 0 0;font-weight:700;color:#204490;">
+                            Feasibility positioning - Feasibility ranking interval (min-max)
+                        </h4>
+                        <canvas id="feasBarInterval" width="370" height="60"></canvas>
+                        <div style="display:flex;justify-content:space-between;font-size:14px;margin-top:3px;">
+                            <span>Low</span><span>High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+               <button onclick="drawScorecardChart()" class="btn" style="width: 400px;">
+                              Export feasibility chart to scorecard
+                </button>
+                 <canvas id="scorecardChart" width="400" height="300" style="display:none"></canvas>
+               {% if show_chart %}
+              <form method="post" action="{% url 'export_excel' pk=tech_id %}" id="exportExcelForm">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="width: 200px;">Export to Excel</button>
+               </form>
+               {% endif %}
+            </div>
+
+            <div style="margin-top:18px; width:100%;">
+                <h3 style="margin-bottom:9px; color:#204490;">Qualification Table</h3>
+                <table>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Selected Value</th>
+                        <th>Qualification Statement</th>
+                        <th>Confidence Level</th>
+                    </tr>
+                    {% for param, value, statement, confidence in qualification_statements %}
+                    <tr>
+                        <td>{{ param }}</td>
+                        <td style="font-weight:700; color: #3678e0;">{{ value }}</td>
+                        <td class="qualification">{{ statement }}</td>
+                        <td>{{ confidence }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            <!-- Pass data for charts -->
+            {{ radar1_short|json_script:"radar1-data" }}
+            {{ radar2_short|json_script:"radar2-data" }}
+            {{ radar1_values|json_script:"radar1-values" }}
+            {{ radar2_values|json_script:"radar2-values" }}
+            {{ stake_bar_min|json_script:"stake-bar-min" }}
+            {{ stake_bar_max|json_script:"stake-bar-max" }}
+            {{ feas_bar_min|json_script:"feas-bar-min" }}
+            {{ feas_bar_max|json_script:"feas-bar-max" }}
+            {{ stake_conf_bar_min|json_script:"stake-conf-bar-min" }}
+            {{ stake_conf_bar_max|json_script:"stake-conf-bar-max" }}
+            {{ feas_conf_bar_min|json_script:"feas-conf-bar-min" }}
+            {{ feas_conf_bar_max|json_script:"feas-conf-bar-max" }}
+
+            <div style="display:none">{{ technology.id }}</div>
+
+
+
+<script>
+                // Radar charts (unchanged)
+                function wrapLabel(label) {
+                    if (label.length < 10) return label;
+                    let words = label.split(" ");
+                    let lines = [];
+                    let line = "";
+                    words.forEach(word => {
+                        if ((line + word).length > 10) {
+                            lines.push(line.trim());
+                            line = "";
+                        }
+                        line += word + " ";
+                    });
+                    if (line) lines.push(line.trim());
+                    return lines.join("\n");
+                }
+
+                const radar1Labels = JSON.parse(document.getElementById('radar1-data').textContent);
+                const radar2Labels = JSON.parse(document.getElementById('radar2-data').textContent);
+                const radar1Data = JSON.parse(document.getElementById('radar1-values').textContent);
+                const radar2Data = JSON.parse(document.getElementById('radar2-values').textContent);
+
+                const baseOptions = {
+                    layout: { padding: 38 },
+                    elements: { line: { borderWidth: 3, tension: 0.1 } },
+                    scales: {
+                        r: {
+                            angleLines: { color: "#e4e4e4", lineWidth: 1.1 },
+                            grid: { color: "#efefef", circular: false, lineWidth: 1 },
+                            pointLabels: {
+                                color: "#101010",
+                                font: { size: 11, weight: "bold" },
+                                padding: 16,
+                                callback: wrapLabel
+                            },
+                            min: 0,
+                            max: 9,
+                            ticks: { stepSize: 1, color: "#767676", font: { size: 10 } }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                };
+
+                new Chart(document.getElementById('radar1'), {
+                    type: 'radar',
+                    data: {
+                        labels: radar1Labels,
+                        datasets: [{
+                            label: 'Score',
+                            data: radar1Data,
+                            fill: true,
+                            backgroundColor: 'rgba(32,68,144, 0.11)',
+                            borderColor: '#204490',
+                            pointBackgroundColor: '#3678e0',
+                            pointBorderColor: '#204490',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderWidth: 2.2
+                        }]
+                    },
+                    options: baseOptions
+                });
+
+                new Chart(document.getElementById('radar2'), {
+                    type: 'radar',
+                    data: {
+                        labels: radar2Labels,
+                        datasets: [{
+                            label: 'Score',
+                            data: radar2Data,
+                            fill: true,
+                            backgroundColor: 'rgba(143,64,255,0.10)',
+                            borderColor: '#9148cb',
+                            pointBackgroundColor: '#9148cb',
+                            pointBorderColor: '#9148cb',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderWidth: 2.2
+                        }]
+                    },
+                    options: baseOptions
+                });
+
+                Chart.register(window['chartjs-plugin-annotation']);
+
+                // VERTICAL Stake Confidence Bar
+                (function() {
+                    const stakeConfMin = JSON.parse(document.getElementById('stake-conf-bar-min').textContent);
+                    const stakeConfMax = JSON.parse(document.getElementById('stake-conf-bar-max').textContent);
+                    const stakeConfCanvas = document.getElementById('stakeConfidenceBar');
+                    if (stakeConfCanvas) {
+                        const ctx = stakeConfCanvas.getContext('2d');
+                        const grad = ctx.createLinearGradient(0, stakeConfCanvas.height, 0, 0);
+                        grad.addColorStop(0, '#27ae60');
+                        grad.addColorStop(0.5, '#f6e58d');
+                        grad.addColorStop(1, '#e74c3c');
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: [''],
+                                datasets: [{
+                                    label: 'Stake Confidence',
+                                    data: [9],
+                                    backgroundColor: grad,
+                                    barThickness: 54,
+                                    categoryPercentage: 0.9,
+                                    barPercentage: 0.9
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'x',
+                                plugins: {
+                                    legend: { display: false },
+                                    annotation: {
+                                        annotations: {
+                                            minLabel: {
+                                                type: "label",
+                                                yValue: stakeConfMin,
+                                                xValue: 0,
+                                                content: stakeConfMin.toFixed(1),
+                                                backgroundColor: "#e74c3c",
+                                                color: "#fff",
+                                                font: { size: 13, weight: "bold" },
+                                                position: "start",
+                                                xAdjust: -12,
+                                                yAdjust: 0,
+                                                padding: 1,
+                                                borderRadius: 3,
+                                                display: true
+                                            },
+                                            maxLabel: {
+                                                type: "label",
+                                                yValue: stakeConfMax,
+                                                xValue: 0,
+                                                content: stakeConfMax.toFixed(1),
+                                                backgroundColor: "#27ae60",
+                                                color: "#fff",
+                                                font: { size: 13, weight: "bold" },
+                                                position: "start",
+                                                xAdjust: -12,
+                                                yAdjust: 0,
+                                                padding: 1,
+                                                borderRadius: 3,
+                                                display: true
+                                            }
+                                        }
+                                    },
+                                     tooltip: {enabled: false}
+                                },
+                                scales: {
+                                    y: {
+                                        min: 0, max: 9,
+                                        grid: { display: false },
+                                        ticks: { color: "#204490", stepSize: 1, font: { size: 11 } }
+                                    },
+                                    x: {
+                                        display: false,
+                                        categoryPercentage: 0.9,
+                                        barPercentage: 0.9
+                                    }
+                                }
+                            }
+                        });
+                    }
+                })();
+
+                // VERTICAL Feasibility Confidence Bar
+                (function() {
+                    const feasConfMin = JSON.parse(document.getElementById('feas-conf-bar-min').textContent);
+                    const feasConfMax = JSON.parse(document.getElementById('feas-conf-bar-max').textContent);
+                    const feasConfCanvas = document.getElementById('feasConfidenceBar');
+                    if (feasConfCanvas) {
+                        const ctx = feasConfCanvas.getContext('2d');
+                        const grad = ctx.createLinearGradient(0, feasConfCanvas.height, 0, 0);
+                        grad.addColorStop(0, '#27ae60');
+                        grad.addColorStop(0.5, '#f6e58d');
+                        grad.addColorStop(1, '#e74c3c');
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: [''],
+                                datasets: [{
+                                    label: 'Feasibility Confidence',
+                                    data: [9],
+                                    backgroundColor: grad,
+                                    barThickness: 54,
+                                    categoryPercentage: 0.9,
+                                    barPercentage: 0.9
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'x',
+                                plugins: {
+                                    legend: { display: false },
+                                    annotation: {
+                                        annotations: {
+                                            minLabel: {
+                                                type: "label",
+                                                yValue: feasConfMin,
+                                                xValue: 0,
+                                                content: feasConfMin.toFixed(1),
+                                                backgroundColor: "#e74c3c",
+                                                color: "#fff",
+                                                font: { size: 13, weight: "bold" },
+                                                position: "start",
+                                                xAdjust: -12,
+                                                yAdjust: 0,
+                                                padding: 1,
+                                                borderRadius: 3,
+                                                display: true
+                                            },
+                                            maxLabel: {
+                                                type: "label",
+                                                yValue: feasConfMax,
+                                                xValue: 0,
+                                                content: feasConfMax.toFixed(1),
+                                                backgroundColor: "#27ae60",
+                                                color: "#fff",
+                                                font: { size: 13, weight: "bold" },
+                                                position: "start",
+                                                xAdjust: -12,
+                                                yAdjust: 0,
+                                                padding: 1,
+                                                borderRadius: 3,
+                                                display: true
+                                            }
+                                        }
+                                    },
+                                    tooltip: {enabled: false}
+                                },
+                                scales: {
+                                    y: {
+                                        min: 0, max: 9,
+                                        grid: { display: false },
+                                        ticks: { color: "#204490", stepSize: 1, font: { size: 11 } }
+                                    },
+                                    x: {
+                                        display: false,
+                                        categoryPercentage: 0.9,
+                                        barPercentage: 0.9
+                                    }
+                                }
+                            }
+                        });
+                    }
+                })();
+
+                // Stake Positioning Bar Chart (horizontal)
+                (function() {
+                    const barMin = JSON.parse(document.getElementById('stake-bar-min').textContent);
+                    const barMax = JSON.parse(document.getElementById('stake-bar-max').textContent);
+                    const minVal = Math.min(barMin, barMax);
+                    const maxVal = Math.max(barMin, barMax);
+                    const stakeBarCanvas = document.getElementById('stakeBarInterval');
+                    if (stakeBarCanvas) {
+                        const ctx = stakeBarCanvas.getContext('2d');
+                        const grad = ctx.createLinearGradient(0, 0, stakeBarCanvas.width, 0);
+                        grad.addColorStop(0, '#e8f0fc');
+                        grad.addColorStop(1, '#204490');
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: [''],
+                                datasets: [{
+                                    label: 'Project Positioning',
+                                    data: [9],
+                                    backgroundColor: grad,
+                                    barThickness: 32,
+                                    categoryPercentage: 0.7,
+                                    barPercentage: 0.7
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                plugins: {
+                                    legend: { display: false },
+                                    annotation: {
+                                        annotations: {
+                                            minLabel: {
+                                                type: "label",
+                                                xValue: minVal,
+                                                yValue: 0,
+                                                content: minVal.toFixed(1),
+                                                backgroundColor: "#e74c3c",
+                                                color: "#fff",
+                                                font: { size: 13, weight: "bold" },
+                                                position: "start",
+                                                yAdjust: -8,
+                                                padding: 1,
+                                                borderRadius: 3,
+                                                display: true
+                                            },
+                                            maxLabel: {
+                                                type: "label",
+                                                xValue: maxVal,
+                                                yValue: 0,
+                                                content: maxVal.toFixed(1),
+                                                backgroundColor: "#27ae60",
+                                                color: "#fff",
+                                                font: { size: 13, weight: "bold" },
+                                                position: "start",
+                                                yAdjust: -8,
+                                                padding: 1,
+                                                borderRadius: 3,
+                                                display: true
+                                            }
+                                        }
+                                    },
+                                     tooltip: {enabled: false}
+                                },
+                                scales: {
+                                    x: {
+                                        min: 0, max: 9,
+                                        grid: { display: false },
+                                        ticks: { color: "#204490", stepSize: 1, font: { size: 11 } }
+                                    },
+                                    y: {
+                                        display: false,
+                                        categoryPercentage: 0.7,
+                                        barPercentage: 0.7
+                                    }
+                                }
+                            }
+                        });
+                    }
+                })();
+
+                // Feasibility Positioning Bar Chart (horizontal)
+                (function() {
+                    const feasMin = JSON.parse(document.getElementById('feas-bar-min').textContent);
+                    const feasMax = JSON.parse(document.getElementById('feas-bar-max').textContent);
+                    const feasMinVal = Math.min(feasMin, feasMax);
+                    const feasMaxVal = Math.max(feasMin, feasMax);
+                    const feasBarCanvas = document.getElementById('feasBarInterval');
+                    if (feasBarCanvas) {
+                        const ctx = feasBarCanvas.getContext('2d');
+                        const grad = ctx.createLinearGradient(0, 0, feasBarCanvas.width, 0);
+                        grad.addColorStop(0, '#e8f0fc');
+                        grad.addColorStop(1, '#204490');
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: [''],
+                                datasets: [{
+                                    label: 'Feasibility Positioning',
+                                    data: [9],
+                                    backgroundColor: grad,
+                                    barThickness: 32,
+                                    categoryPercentage: 0.7,
+                                    barPercentage: 0.7
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                plugins: {
+                                    legend: { display: false },
+                                    annotation: {
+                                        annotations: {
+                                            minLabel: {
+                                                type: "label",
+                                                xValue: feasMinVal,
+                                                yValue: 0,
+                                                content: feasMinVal.toFixed(1),
+                                                backgroundColor: "#e74c3c",
+                                                color: "#fff",
+                                                font: { size: 13, weight: "bold" },
+                                                position: "start",
+                                                yAdjust: -8,
+                                                padding: 3,
+                                                borderRadius: 3,
+                                                display: true
+                                            },
+                                            maxLabel: {
+                                                type: "label",
+                                                xValue: feasMaxVal,
+                                                yValue: 0,
+                                                content: feasMaxVal.toFixed(1),
+                                                backgroundColor: "#27ae60",
+                                                color: "#fff",
+                                                font: { size: 13, weight: "bold" },
+                                                position: "start",
+                                                yAdjust: -8,
+                                                padding: 3,
+                                                borderRadius: 3,
+                                                display: true
+                                            }
+                                        }
+                                    },
+                                     tooltip: {enabled: false}
+                                },
+                                scales: {
+                                    x: {
+                                        min: 0, max: 9,
+                                        grid: { display: false },
+                                        ticks: { color: "#204490", stepSize: 1, font: { size: 11 } }
+                                    },
+                                    y: {
+                                        display: false,
+                                        categoryPercentage: 0.7,
+                                        barPercentage: 0.7
+                                    }
+                                }
+                            }
+                        });
+                    }
+                })();
+
+
+function drawScorecardChart() {
+    // 1. --- DATA ---
+    const radarLabels = JSON.parse(document.getElementById('radar2-data').textContent);
+    const radarValues = JSON.parse(document.getElementById('radar2-values').textContent);
+    const posBarMin = JSON.parse(document.getElementById('feas-bar-min').textContent);
+    const posBarMax = JSON.parse(document.getElementById('feas-bar-max').textContent);
+    const confMin = JSON.parse(document.getElementById('feas-conf-bar-min').textContent);
+    const confMax = JSON.parse(document.getElementById('feas-conf-bar-max').textContent);
+
+    // 2. --- LAYOUT ---
+    const canvas = document.getElementById('scorecardChart');
+    canvas.width = 400;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Position Bar
+    const barLen = 190;     // Horizontal bar length
+    const barThk = 20;      // Bar thickness
+    const barX = 50;
+    const barY = 30;
+
+    // Radar chart
+    const radarRadius = 80;
+    const radarCx = barX + barLen/2 - 8+20;
+    const radarCy = barY + barThk + 130;
+
+    // Confidence bar
+    const confW = 20;
+    const confH = 160;
+    const confX = canvas.width - confW - 50;
+    const confY = barY +60;
+
+    // 3. --- DRAW POSITIONING BAR (Top) ---
+    let grad = ctx.createLinearGradient(barX, barY, barX+barLen, barY);
+    grad.addColorStop(0, "#ecebf7");
+    grad.addColorStop(0.5, "#b5c1d4");
+    grad.addColorStop(1, "#204490");
+    ctx.fillStyle = grad;
+    ctx.fillRect(barX, barY, barLen, barThk);
+    ctx.strokeStyle = "#aaa";
+    ctx.strokeRect(barX, barY, barLen, barThk);
+
+    // Heading
+    ctx.save();
+    ctx.font = "bold 10px Arial";
+    ctx.fillStyle = "#204490";
+    ctx.textAlign = "center";
+    ctx.fillText("Feasibility positioning - ranking interval (min-max)", barX+barLen/2 + 8, barY-15);
+    ctx.restore();
+
+    // Ticks/numbers
+    ctx.font = "7px Arial";
+    ctx.fillStyle = "#204490";
+    for(let i=0;i<=9;i++){
+        let tx = barX + barLen*i/9;
+        ctx.beginPath();
+        ctx.textAlign = "center";
+        ctx.fillText(i, tx, barY-4);
+    }
+    // Min/Max diamonds
+    function drawDiamond(cx, cy, color, size=10) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(Math.PI/4);
+        ctx.fillStyle = color;
+        ctx.fillRect(-size/2, -size/2, size, size);
+        ctx.restore();
+    }
+    let pxMin = barX + barLen*(posBarMin/9);
+    let pxMax = barX + barLen*(posBarMax/9);
+    drawDiamond(pxMin, barY+barThk/2, "#e74c3c", 11);
+    drawDiamond(pxMax, barY+barThk/2, "#27ae60", 11);
+    ctx.font = "bold 9px Arial";
+    ctx.fillStyle = "#e74c3c";
+    ctx.fillText(Number(posBarMin).toFixed(1), pxMin-7, barY+35);
+    ctx.fillStyle = "#27ae60";
+    ctx.fillText(Number(posBarMax).toFixed(1), pxMax+7, barY+35);
+
+    ctx.font = "9px Arial";
+    ctx.fillStyle = "#204490";
+    ctx.textAlign = "left";
+    ctx.fillText("Low", barX-19, barY+barThk/2+4);
+    ctx.textAlign = "right";
+    ctx.fillText("High", barX+barLen+19, barY+barThk/2+4);
+
+    // 4. --- DRAW CONFIDENCE BAR (Right Vertical) ---
+    let confGrad = ctx.createLinearGradient(confX, confY+confH, confX, confY);
+    confGrad.addColorStop(0, "#27ae60");
+    confGrad.addColorStop(0.5, "#ffe06d");
+    confGrad.addColorStop(1, "#e74c3c");
+    ctx.fillStyle = confGrad;
+    ctx.fillRect(confX, confY, confW, confH);
+    ctx.strokeStyle = "#204490";
+    ctx.strokeRect(confX, confY, confW, confH);
+
+    // Ticks/numbers
+    ctx.save();
+    ctx.font = "7px Arial";
+    ctx.fillStyle = "#204490";
+    ctx.textAlign = "left";
+    for(let i=0;i<=9;i++){
+        let ty = confY + confH - confH*i/9;
+        ctx.beginPath();
+        ctx.fillText(i, confX+confW+5, ty+3);
+    }
+    ctx.restore();
+
+    // Min/Max diamonds
+    function confDiamond(yval, color) {
+        let py = confY + confH*(1 - yval/9);
+        drawDiamond(confX+confW/2, py, color, 11);
+        ctx.font = "bold 8px Arial";
+        ctx.fillStyle = color;
+        ctx.textAlign = "right";
+        ctx.fillText(Number(yval).toFixed(1), confX-6, py+3);
+    }
+    confDiamond(confMin, "#e74c3c");
+    confDiamond(confMax, "#27ae60");
+
+    // Title above confidence bar
+    ctx.font = "bold 9px Arial";
+    ctx.fillStyle = "#204490";
+    ctx.textAlign = "center";
+    ctx.fillText("Confidence level", confX + confW/2, confY-30);
+    ctx.font = "bold 8px Arial";
+    ctx.fillText("interval (min-max)", confX + confW/2, confY-20);
+
+    ctx.save();
+    ctx.font = "9px Arial";
+    ctx.fillStyle = "#204490";
+    ctx.textAlign = "center";
+    ctx.fillText("High", confX+confW/2, confY-4);
+    ctx.fillText("Low", confX+confW/2, confY+confH+10);
+    ctx.restore();
+
+    // 5. --- DRAW RADAR CHART ---
+    function drawRadar(cx, cy, R, labels, values) {
+        let N = labels.length, maxVal = 9;
+        ctx.save();
+        ctx.globalAlpha = 0.11;
+        ctx.strokeStyle = "#000";
+        for(let l=1; l<=9; l++) {
+           ctx.beginPath();
+           for(let i=0; i<N; ++i){
+               let a = i*2*Math.PI/N - Math.PI/2;
+               let r = R*l/9;
+               let x = cx + r*Math.cos(a), y = cy + r*Math.sin(a);
+               if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1.0;
+
+        ctx.strokeStyle = "#b5c1d4";
+        ctx.lineWidth = 1;
+        for(let i=0;i<N;++i){
+            let a = i*2*Math.PI/N - Math.PI/2;
+            ctx.beginPath();
+            ctx.moveTo(cx,cy);
+            ctx.lineTo(cx + R*Math.cos(a), cy + R*Math.sin(a));
+            ctx.stroke();
+        }
+
+        // Draw grid numbers 0-9 for each axis
+        ctx.font = "9px Arial";
+        ctx.fillStyle = "#204490";  
+        for(let l=1; l<=9; l++) {
+          // Only the top axis (i=0, vertical up)
+          let a = -Math.PI/2; // first axis
+          let r = R*l/9;
+          let x = cx + r*Math.cos(a), y = cy + r*Math.sin(a);
+          ctx.fillText(l, x - 9, y); // x-9: shift left so numbers don't overlap the line
+        }
+
+        // Radar area
+        ctx.beginPath();
+        for(let i=0;i<N;++i){
+            let a = i*2*Math.PI/N - Math.PI/2;
+            let r = R*values[i]/maxVal;
+            let x = cx + r*Math.cos(a), y = cy + r*Math.sin(a);
+            if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.closePath();
+        
+        // --- Only the area fill gets alpha ---
+        ctx.save();                         // Save previous context state
+        ctx.globalAlpha = 0.16;             // Set transparency just for fill
+        ctx.fillStyle = "#9148cb";          // Radar area color 
+        ctx.fill();                         // Fill shape with transparency
+        ctx.restore();                      // Restore to previous state (full opacity)
+
+        // --- Everything below is drawn at normal opacity ---
+       ctx.strokeStyle = "#a345e0";        // Outline color
+       ctx.lineWidth = 1.6;
+       ctx.stroke();
+
+        for(let i=0;i<N;++i){
+            let a = i*2*Math.PI/N - Math.PI/2;
+            let r = R*values[i]/maxVal;
+            let x = cx + r*Math.cos(a), y = cy + r*Math.sin(a);
+            ctx.beginPath();
+            ctx.arc(x,y,1,0,2*Math.PI);
+            ctx.fillStyle = "#9148cb";
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 0.9;
+            ctx.stroke();
+        }
+        // Labels (abbreviate for fit)
+        ctx.font = "7px Arial";
+        ctx.fillStyle = "#204490";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        for(let i=0;i<N;++i){
+            let a = i*2*Math.PI/N - Math.PI/2;
+            let x = cx + (R+18)*Math.cos(a), y = cy + (R+20)*Math.sin(a);
+            let label = labels[i];
+            if (label.length > 18) label = label.split(" ").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
+            let lines = [];
+            while (label.length > 16) {
+                let idx = label.lastIndexOf(' ', 16);
+                if (idx <= 0) idx = 16;
+                lines.push(label.slice(0, idx));
+                label = label.slice(idx).trim();
+            }
+            lines.push(label);
+            for(let li=0;li<lines.length;++li)
+                ctx.fillText(lines[li], x, y - 5 + li*9);
+        }
+        ctx.restore();
+    }
+
+  
+
+
+    // Draw radar
+    drawRadar(radarCx, radarCy, radarRadius, radarLabels, radarValues);
+
+    // 6. --- EXPORT AS PNG 
+ 
+    let imgData = canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+
+    // Send image to backend for gallery
+    fetch(`/technology/{{ tech_id }}/save_chart_image/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}' // Django template!
+        },
+        body: JSON.stringify({
+            image_base64: imgData,       // <-- this key must match your backend!
+            type: 'evaluation',
+            name: 'scorecard_chart.png'
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert("Chart sent to the gallery!");
+            location.reload(); // reload to update the gallery
+        } else {
+            alert("Failed to save chart image! " + (data.error || ''));
+        }
+    })
+    .catch(err => {
+        alert("Network error while saving image!");
+        console.error(err);
+    });
+}
+
+console.log("Tech ID: {{ technology.id }}")
+
+
+document.getElementById('exportExcelForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent form submission
+
+        // Show blocking popup
+        alert("⚠️  Please ensure all comments have been added in the template.\n\nClick OK to continue.");
+
+        // Submit the form after user clicks OK
+        event.target.submit();
+    });
+
+
+let formDirty = false;
+
+  // mark form dirty if any input changes
+  document.addEventListener("input", function(e) {
+    formDirty = true;
+  });
+
+  // reset dirty flag if Save Evaluation is clicked
+  function markSaved() {
+    formDirty = false;
+  }
+
+  // warn user if leaving with unsaved changes
+  window.addEventListener("beforeunload", function(e) {
+    if (formDirty) {
+      e.preventDefault();
+      e.returnValue = "You have unsaved changes. If you leave, your evaluation will not be saved.";
+    }
+});
+
+</script>
+        </div>
+        {% endif %}
+    </div>
+
+
+<!-------------------------------------------------Warning box-------------------------------------------------------------->
+
+
+
+</body>
+</html>
