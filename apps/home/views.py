@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+
 """
 Copyright (c) 2019 - present AppSeed.us
 """
@@ -10,12 +10,51 @@ from django.template import loader
 from django.urls import reverse
 from django.shortcuts import render
 
+from pymongo import MongoClient
+from datetime import datetime 
+
+
+
+# -----------------------------------------Pymongo connection---------------------------------------------------------
+
+client = MongoClient("mongodb://localhost:27017/") 
+db = client["tech_tool_db"]
+activities = db["activities"]   # collection name for recent activities
+
+
 @login_required(login_url="/login/")
 def index(request):
-    context = {'segment': 'index'}
+    # Expect docs like:
+    # { activity: "Login", username: "alice", occurred_at: ISODate(...), logged_in: true }
+    cursor = (
+        activities
+        .find({}, {"activity": 1, "username": 1, "occurred_at": 1, "logged_in": 1})
+        .sort("occurred_at", -1)
+        .limit(10)
+    )
+
+    rows = []
+    for d in cursor:
+        t = d.get("occurred_at", datetime.utcnow())
+        # If stored as string, try to parse ISO quickly (optional)
+        if isinstance(t, str):
+            try:
+                t = datetime.fromisoformat(t.replace("Z", "+00:00"))
+            except Exception:
+                t = datetime.utcnow()
+
+        rows.append({
+            "activity": d.get("activity", ""),
+            "user": d.get("username", "—"),
+            "time": t,                          # datetime for {{ r.time|naturaltime }}
+            "logged_in": bool(d.get("logged_in", False)),
+        })
+
+    context = {"segment": "index", "rows": rows}
 
     html_template = loader.get_template('home/index.html')
     return HttpResponse(html_template.render(context, request))
+
 
 
 @login_required(login_url="/login/")
@@ -57,4 +96,4 @@ def dashboard(request):
     {"activity": "/help/faq",              "time": 1211, "duration": 64,  "rate": 4.96},
     ]
 
-    return render(request, "home/templates/index.html", {"rows": rows})
+    return render(request, "home/templates/index.html", {"rows": rows}) 

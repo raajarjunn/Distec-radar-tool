@@ -5,6 +5,8 @@ import datetime
 import base64
 import imghdr
 
+from apps.common.activity_log import log_activity
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -18,6 +20,7 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.utils.text import get_valid_filename
 
 from .models import Technology, CONFIDENTIALITY_CHOICES
 from .forms import TechnologyForm
@@ -57,7 +60,8 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 
 #Compendium
-from pymongo import MongoClient
+from pymongo import MongoClient 
+from pymongo.errors import ServerSelectionTimeoutError
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, get_object_or_404
 from .models import Technology
@@ -70,7 +74,7 @@ from django.utils.timezone import make_aware, localtime
 #-------------Pymongo defined--------------------------
 
 client = MongoClient("mongodb://localhost:27017/")
-db = client["DISTECH"]
+db = client["tech_tool_db"]
 technologies = db["technology_technology"] 
 
 
@@ -216,6 +220,7 @@ class TechnologyCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("technology_list")
 
 
+
 class TechnologyUpdateView(LoginRequiredMixin, UpdateView):
     model = Technology
     form_class = TechnologyForm
@@ -314,6 +319,7 @@ class TechnologyCompendiumView(LoginRequiredMixin, View):
                 t.created_at.strftime("%Y-%m-%d %H:%M"),
                 t.confidentiality,
             ])
+
         return resp
 
 
@@ -377,7 +383,7 @@ def add_gallery_image(request, pk):
         "b64": "data:image/png;base64,....",
         "tag": "SC1|SC2|",
         "type": "upload",
-        "uploaded_at": "<iso>"
+        "uploaded_at": "<iso8601>"
       }
     """
     tech = get_object_or_404(Technology, pk=pk)
@@ -386,8 +392,22 @@ def add_gallery_image(request, pk):
         messages.error(request, "No image uploaded.")
         return _redirect_back_to_edit(request, pk)
 
+    # (optional) small guardrails
+    # if img.size > 10 * 1024 * 1024:
+    #     messages.error(request, "Image too large (max 10 MB).")
+    #     return _redirect_back_to_edit(request, pk)
+
     tag = (request.POST.get("tag") or "").strip()
-    safe_name = (getattr(img, "name", "") or f"img_{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')}").strip()
+
+    original_name = getattr(img, "name", "") or ""
+    original_name = os.path.basename(original_name)  # strip any path bits
+    original_name = get_valid_filename(original_name)  # keep it filesystem/URL friendly
+
+    # fallback name if upload has no name
+    if not original_name:
+        original_name = f"img_{timezone.now().strftime('%Y%m%d%H%M%S')}"
+
+    safe_name = original_name.strip()
 
     try:
         data_uri = _file_to_data_uri(img)
@@ -400,17 +420,21 @@ def add_gallery_image(request, pk):
         "b64": data_uri,
         "tag": tag,
         "type": "upload",
-        "uploaded_at": datetime.datetime.utcnow().isoformat()
+        # timezone-aware; with USE_TZ=True this is UTC and ISO 8601 (e.g., "2025-08-26T08:15:46+00:00")
+        "uploaded_at": timezone.now().isoformat()
+        # If you prefer a "Z" suffix, do: timezone.now().isoformat().replace("+00:00", "Z")
     }
 
     gallery = _loads(getattr(tech, "gallery", "[]"))
     # replace same name if exists
     gallery = [g for g in gallery if g.get("name") != safe_name]
     gallery.append(entry)
+
     tech.gallery = _dumps(gallery)
     tech.save(update_fields=["gallery"])
     messages.success(request, "Image uploaded.")
     return _redirect_back_to_edit(request, pk)
+
 
 @require_POST
 def update_gallery_tag(request, pk):
@@ -441,6 +465,7 @@ def update_gallery_tag(request, pk):
         messages.error(request, "Image not found.")
 
     return _redirect_back_to_edit(request, pk)
+
 
 @require_POST
 def delete_gallery_image(request, pk):
@@ -958,6 +983,22 @@ def _latest_eval(gallery):
             return datetime.min
     return sorted(evals, key=key, reverse=True)[0] if evals else None
 
+@require_GET
+def api_techs(request):
+    """Return minimal fields for the selector modal."""
+    include_inactive = request.GET.get("inactive") == "1"
+    try:
+        client.admin.command("ping")
+    except ServerSelectionTimeoutError:
+        return JsonResponse({"ok": False, "error": "MongoDB not reachable"}, status=503)
+
+    query = {} if include_inactive else {"is_active": True}
+    proj = {"_id": 0, "id": 1, "name": 1, "macro": 1, "meso1": 1, "meso2": 1, "is_active": 1}
+    docs = list(technologies.find(query, proj))
+    # sort by name client-side for stability
+    docs.sort(key=lambda d: (d.get("name") or "").lower())
+    return JsonResponse({"ok": True, "items": docs})
+
 def _scorecard_context_from_doc(doc: dict) -> dict:
     """Map a Mongo document to the context your Scorecard template expects."""
     gallery = _gallery_list(doc)
@@ -993,28 +1034,58 @@ def _scorecard_context_from_doc(doc: dict) -> dict:
     }
     return ctx
 
+
 @require_http_methods(["GET", "POST"])
 def scorecard_selector(request):
+
     if request.method == "GET":
-        # Fetch minimal fields with PyMongo; avoid Djongo ORM entirely
-        cursor = technologies.find(
-            {"is_active": True},
-            {"_id": 0, "id": 1, "name": 1, "macro": 1}
-        )
+        include_inactive = request.GET.get("inactive") == "1"
+        query = {} if include_inactive else {"is_active": True}
+        # ⬇️ fetch macro/meso fields for filtering
+        cursor = technologies.find(query, {
+            "_id": 0, "id": 1, "name": 1, "macro": 1, "meso1": 1, "meso2": 1, "is_active": 1
+        })
         techs = list(cursor)
         techs.sort(key=lambda d: (d.get("name") or "").lower())
-        return render(request, "Scorecard/Selector.html", {"techs": techs})
 
-    # POST: ordered ids in order[]
+        # Build distinct, sorted filter options
+        def _opts(key):
+            vals = { (d.get(key) or "").strip() for d in techs if d.get(key) }
+            return sorted(vals, key=str.lower)
+
+        macro_opts = _opts("macro")
+        meso1_opts = _opts("meso1")
+        meso2_opts = _opts("meso2")
+
+        return render(request, "Scorecard/Selector.html", {
+            "techs": techs,
+            "include_inactive": include_inactive,
+            "macro_opts": macro_opts,
+            "meso1_opts": meso1_opts,
+            "meso2_opts": meso2_opts,
+        })
+
+    # POST (unchanged)
     ids = request.POST.getlist("order[]") or request.POST.getlist("order")
     if not ids:
-        cursor = technologies.find({"is_active": True}, {"_id": 0, "id": 1, "name": 1, "macro": 1})
+        # re-render with defaults if no selection
+        cursor = technologies.find({"is_active": True},
+                                   {"_id": 0, "id": 1, "name": 1, "macro": 1, "meso1": 1, "meso2": 1, "is_active": 1})
         techs = sorted(list(cursor), key=lambda d: (d.get("name") or "").lower())
-        return render(request, "Scorecard/Selector.html", {"techs": techs, "error": "Please select at least one item."})
+        def _opts(key):
+            vals = { (d.get(key) or "").strip() for d in techs if d.get(key) }
+            return sorted(vals, key=str.lower)
+        return render(request, "Scorecard/Selector.html", {
+            "techs": techs,
+            "error": "Please select at least one item.",
+            "macro_opts": _opts("macro"),
+            "meso1_opts": _opts("meso1"),
+            "meso2_opts": _opts("meso2"),
+        })
 
-    # stash in session and go build
     request.session["scorecard_order_ids"] = ids
     return render(request, "Scorecard/ForwardToBuild.html", {})
+
 
 def scorecard_compendium(request):
     # ids from session or POST

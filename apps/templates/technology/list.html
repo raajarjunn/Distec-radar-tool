@@ -85,8 +85,7 @@
                href="{% url 'technology_compendium' %}?q={{ q|urlencode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">
                <i class="ni ni-archive-2 mr-1"></i> Compendium
             </a>
-            <a href="{% url 'technology_scorecard_selector' %}" class="btn">Scorecard Compendium</a>
-
+            <button class="btn btn-primary" id="openSelector" type="button">Scorecard Compendium</button>
           </div>
         </div>
       </form>
@@ -388,5 +387,8 @@
   @media (max-width:575.98px){ .input-group-text{ padding:.375rem .5rem; } }
 </style>
 {% endblock stylesheets %}
+
+
+{% include "Scorecard/Selector.html" %}
 
 {% endblock %}

@@ -1,72 +1,173 @@
+{# templates/Scorecard/SelectorModal.html #}
 
-{% load static %}
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Scorecard Compendium</title>
-  <style>
-    body { font-family: system-ui, sans-serif; padding: 20px; }
-    .actions { display:flex; gap:8px; margin-bottom:12px; }
-    ul#tech-list { list-style:none; padding:0; margin:0; }
-    li.item { display:flex; align-items:center; gap:10px; padding:8px; border:1px solid #e5e7eb; margin-bottom:6px; background:#fff; }
-    .drag { cursor:grab; user-select:none; padding:0 6px; border:1px solid #cbd5e1; }
-    .name { flex:1; }
-    .error { color:#b91c1c; margin-bottom:10px; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-</head>
-<body>
-  <h1>Build a Scorecard Compendium</h1>
-  <p>Select technologies, drag to set order, then build.</p>
+<style>
+  /* === Scorecard Compendium Modal (namespace: sc-) === */
+  .sc-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;  /* hidden until opened */
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;  /* above Argon sidebar/header */
+  }
+  .sc-dialog {
+    width: min(1100px, 96vw);
+    max-height: 92vh;
+    background: #fff;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,.2);
+  }
+  .sc-header {
+    background: linear-gradient(87deg,#5e72e4,#11cdef);
+    color: #fff;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sc-header h2 { margin: 0; font-size: 18px; font-weight: 600; }
+  .sc-body { flex: 1; display: flex; overflow: hidden; }
+  .sc-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #fafbff;
+  }
 
-  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  /* Left filters */
+  .sc-filters { flex: 0 0 280px; border-right: 1px solid #e9ecef; padding: 10px; overflow-y: auto; }
+  .sc-card { border: 1px solid #e9ecef; border-radius: 8px; margin-bottom: 12px; background: #fff; }
+  .sc-card h3 { font-size: 14px; margin: 0; padding: 8px 12px; border-bottom: 1px solid #e9ecef; }
+  .sc-section { padding: 8px 10px; max-height: 140px; overflow-y: auto; }
+  .sc-section label { display: flex; align-items: center; margin: 4px 0; gap: 6px; }
 
-  <form id="compendium-form" method="post" action="{% url 'technology_scorecard_selector' %}">
-    {% csrf_token %}
-    <div class="actions">
-      <button type="button" id="select-all">Select all</button>
-      <button type="button" id="clear-all">Clear</button>
-      <button type="submit" style="background:#045823;color:#fff;border:none;padding:8px 12px;">Build compendium</button>
+  /* Right list */
+  .sc-listwrap { flex: 1; padding: 12px; display: flex; flex-direction: column; }
+  .sc-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .sc-pill { padding: 6px 10px; border: 1px solid #ccc; border-radius: 999px; cursor: pointer; font-size: 13px; }
+  .sc-count { margin-left: auto; color: #6b7280; font-size: 13px; }
+  .sc-list { flex: 1; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 0; margin: 0; list-style: none; }
+  .sc-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; }
+  .sc-item:last-child { border-bottom: none; }
+  .sc-drag { cursor: grab; color: #64748b; }
+  .sc-name { flex: 1; }
+  .sc-badge { font-size: 11px; padding: 2px 6px; background: #edf2ff; border-radius: 999px; color: #3b5bdb; }
+  .sc-inactive { color: #b91c1c; font-weight: 600; margin-left: 6px; }
+
+  /* Buttons */
+  .sc-btn { border: none; border-radius: 6px; padding: 6px 12px; font-size: 14px; cursor: pointer; }
+  .sc-btn-primary { background: #5e72e4; color: #fff; }
+  .sc-btn-muted { background: #e9ecef; color: #1f2937; }
+  .sc-btn-danger { background: #f5365c; color: #fff; }
+</style>
+
+<div class="sc-backdrop" id="scBackdrop" aria-hidden="true">
+  <div class="sc-dialog" role="dialog" aria-modal="true" aria-labelledby="scTitle">
+    <div class="sc-header">
+      <h2 id="scTitle">Build Scorecard Compendium</h2>
+      <button type="button" class="sc-btn sc-btn-muted" id="scClose">×</button>
     </div>
 
-    <ul id="tech-list">
-      {% for t in techs %}
-      <li class="item" data-id="{{ t.id }}">
-        <span class="drag">☰</span>
+    <form id="scForm" method="post" action="{% url 'technology_scorecard_compendium' %}">
+      {% csrf_token %}
+      <div class="sc-body">
+        <!-- Left filters -->
+        <aside class="sc-filters">
+          <div class="sc-card">
+            <h3>Macro</h3>
+            <div class="sc-section" id="macroBox"></div>
+          </div>
+          <div class="sc-card">
+            <h3>Meso 1</h3>
+            <div class="sc-section" id="meso1Box"></div>
+          </div>
+          <div class="sc-card">
+            <h3>Meso 2</h3>
+            <div class="sc-section" id="meso2Box"></div>
+          </div>
+        </aside>
+
+        <!-- Right list -->
+        <section class="sc-listwrap">
+          <div class="sc-toolbar">
+            <span class="sc-pill" id="selectAll">Select all</span>
+            <span class="sc-pill" id="clearAll">Clear</span>
+            <span class="sc-count"><span id="selCount">0</span> selected</span>
+          </div>
+          <ul id="techList" class="sc-list"></ul>
+          <div id="hidden"></div>
+        </section>
+      </div>
+
+      <div class="sc-footer">
+        <button type="button" class="sc-btn sc-btn-muted" id="scCancel">Cancel</button>
+        <button type="submit" class="sc-btn sc-btn-primary">Build</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+(function(){
+  const openBtn  = document.getElementById('openSelector');
+  const backdrop = document.getElementById('scBackdrop');
+  const closeBtns= [document.getElementById('scClose'), document.getElementById('scCancel')];
+  const techList = document.getElementById('techList');
+  const selCount = document.getElementById('selCount');
+  const hidden   = document.getElementById('hidden');
+  let items = [];
+
+  function open(){ backdrop.style.display='flex'; backdrop.setAttribute('aria-hidden','false'); }
+  function close(){ backdrop.style.display='none'; backdrop.setAttribute('aria-hidden','true'); }
+
+  openBtn.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    await loadData();
+    renderList();
+    open();
+  });
+  closeBtns.forEach(b => b.addEventListener('click', close));
+  backdrop.addEventListener('click', e=>{ if(e.target===backdrop) close(); });
+
+  async function loadData(){
+    const res = await fetch("{% url 'technology_api_techs' %}");
+    const data = await res.json();
+    items = data.items || [];
+    items.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+  }
+
+  function renderList(){
+    techList.innerHTML = items.map(t=>`
+      <li class="sc-item" data-id="${t.id}">
+        <span class="sc-drag">☰</span>
         <input type="checkbox" class="chk">
-        <span class="name">#{{ t.id }} — {{ t.name }}{% if t.macro %} <small>({{ t.macro }})</small>{% endif %}</span>
-      </li>
-      {% endfor %}
-    </ul>
+        <span class="sc-name">#${t.id} — ${t.name}
+          ${t.macro ? `<span class="sc-badge">${t.macro}</span>`:''}
+          ${t.is_active===false?'<span class="sc-inactive">inactive</span>':''}
+        </span>
+      </li>`).join('');
 
-    <div id="hidden"></div>
-  </form>
+    new Sortable(techList,{animation:150,handle:'.sc-drag'});
+    techList.addEventListener('change', updateCount);
+    document.getElementById('selectAll').onclick = ()=>{ techList.querySelectorAll('.chk').forEach(c=>c.checked=true); updateCount(); };
+    document.getElementById('clearAll').onclick  = ()=>{ techList.querySelectorAll('.chk').forEach(c=>c.checked=false); updateCount(); };
+    updateCount();
+  }
 
-  <script>
-    const list = document.getElementById('tech-list');
-    new Sortable(list, { animation: 150, handle: '.drag' });
+  function updateCount(){ selCount.textContent = techList.querySelectorAll('.chk:checked').length; }
 
-    document.getElementById('select-all').onclick = () =>
-      list.querySelectorAll('.chk').forEach(c => c.checked = true);
-    document.getElementById('clear-all').onclick = () =>
-      list.querySelectorAll('.chk').forEach(c => c.checked = false);
-
-    document.getElementById('compendium-form').addEventListener('submit', (e) => {
-      const hidden = document.getElementById('hidden');
-      hidden.innerHTML = '';
-      const ids = Array.from(list.querySelectorAll('li.item'))
-        .filter(li => li.querySelector('.chk').checked)
-        .map(li => li.getAttribute('data-id'));
-      if (!ids.length) { e.preventDefault(); alert('Pick at least one.'); return; }
-      ids.forEach(id => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'order[]';
-        input.value = id;
-        hidden.appendChild(input);
-      });
-    });
-  </script>
-</body>
-</html>
+  document.getElementById('scForm').addEventListener('submit', (e)=>{
+    hidden.innerHTML = '';
+    const ids = Array.from(techList.querySelectorAll('li')).filter(li=>li.querySelector('.chk').checked).map(li=>li.dataset.id);
+    if(!ids.length){ e.preventDefault(); alert("Pick at least one technology"); return; }
+    ids.forEach(id=>{ hidden.insertAdjacentHTML('beforeend',`<input type="hidden" name="order[]" value="${id}">`); });
+  });
+})();
+</script>

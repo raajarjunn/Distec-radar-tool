@@ -4,7 +4,7 @@ from .views import (
     TechnologyListView, TechnologyDetailView,
     TechnologyCreateView, TechnologyUpdateView, TechnologyDeleteView,
     TechnologyCompendiumView, mindmap_view,generate_report,scorecard_selector, scorecard_compendium,
-    api_macros, api_meso1, api_meso2,
+    api_macros, api_meso1, api_meso2, api_techs,
     add_extra_field, edit_extra_field, delete_extra_field,
     add_gallery_image, update_gallery_tag, delete_gallery_image,
     evaluate, save_chart_image, export_excel,
@@ -40,7 +40,8 @@ urlpatterns = [
     path("<int:pk>/export_excel/", export_excel, name="export_excel"),
 
     path("<int:pk>/scorecard/", generate_report, name="technology_scorecard"),
-    path("scorecards/", scorecard_selector, name="technology_scorecard_selector"),
+    path("api/techs/", api_techs, name="technology_api_techs"),
     path("scorecards/build/", scorecard_compendium, name="technology_scorecard_compendium"),
+ 
 
 ]
