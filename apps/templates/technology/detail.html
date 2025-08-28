@@ -82,6 +82,7 @@
             <div class="meta-item"><strong>Status:</strong> {% if object.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-secondary">Inactive</span>{% endif %}</div>
             <div class="meta-item"><strong>Confidentiality:</strong> <span class="badge badge-info">{{ object.confidentiality }}</span></div>
             <div class="meta-item"><strong>Created:</strong> {{ object.created_at|date:"Y-m-d H:i" }}</div>
+            <div class="meta-item"><strong>Last Modified:</strong> {{ object.last_modified|date:"Y-m-d H:i" }}</div>
           </div>
           {% if object.description %}
             <p class="text-muted mb-0">{{ object.description|linebreaksbr }}</p>

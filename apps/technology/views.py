@@ -488,19 +488,6 @@ def delete_gallery_image(request, pk):
 
 #-----------------------Mindmap-----------------------------------------------------
 
-from pymongo import MongoClient
-
-
-MONGO_URI = "mongodb://localhost:27017/"
-MONGO_DB  = "tech_tool_db"                 # or whatever DB you actually use now
-TECH_COLLECTION_NAME = "technology_technology"  # Django's default table/collection name
-
-
-client = MongoClient(MONGO_URI)
-db = client[MONGO_DB]
-
-technologies = db[TECH_COLLECTION_NAME]
-
 
 def mindmap_view(request):
     cursor = technologies.find({},{"_id": 0, "name": 1, "macro": 1, "meso1": 1, "meso2": 1},)
@@ -636,9 +623,11 @@ def evaluate(request, pk):
     default_values = [1]*16
     default_confidences = ["Moderate"]*16
     default_ampl = 2.0
+    default_comments = [""]*16
 
     prefill_values = (last or {}).get("values", default_values)
     prefill_confidences = (last or {}).get("confidences", default_confidences)
+    prefill_comments = (last or {}).get("comments", default_comments)
     try:
         prefill_amplification = float((last or {}).get("amplification", default_ampl))
     except (TypeError, ValueError):
@@ -647,6 +636,7 @@ def evaluate(request, pk):
     # Seed session so Export works (regardless of save)
     request.session["user_values"] = prefill_values
     request.session["user_confidences"] = prefill_confidences
+    request.session["user_comments"] = prefill_comments 
     request.session["amplification"] = prefill_amplification
 
     # Build base context (prefilled)
@@ -663,6 +653,7 @@ def evaluate(request, pk):
         "radar2_indexes": list(range(len(radar1_short), len(radar1_short) + len(radar2_short))),
         "user_values": prefill_values,
         "user_confidences": prefill_confidences,
+        "user_comments": prefill_comments,  
         "amplification": prefill_amplification,
     }
 
@@ -686,6 +677,9 @@ def evaluate(request, pk):
         values = prefill_values
         confidences = prefill_confidences
         amplification = prefill_amplification
+
+        context["user_comments"] = prefill_comments
+
 
         r1n, r2n = len(radar1_short), len(radar2_short)
         radar1_values = values[:r1n]
@@ -726,6 +720,8 @@ def evaluate(request, pk):
 
         values = [int(v) for v in request.POST.getlist("values[]")]
         confidences = request.POST.getlist("confidences[]")
+        raw_comments = request.POST.getlist("comments[]")
+        comments = [ (raw_comments[i].strip() if i < len(raw_comments) else "") for i in range(16) ]
         try:
             amplification = float(request.POST.get("amplification", 2))
         except (TypeError, ValueError):
@@ -734,6 +730,7 @@ def evaluate(request, pk):
         # Always update session for export
         request.session["user_values"] = values
         request.session["user_confidences"] = confidences
+        request.session["user_comments"] = comments     
         request.session["amplification"] = amplification
 
         # If action == "save": persist snapshot with timestamp+user
@@ -741,6 +738,7 @@ def evaluate(request, pk):
             eval_data = {
                 "values": values,
                 "confidences": confidences,
+                "comments": comments,
                 "amplification": amplification,
                 "timestamp": timezone.now().isoformat(),
                 "user": (request.user.username if getattr(request, "user", None)
@@ -791,6 +789,7 @@ def evaluate(request, pk):
             "feas_conf_bar":  feas_conf_bar_info["bar"],  "feas_conf_bar_min":  feas_conf_bar_info["bar_min"],  "feas_conf_bar_max":  feas_conf_bar_info["bar_max"],
             "user_values": values,
             "user_confidences": confidences,
+            "user_comments": comments, 
         })
 
     return render(request, "Evaluation/evaluation_form.html", context)
@@ -855,6 +854,8 @@ def export_excel(request, pk):
 
     values = request.session.get("user_values")
     confidences = request.session.get("user_confidences")
+    comments = request.session.get("user_comments") or [""]*16 
+
     try:
         amplification = float(request.session.get("amplification", 2))
     except (TypeError, ValueError):
@@ -880,13 +881,18 @@ def export_excel(request, pk):
 
     confidence_map = CONFIDENCE_MAP
 
+    if len(comments) < 16:
+        comments = comments + [""]*(16 - len(comments))
+
     for i in range(16):
         row = 6 + i * 2
         ws.Range(f"F{row}").Value = values[i]
         ws.Range(f"J{row}").Value = f"{confidences[i]} level of confidence in the evaluation"
         ws.Range(f"K{row}").Value = confidence_map.get(confidences[i], 1)
+        ws.Range(f"L{row}").Value = comments[i] 
 
     ws.Range("F39").Value = amplification
+    ws.Range("L2").Value = tech_name
 
     wb.RefreshAll()
     excel.CalculateFull()
