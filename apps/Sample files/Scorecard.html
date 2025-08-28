@@ -28,7 +28,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      overflow: hidden !important;
+      overflow: hidden;
     }
 
     .header-section {
@@ -226,7 +226,6 @@
        
         margin: 0 auto;
         border: none;
-        overflow: hidden !important;
       }
 
       .content-box,
@@ -360,51 +359,37 @@
     </div>
   </div>
 
-  {% if not compendium_mode %}
-    <button onclick="downloadPDF()" style="
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      padding: 8px 12px;
-      background-color: #1d4ed8;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      z-index: 1000;
-    ">
-      Download PDF
-    </button>
-  {% endif %}
+  <button onclick="downloadPDF()" style="
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    padding: 8px 12px;
+    background-color: #1d4ed8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 1000;
+  ">
+    Download PDF
+  </button>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script>
-  function downloadPDF() {
-  const element = document.querySelector('.scorecard-container');
+    function downloadPDF() {
+      const element = document.querySelector('.scorecard-container');
 
-  const opt = {
-    margin: 0,
-    filename: '{{ technology.Name|slugify }}_scorecard.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-  };
+      const opt = {
+        margin: 0,
+        filename: 'safran_scorecard.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5, useCORS: true,  backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
 
-  html2pdf()
-    .set(opt)
-    .from(element)
-    .toPdf()
-    .get('pdf')
-    .then((pdf) => {
-      // to remove extra pages
-      if (pdf.internal.getNumberOfPages() > 1) {
-        pdf.deletePage(2); // delete second page (and more if needed)
-      }
-    })
-    .save();
-}
-
+      html2pdf().set(opt).from(element).save();
+    }
   </script>
 </body>
 </html>

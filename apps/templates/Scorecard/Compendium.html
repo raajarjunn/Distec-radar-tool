@@ -5,11 +5,40 @@
   <meta charset="utf-8">
   <title>Scorecard Compendium</title>
   <style>
+    /* Keep layout width identical with/without scrollbars to avoid horizontal shift in the exported PDF */
+    html, body { scrollbar-gutter: stable both-edges; }
+
     @page { size: A4 landscape; margin: 0; }
-    .scorecard-container { page-break-after: always; }
+
+    /* One page per scorecard; don't force a blank page after the last one */
+    .scorecard-container { 
+      width: 297mm;                 /* lock to A4 landscape width */
+      margin: 0 auto;               /* consistent centering */
+      page-break-after: always; 
+      break-after: page;
+    }
+    .scorecard-container:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
     body { margin:0; background:#fff; }
-    .toolbar { position: sticky; top:0; background:#fff; padding:8px; border-bottom:1px solid #e5e7eb; display:flex; gap:8px; }
+
+    .toolbar { 
+      position: sticky; 
+      top:0; 
+      background:#fff; 
+      padding:8px; 
+      border-bottom:1px solid #e5e7eb; 
+      display:flex; 
+      gap:8px; 
+      z-index: 10;
+    }
     button { background:#045823; color:#fff; border:none; padding:8px 12px; cursor:pointer; }
+
+    /* During export: hide toolbar and lock scrolling to prevent last-moment reflow/shift */
+    body.exporting { overflow: hidden; }
+    body.exporting .toolbar { display: none !important; }
   </style>
 </head>
 <body>
@@ -25,14 +54,34 @@
   <script>
     document.getElementById('download').onclick = function() {
       const element = document.getElementById('compendium');
-      html2pdf().set({
+      document.body.classList.add('exporting'); 
+
+      const opt = {
         margin: 0,
         filename: '{{ filename }}',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-      }).from(element).save();
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .toPdf()
+        .get('pdf')
+        .then((pdf) => {
+          // Delete every alternate page
+          for (let i = pdf.internal.getNumberOfPages(); i >= 2; i--) {
+            if (i % 2 === 0) pdf.deletePage(i);
+          }
+        })
+        .save()
+        .finally(() => {
+          document.body.classList.remove('exporting');
+        });
     };
   </script>
+
 </body>
 </html>

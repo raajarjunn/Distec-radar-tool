@@ -1,105 +1,103 @@
-{# templates/Scorecard/SelectorModal.html #}
+{# templates/Scorecard/Selector.html #}
 
 <style>
-  /* === Scorecard Compendium Modal (namespace: sc-) === */
-  .sc-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    display: none;  /* hidden until opened */
-    align-items: center;
-    justify-content: center;
-    z-index: 3000;  /* above Argon sidebar/header */
-  }
-  .sc-dialog {
-    width: min(1100px, 96vw);
-    max-height: 92vh;
-    background: #fff;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 10px 25px rgba(0,0,0,.2);
-  }
-  .sc-header {
-    background: linear-gradient(87deg,#5e72e4,#11cdef);
-    color: #fff;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .sc-header h2 { margin: 0; font-size: 18px; font-weight: 600; }
-  .sc-body { flex: 1; display: flex; overflow: hidden; }
-  .sc-footer {
-    padding: 12px 16px;
-    border-top: 1px solid #e9ecef;
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    background: #fafbff;
-  }
+  /* Namespaced to avoid Bootstrap/Argon collisions */
+  .sc-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:3000}
+  .sc-dialog{width:min(1100px,96vw);max-height:92vh;background:#fff;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,.2)}
+  .sc-header{background:linear-gradient(87deg,#5e72e4,#11cdef);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px}
+  .sc-header h2{margin:0;font-size:18px;font-weight:600;flex:1}
+  .sc-body{display:flex;gap:14px;padding:12px 14px;overflow:hidden}
+  .sc-footer{padding:12px 16px;border-top:1px solid #e9ecef;display:flex;gap:8px;justify-content:flex-end;background:#fafbff}
 
-  /* Left filters */
-  .sc-filters { flex: 0 0 280px; border-right: 1px solid #e9ecef; padding: 10px; overflow-y: auto; }
-  .sc-card { border: 1px solid #e9ecef; border-radius: 8px; margin-bottom: 12px; background: #fff; }
-  .sc-card h3 { font-size: 14px; margin: 0; padding: 8px 12px; border-bottom: 1px solid #e9ecef; }
-  .sc-section { padding: 8px 10px; max-height: 140px; overflow-y: auto; }
-  .sc-section label { display: flex; align-items: center; margin: 4px 0; gap: 6px; }
+  /* Filters (left) */
+  .sc-filters{flex:0 0 300px;border-right:1px solid #e9ecef;padding-right:10px;max-height:calc(92vh - 110px);overflow:auto}
+  .sc-search{display:flex;gap:8px;margin-bottom:10px}
+  .sc-search input{width:100%;padding:10px 12px;border:1px solid #e9ecef;border-radius:10px}
+  .sc-card{border:1px solid #e9ecef;border-radius:10px;background:#fff;margin-bottom:10px;overflow:hidden}
+  .sc-card h3{margin:0;padding:9px 12px;border-bottom:1px solid #e9ecef;font-size:14px}
+  .sc-section{padding:8px 10px;max-height:180px;overflow:auto}
+  .sc-section label{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .sc-actions{display:flex;gap:8px;padding:8px 10px;border-top:1px solid #e9ecef;flex-wrap:wrap}
+  .sc-btn{border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
+  .sc-btn-muted{background:#eef2f7;color:#1f2937}
+  .sc-btn-primary{background:#5e72e4;color:#fff}
+  .sc-btn-danger{background:#f5365c;color:#fff}
 
-  /* Right list */
-  .sc-listwrap { flex: 1; padding: 12px; display: flex; flex-direction: column; }
-  .sc-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .sc-pill { padding: 6px 10px; border: 1px solid #ccc; border-radius: 999px; cursor: pointer; font-size: 13px; }
-  .sc-count { margin-left: auto; color: #6b7280; font-size: 13px; }
-  .sc-list { flex: 1; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 0; margin: 0; list-style: none; }
-  .sc-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; }
-  .sc-item:last-child { border-bottom: none; }
-  .sc-drag { cursor: grab; color: #64748b; }
-  .sc-name { flex: 1; }
-  .sc-badge { font-size: 11px; padding: 2px 6px; background: #edf2ff; border-radius: 999px; color: #3b5bdb; }
-  .sc-inactive { color: #b91c1c; font-weight: 600; margin-left: 6px; }
-
-  /* Buttons */
-  .sc-btn { border: none; border-radius: 6px; padding: 6px 12px; font-size: 14px; cursor: pointer; }
-  .sc-btn-primary { background: #5e72e4; color: #fff; }
-  .sc-btn-muted { background: #e9ecef; color: #1f2937; }
-  .sc-btn-danger { background: #f5365c; color: #fff; }
+  /* List (right) */
+  .sc-listwrap{flex:1;min-width:0;display:flex;flex-direction:column;max-height:calc(92vh - 110px)}
+  .sc-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .sc-pill{padding:8px 10px;border:1px solid #e9ecef;border-radius:999px;background:#fff;cursor:pointer}
+  .sc-count{margin-left:auto;color:#6b7280;font-size:13px}
+  .sc-list{list-style:none;margin:0;padding:0;flex:1;overflow:auto;border:1px solid #e9ecef;border-radius:10px;background:#fff}
+  .sc-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid #f1f5f9}
+  .sc-item:last-child{border-bottom:none}
+  .sc-drag{cursor:grab;user-select:none;padding:4px 8px;border:1px dashed #cbd5e1;border-radius:8px;color:#64748b}
+  .sc-name{flex:1}
+  .sc-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;margin-left:6px;background:#edf2ff;color:#3b5bdb}
+  .sc-inactive{color:#b91c1c;font-weight:600;margin-left:6px}
 </style>
 
 <div class="sc-backdrop" id="scBackdrop" aria-hidden="true">
   <div class="sc-dialog" role="dialog" aria-modal="true" aria-labelledby="scTitle">
     <div class="sc-header">
       <h2 id="scTitle">Build Scorecard Compendium</h2>
-      <button type="button" class="sc-btn sc-btn-muted" id="scClose">×</button>
+      <button type="button" class="sc-btn sc-btn-muted" id="scClose">Close</button>
     </div>
 
     <form id="scForm" method="post" action="{% url 'technology_scorecard_compendium' %}">
       {% csrf_token %}
       <div class="sc-body">
-        <!-- Left filters -->
+        <!-- LEFT: Filters -->
         <aside class="sc-filters">
+          <div class="sc-search">
+            <input id="scSearch" type="search" placeholder="Search by name or macro…">
+          </div>
+
           <div class="sc-card">
             <h3>Macro</h3>
             <div class="sc-section" id="macroBox"></div>
+            <div class="sc-actions">
+              <button type="button" class="sc-btn sc-btn-muted" data-group="f-macro" data-do="all">All</button>
+              <button type="button" class="sc-btn sc-btn-muted" data-group="f-macro" data-do="none">None</button>
+            </div>
           </div>
+
           <div class="sc-card">
             <h3>Meso 1</h3>
             <div class="sc-section" id="meso1Box"></div>
+            <div class="sc-actions">
+              <button type="button" class="sc-btn sc-btn-muted" data-group="f-meso1" data-do="all">All</button>
+              <button type="button" class="sc-btn sc-btn-muted" data-group="f-meso1" data-do="none">None</button>
+            </div>
           </div>
+
           <div class="sc-card">
             <h3>Meso 2</h3>
             <div class="sc-section" id="meso2Box"></div>
+            <div class="sc-actions">
+              <button type="button" class="sc-btn sc-btn-muted" data-group="f-meso2" data-do="all">All</button>
+              <button type="button" class="sc-btn sc-btn-muted" data-group="f-meso2" data-do="none">None</button>
+            </div>
+          </div>
+
+          <div class="sc-card">
+            <h3>Actions</h3>
+            <div class="sc-actions">
+              <button type="button" class="sc-btn sc-btn-muted" id="toggleInactive">Include inactive</button>
+              <button type="button" class="sc-btn sc-btn-primary" id="checkFiltered">Check filtered</button>
+              <button type="button" class="sc-btn sc-btn-danger"  id="uncheckFiltered">Uncheck filtered</button>
+            </div>
           </div>
         </aside>
 
-        <!-- Right list -->
+        <!-- RIGHT: List -->
         <section class="sc-listwrap">
           <div class="sc-toolbar">
             <span class="sc-pill" id="selectAll">Select all</span>
             <span class="sc-pill" id="clearAll">Clear</span>
             <span class="sc-count"><span id="selCount">0</span> selected</span>
           </div>
+
           <ul id="techList" class="sc-list"></ul>
           <div id="hidden"></div>
         </section>
@@ -107,67 +105,176 @@
 
       <div class="sc-footer">
         <button type="button" class="sc-btn sc-btn-muted" id="scCancel">Cancel</button>
-        <button type="submit" class="sc-btn sc-btn-primary">Build</button>
+        <button type="submit" class="sc-btn sc-btn-primary">Build compendium</button>
       </div>
     </form>
   </div>
 </div>
 
+<!-- SortableJS for drag ordering -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
 (function(){
-  const openBtn  = document.getElementById('openSelector');
+  const openBtn  = document.getElementById('openSelector');     // your trigger button on the list page
   const backdrop = document.getElementById('scBackdrop');
   const closeBtns= [document.getElementById('scClose'), document.getElementById('scCancel')];
+
   const techList = document.getElementById('techList');
-  const selCount = document.getElementById('selCount');
   const hidden   = document.getElementById('hidden');
-  let items = [];
+  const selCount = document.getElementById('selCount');
+
+  const searchBox= document.getElementById('scSearch');
+  const macroBox = document.getElementById('macroBox');
+  const meso1Box = document.getElementById('meso1Box');
+  const meso2Box = document.getElementById('meso2Box');
+  const includeInactiveBtn = document.getElementById('toggleInactive');
+
+  let items = [];          // all items from API
+  let showInactive = false;
 
   function open(){ backdrop.style.display='flex'; backdrop.setAttribute('aria-hidden','false'); }
   function close(){ backdrop.style.display='none'; backdrop.setAttribute('aria-hidden','true'); }
 
-  openBtn.addEventListener('click', async (e)=>{
+  if (openBtn) openBtn.addEventListener('click', async (e)=>{
     e.preventDefault();
     await loadData();
+    renderFilters();
     renderList();
     open();
   });
   closeBtns.forEach(b => b.addEventListener('click', close));
-  backdrop.addEventListener('click', e=>{ if(e.target===backdrop) close(); });
+  backdrop.addEventListener('click', e=>{ if (e.target === backdrop) close(); });
 
   async function loadData(){
-    const res = await fetch("{% url 'technology_api_techs' %}");
+    const url = "{% url 'technology_api_techs' %}" + (showInactive ? "?inactive=1" : "");
+    const res = await fetch(url, {headers: {'Accept':'application/json'}});
     const data = await res.json();
+    if (!data.ok){ alert(data.error || "Failed to load items"); return; }
     items = data.items || [];
     items.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
   }
 
+  function distinct(key){
+    const set = new Set(items.map(x => (x[key] || '').trim()).filter(Boolean));
+    return Array.from(set).sort((a,b)=>a.localeCompare(b));
+  }
+
+  function renderFilters(){
+    const put = (box, cls, vals) => {
+      box.innerHTML = vals.length
+        ? vals.map(v => `<label><input type="checkbox" class="${cls}" value="${v}"> ${v}</label>`).join('')
+        : `<div style="color:#94a3b8">None</div>`;
+    };
+    put(macroBox, 'f-macro', distinct('macro'));
+    put(meso1Box, 'f-meso1', distinct('meso1'));
+    put(meso2Box, 'f-meso2', distinct('meso2'));
+
+    // bind filter changes
+    document.querySelectorAll('.f-macro,.f-meso1,.f-meso2')
+      .forEach(el => el.addEventListener('change', applyFilter));
+
+    // group toggles
+    document.querySelectorAll('[data-group][data-do]').forEach(btn=>{
+      btn.onclick = () => {
+        const cls = btn.getAttribute('data-group');
+        const state = btn.getAttribute('data-do') === 'all';
+        document.querySelectorAll('input.'+cls).forEach(i => i.checked = state);
+        applyFilter();
+      };
+    });
+
+    // inactive toggle
+    includeInactiveBtn.onclick = async () => {
+      showInactive = !showInactive;
+      includeInactiveBtn.classList.toggle('active', showInactive);
+      await loadData();
+      renderFilters();
+      renderList();
+      applyFilter();
+    };
+
+    searchBox.addEventListener('input', applyFilter);
+  }
+
   function renderList(){
-    techList.innerHTML = items.map(t=>`
-      <li class="sc-item" data-id="${t.id}">
-        <span class="sc-drag">☰</span>
+    techList.innerHTML = items.map(t => `
+      <li class="sc-item"
+          data-id="${t.id}"
+          data-name="${(t.name||'').toLowerCase()}"
+          data-macro="${(t.macro||'').toLowerCase()}"
+          data-meso1="${(t.meso1||'').toLowerCase()}"
+          data-meso2="${(t.meso2||'').toLowerCase()}"
+          data-active="${t.is_active !== false}">
+        <span class="sc-drag" title="Drag to reorder">☰</span>
         <input type="checkbox" class="chk">
         <span class="sc-name">#${t.id} — ${t.name}
-          ${t.macro ? `<span class="sc-badge">${t.macro}</span>`:''}
-          ${t.is_active===false?'<span class="sc-inactive">inactive</span>':''}
+          ${t.macro ? `<span class="sc-badge">${t.macro}</span>` : ``}
+          ${t.is_active === false ? `<span class="sc-inactive">inactive</span>` : ``}
         </span>
-      </li>`).join('');
+      </li>
+    `).join('');
 
-    new Sortable(techList,{animation:150,handle:'.sc-drag'});
-    techList.addEventListener('change', updateCount);
-    document.getElementById('selectAll').onclick = ()=>{ techList.querySelectorAll('.chk').forEach(c=>c.checked=true); updateCount(); };
-    document.getElementById('clearAll').onclick  = ()=>{ techList.querySelectorAll('.chk').forEach(c=>c.checked=false); updateCount(); };
+    new Sortable(techList, { animation: 150, handle: '.sc-drag' });
+
+    // actions
+    document.getElementById('selectAll').onclick = () => { techList.querySelectorAll('.chk').forEach(c=>c.checked=true); updateCount(); };
+    document.getElementById('clearAll').onclick  = () => { techList.querySelectorAll('.chk').forEach(c=>c.checked=false); updateCount(); };
+    document.getElementById('checkFiltered').onclick = () => {
+      Array.from(techList.querySelectorAll('li.sc-item')).forEach(li => {
+        if (li.style.display !== 'none') li.querySelector('.chk').checked = true;
+      });
+      updateCount();
+    };
+    document.getElementById('uncheckFiltered').onclick = () => {
+      Array.from(techList.querySelectorAll('li.sc-item')).forEach(li => {
+        if (li.style.display !== 'none') li.querySelector('.chk').checked = false;
+      });
+      updateCount();
+    };
+
+    techList.addEventListener('change', e => { if(e.target.classList.contains('chk')) updateCount(); });
+
+    applyFilter();
     updateCount();
+  }
+
+  function getCheckedValues(cls){
+    return Array.from(document.querySelectorAll('input.'+cls+':checked')).map(i => i.value.toLowerCase());
+  }
+
+  function applyFilter(){
+    const q = (searchBox.value || '').toLowerCase();
+    const selMacros = new Set(getCheckedValues('f-macro'));
+    const selM1     = new Set(getCheckedValues('f-meso1'));
+    const selM2     = new Set(getCheckedValues('f-meso2'));
+
+    Array.from(techList.querySelectorAll('li.sc-item')).forEach(li=>{
+      const name  = li.dataset.name || '';
+      const macro = li.dataset.macro || '';
+      const m1    = li.dataset.meso1 || '';
+      const m2    = li.dataset.meso2 || '';
+      const active= (li.dataset.active === 'true' || li.dataset.active === 'True' || li.dataset.active === '1');
+
+      const textMatch = !q || name.includes(q) || macro.includes(q);
+      const macroPass = !selMacros.size || selMacros.has(macro);
+      const m1Pass    = !selM1.size     || selM1.has(m1);
+      const m2Pass    = !selM2.size     || selM2.has(m2);
+      const activePass= showInactive ? true : active;
+
+      li.style.display = (textMatch && macroPass && m1Pass && m2Pass && activePass) ? '' : 'none';
+    });
   }
 
   function updateCount(){ selCount.textContent = techList.querySelectorAll('.chk:checked').length; }
 
+  // submit: send checked IDs in DOM order
   document.getElementById('scForm').addEventListener('submit', (e)=>{
     hidden.innerHTML = '';
-    const ids = Array.from(techList.querySelectorAll('li')).filter(li=>li.querySelector('.chk').checked).map(li=>li.dataset.id);
-    if(!ids.length){ e.preventDefault(); alert("Pick at least one technology"); return; }
-    ids.forEach(id=>{ hidden.insertAdjacentHTML('beforeend',`<input type="hidden" name="order[]" value="${id}">`); });
+    const ordered = Array.from(techList.querySelectorAll('li.sc-item'))
+      .filter(li => li.querySelector('.chk').checked)
+      .map(li => li.getAttribute('data-id'));
+    if (!ordered.length){ e.preventDefault(); alert('Pick at least one technology.'); return; }
+    ordered.forEach(id => hidden.insertAdjacentHTML('beforeend', `<input type="hidden" name="order[]" value="${id}">`));
   });
 })();
 </script>

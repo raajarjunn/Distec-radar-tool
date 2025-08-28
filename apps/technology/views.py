@@ -1110,6 +1110,7 @@ def scorecard_compendium(request):
     combined_html = "\n".join(pages_html)
 
     return render(request, "Scorecard/Compendium.html", {
+        "compendium_mode": True, 
         "combined_html": combined_html,
         "filename": f"scorecards_{localtime(make_aware(datetime.now())).strftime('%Y%m%d')}.pdf"
     })
