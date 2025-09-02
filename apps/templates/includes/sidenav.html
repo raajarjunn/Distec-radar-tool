@@ -1,10 +1,12 @@
-<nav class="sidenav navbar navbar-vertical  fixed-left  navbar-expand-xs navbar-light bg-white" id="sidenav-main">
+<nav class="sidenav navbar navbar-vertical  fixed-left  navbar-expand-xs navbar-light bg-darker" id="sidenav-main">
   <div class="scrollbar-inner">
     <!-- Brand -->
     <div class="sidenav-header  align-items-center">
       <a class="navbar-brand" href="/">
-        <img src="/static/assets/img/brand/white.jpeg" class="navbar-brand-img" alt="Argon Design - Jinja Template Logo.">
+        <img src="/static/assets/img/brand/Safran.png" class="navbar-brand-img" alt="Argon Design - Jinja Template Logo.">
       </a>
+     
+
     </div>
     <div class="navbar-inner">
       <!-- Collapse -->
@@ -14,13 +16,13 @@
           <li class="nav-item">
             <a class="nav-link {% if 'index' in segment %} active {% endif %}" href="/">
               <i class="ni ni-tv-2 text-primary"></i>
-              <span class="nav-link-text">Dashboard</span>
+              <span class="nav-link-text text-white">Dashboard </span>
             </a>
           </li>
           <li class="nav-item">
            <a class="nav-link {% if segment == 'technology' %} active {% endif %}" href="{% url 'technology_list' %}">
             <i class="ni ni-planet text-orange"></i>
-            <span class="nav-link-text">Technology</span>
+            <span class="nav-link-text text-white">Technology</span>
           </a>
           </li> 
           <!-- {% url 'mindmap' as mindmap_url %} -->
@@ -28,11 +30,9 @@
             <a class="nav-link{% if request.path == mindmap_url %} active{% endif %}"
               href="{{ mindmap_url }}">
               <i class="ni ni-collection text-primary"></i>
-              <span class="nav-link-text">Mind Map</span>
+              <span class="nav-link-text text-white">Mind Map</span>
             </a>
           </li>
-
-
     </div>
   </div>
 </nav>

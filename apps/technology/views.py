@@ -219,6 +219,18 @@ class TechnologyCreateView(LoginRequiredMixin, CreateView):
     template_name = "technology/create.html"
     success_url = reverse_lazy("technology_list")
 
+# acitvity log
+    def form_valid(self, form):
+        resp = super().form_valid(form)  # self.object now saved
+        log_activity(
+            username=self.request.user.get_username(),
+            activity="Add technology",
+            logged_in=True,
+            meta={"technology_id": str(self.object.pk), "technology_name": self.object.name},
+        )
+        messages.success(self.request, "Technology created successfully.")
+        return resp
+
 
 
 class TechnologyUpdateView(LoginRequiredMixin, UpdateView):
@@ -231,6 +243,13 @@ class TechnologyUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         try:
             resp = super().form_valid(form)
+#actvity log
+            log_activity(
+                username=self.request.user.get_username(),
+                activity="Edit technology",
+                logged_in=True,
+                meta={"technology_id": str(self.object.pk), "technology_name": self.object.name},
+            )
             messages.success(self.request, "Technology updated successfully.")
             return resp
         except (IntegrityError, DatabaseError) as e:
@@ -269,6 +288,20 @@ class TechnologyDeleteView(LoginRequiredMixin, DeleteView):
             return redirect(self.object.get_absolute_url())
         return super().post(request, *args, **kwargs)
 
+
+#log activity
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        tech_id, tech_name = str(self.object.pk), self.object.name
+        resp = super().delete(request, *args, **kwargs)
+        log_activity(
+            username=request.user.get_username(),
+            activity="Delete technology",
+            logged_in=True,
+            meta={"technology_id": tech_id, "technology_name": tech_name},
+        )
+        messages.success(request, "Technology deleted.")
+        return resp
 
 # -------------------------- taxonomy JSON APIs --------------------------
 
@@ -746,6 +779,14 @@ def evaluate(request, pk):
                 "version": 1,
             }
             _save_eval_history(technology, [eval_data])  # keep only latest; use hist+append to keep history
+
+            log_activity(
+                username=request.user.get_username() if request.user.is_authenticated else "Anonymous",
+                activity="Evaluate technology",        # <= used to filter later
+                logged_in=bool(request.user.is_authenticated),
+                meta={"technology_id": str(technology.pk), "technology_name": technology.name},
+            )
+
 
             # Pass meta to the template
             dt_local = timezone.localtime(timezone.now())

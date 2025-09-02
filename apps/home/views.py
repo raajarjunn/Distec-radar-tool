@@ -13,6 +13,9 @@ from django.shortcuts import render
 from pymongo import MongoClient
 from datetime import datetime 
 
+from apps.common.activity_log import activities
+from datetime import datetime, timezone
+
 
 
 # -----------------------------------------Pymongo connection---------------------------------------------------------
@@ -22,38 +25,42 @@ db = client["tech_tool_db"]
 activities = db["activities"]   # collection name for recent activities
 
 
+def _aware(dt):
+    if isinstance(dt, datetime):
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return datetime.now(tz=timezone.utc)
+
 @login_required(login_url="/login/")
 def index(request):
-    # Expect docs like:
-    # { activity: "Login", username: "alice", occurred_at: ISODate(...), logged_in: true }
     cursor = (
-        activities
-        .find({}, {"activity": 1, "username": 1, "occurred_at": 1, "logged_in": 1})
+        activities.find(
+            {},  # show all recent activities; filter if you want
+            {"activity": 1, "username": 1, "occurred_at": 1, "logged_in": 1, "meta": 1}
+        )
         .sort("occurred_at", -1)
         .limit(10)
     )
 
     rows = []
     for d in cursor:
-        t = d.get("occurred_at", datetime.utcnow())
-        # If stored as string, try to parse ISO quickly (optional)
-        if isinstance(t, str):
-            try:
-                t = datetime.fromisoformat(t.replace("Z", "+00:00"))
-            except Exception:
-                t = datetime.utcnow()
+        meta = d.get("meta") or {}
+        tech_name = (
+            meta.get("technology_name")
+            or meta.get("name")
+            or meta.get("technology")
+            or meta.get("tech")
+        )
+        activity = d.get("activity", "")
+        label = f"{activity} — {tech_name}" if tech_name else activity
 
         rows.append({
-            "activity": d.get("activity", ""),
+            "activity": label,                  # ← Activity / Technology
             "user": d.get("username", "—"),
-            "time": t,                          # datetime for {{ r.time|naturaltime }}
+            "time": _aware(d.get("occurred_at")),
             "logged_in": bool(d.get("logged_in", False)),
         })
 
-    context = {"segment": "index", "rows": rows}
-
-    html_template = loader.get_template('home/index.html')
-    return HttpResponse(html_template.render(context, request))
+    return render(request, "home/index.html", {"segment": "index", "rows": rows})
 
 
 

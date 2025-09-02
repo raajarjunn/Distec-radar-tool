@@ -6,10 +6,11 @@ db = client["tech_tool_db"]
 activities = db["activities"]
 
 def log_activity(*, username: str, activity: str, logged_in: bool, meta: dict | None = None):
-    activities.insert_one({
+    doc = {
         "activity": activity,
         "username": username or "anonymous",
         "occurred_at": datetime.now(tz=timezone.utc),
         "logged_in": bool(logged_in),
         "meta": meta or {},
-    })
+    }
+    activities.insert_one(doc)
