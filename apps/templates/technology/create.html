@@ -529,6 +529,7 @@
   }
   $macro.on("change",()=>handleMacroChange(false));
   $meso1.on("change",()=>handleMeso1Change(false));
+  $meso2.on("change", () => toggleNewInputs());
   loadMacros();
 
   // Assign stable IDs for counters

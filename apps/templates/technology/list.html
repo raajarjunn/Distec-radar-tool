@@ -81,10 +81,6 @@
               <a class="btn {% if view_mode == 'table' %}btn-dark{% else %}btn-outline-dark{% endif %}"
                  href="?{% if q %}q={{ q|urlencode }}&{% endif %}view=table{% if sort %}&sort={{ sort }}{% endif %}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Table</a>
             </div>
-            <a class="btn btn-sm btn-outline-secondary"
-               href="{% url 'technology_compendium' %}?q={{ q|urlencode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">
-               <i class="ni ni-archive-2 mr-1"></i> Compendium
-            </a>
             <button class="btn btn-primary" id="openSelector" type="button">Scorecard Compendium</button>
           </div>
         </div>
@@ -168,8 +164,18 @@
               </div>
               {% if t.category %}<span class="badge badge-pill badge-primary">{{ t.category }}</span>{% endif %}
             </div>
-            <div class="card-body">
-              <p class="card-text text-muted tech-desc" title="{{ t.description|default:'' }}">{{ t.description|default:""|truncatechars:200 }}</p>
+            <div class="card-body p-0">
+              {% if t.card_image_b64 %}
+                <div class="tech-thumb">
+                  <img src="{{ t.card_image_b64 }}" alt="{{ t.name }} image" loading="lazy" class="img-fluid w-100 h-100">
+                </div>
+              {% else %}
+                <div class="p-3">
+                  <p class="card-text text-muted tech-desc" title="{{ t.description|default:'' }}">
+                    {{ t.description|default:""|truncatechars:200 }}
+                  </p>
+                </div>
+              {% endif %}
             </div>
             {% comment %} <div class="card-footer d-flex justify-content-between align-items-center">
               <small class="text-muted">Created {{ t.created_at|date:"Y-m-d" }}</small>
@@ -363,6 +369,18 @@
   .tech-card { transition: box-shadow .15s ease, transform .15s ease; }
   .tech-card:hover { box-shadow:0 8px 24px rgba(0,0,0,.12); transform: translateY(-1px); }
   .tech-desc{ display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; min-height:5.2em; }
+  .tech-thumb{position: relative; width: 100%; padding-top: 56.25%; /* 16:9 */
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+.tech-thumb img{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 
   /* Filter modal category list (vertical scroll) */
   .badge-check input{ display:none; }

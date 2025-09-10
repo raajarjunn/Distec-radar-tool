@@ -2,6 +2,7 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from django.utils.functional import cached_property
 from django.utils import timezone
 import json
 
@@ -91,7 +92,7 @@ class Technology(models.Model):
 
     @property
     def gallery_list(self):
-        return Technology._loads(self.gallery, [])
+        return Technology._loads(self.gallery, [])    
 
     def set_gallery(self, items):
         self.gallery = Technology._dumps(items)
@@ -109,3 +110,29 @@ class Technology(models.Model):
         if needs_slug:
             self.slug = unique_slug(Technology, self.name, instance=self)
         super().save(*args, **kwargs)
+
+    @cached_property
+    def card_image_b64(self) -> str:
+        """
+        Prefer a gallery image tagged with SC1 (case-insensitive).
+        If none, fall back to the first valid image. Returns data-URI or ''.
+        """
+        items = self.gallery_list or []
+
+        def is_image_b64(x):
+            b64 = (x or {}).get("b64") or ""
+            return isinstance(b64, str) and b64.startswith("data:image")
+
+        # 1) look for SC1-tagged image
+        for g in items:
+            tag = (g or {}).get("tag") or ""
+            if "sc1" in tag.lower() and is_image_b64(g):
+                return g["b64"]
+
+        # 2) fallback: first image
+        for g in items:
+            if is_image_b64(g):
+                return g["b64"]
+
+        return ""    
+

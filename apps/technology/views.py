@@ -332,29 +332,6 @@ def api_meso2(request, meso1):
     return JsonResponse([{"name": m} for m in rows], safe=False)
 
 
-# -------------------------- CSV export --------------------------
-
-class TechnologyCompendiumView(LoginRequiredMixin, View):
-    def get(self, request):
-        qs = apply_filters_and_sort(request, Technology.objects.all())
-        resp = HttpResponse(content_type="text/csv")
-        resp["Content-Disposition"] = 'attachment; filename="technology_compendium.csv"'
-        w = csv.writer(resp)
-        w.writerow(["ID", "Name", "Macro", "Meso1", "Meso2", "Active", "Created", "Confidentiality"])
-        for t in qs:
-            w.writerow([
-                t.pk,
-                t.name,
-                t.macro or "",
-                t.meso1 or "",
-                t.meso2 or "",
-                "Yes" if t.is_active else "No",
-                t.created_at.strftime("%Y-%m-%d %H:%M"),
-                t.confidentiality,
-            ])
-
-        return resp
-
 
 # -------------------------- Extra fields (add/edit/delete) --------------------------
 

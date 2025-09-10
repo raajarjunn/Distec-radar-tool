@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     TechnologyListView, TechnologyDetailView,
     TechnologyCreateView, TechnologyUpdateView, TechnologyDeleteView,
-    TechnologyCompendiumView, mindmap_view,generate_report,scorecard_selector, scorecard_compendium,
+     mindmap_view,generate_report, scorecard_compendium,
     api_macros, api_meso1, api_meso2, api_techs,
     add_extra_field, edit_extra_field, delete_extra_field,
     add_gallery_image, update_gallery_tag, delete_gallery_image,
@@ -19,8 +19,7 @@ urlpatterns = [
     path("<int:pk>/edit/",       TechnologyUpdateView.as_view(), name="technology_update"),
     path("<int:pk>/delete/",     TechnologyDeleteView.as_view(), name="technology_delete"),
 
-    path("compendium.csv",       TechnologyCompendiumView.as_view(), name="technology_compendium"),
-
+  
     path("api/macros/",                  api_macros, name="tech_api_macros"),
     path("api/meso1/<str:macro>/",       api_meso1,  name="tech_api_meso1"),
     path("api/meso2/<str:meso1>/",       api_meso2,  name="tech_api_meso2"),
