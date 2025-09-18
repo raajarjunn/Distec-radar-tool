@@ -13,58 +13,8 @@
     },
     {
         "name": "user2",
-        "description": "Basic user level 2"
-    },
-    {
-        "name": "moderator",
-        "description": "Can monitor and manage content/users within a defined scope"
-    },
-    {
-        "name": "staff",
-        "description": "Internal team member with elevated access for operational tasks"
-    },
-    {
-        "name": "guest",
-        "description": "Limited read-only access for trial/demo"
-    },
-    {
-        "name": "project_manager",
-        "description": "Oversees project assignments, timelines, and team members"
-    },
-    {
-        "name": "team_lead",
-        "description": "Leads a smaller group, assigns daily tasks"
-    },
-    {
-        "name": "developer",
-        "description": "Has access to development tools and code repositories"
-    },
-    {
-        "name": "qa_tester",
-        "description": "Can test features, log bugs, and access staging environments"
-    },
-    {
-        "name": "support_agent",
-        "description": "Handles customer service tickets, can read/write support cases"
-    },
-    {
-        "name": "report_viewer",
-        "description": "Can access analytics and reports but cannot modify data"
-    },
-    {
-        "name": "data_entry",
-        "description": "Can input and update certain types of records"
-    },
-    {
-        "name": "auditor",
-        "description": "Can view all system data for compliance but cannot edit"
-    },
-    {
-        "name": "api_consumer",
-        "description": "Has API keys and integration permissions"
-    },
-    {
-        "name": "content_creator",
-        "description": "Can create and manage content like blog posts or pages"
+        "description": "Special user"
     }
+    
+    
 ]

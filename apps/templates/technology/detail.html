@@ -1,5 +1,7 @@
 {# apps/templates/technology/detail.html #}
 {% extends "layouts/base.html" %}
+{% load perm_tags %}
+
 
 {% block content %}
 <style>
@@ -53,26 +55,36 @@
             </div>
           </div>
           <div class="btn-toolbar">
+            {% if user|can:"edit_technology" %}
             <div class="btn-group">
               <a href="{% url 'technology_update' object.pk %}" class="btn btn-sm btn-outline-primary mr-1">
                 <i class="ni ni-settings-gear-65"></i> Edit
               </a>
+              {% endif %}
+
+              {% if user|can:"delete_technology" %}
               <a href="#" class="btn btn-sm btn-outline-danger js-open-delete"
                  data-url="{% url 'technology_delete' object.pk %}"
                  data-name="{{ object.name|escapejs }}">
                  <i class="ni ni-fat-remove"></i> Delete
               </a>
+              {% endif %}
               
+              {% if user|can:"evaluate_technology" %}
               <a class="btn btn-outline-primary"
                 href="{% url 'technology_evaluate' pk=object.pk %}"
                 target="_blank" rel="noopener">
                 Open Evaluation Tool
               </a>
+              {% endif %}
 
+
+              {% if user|can:"scorecard_generate" %}
               <a href="{% url 'technology_scorecard' object.pk %}" 
                 target="_blank">
                 View Scorecard
               </a>
+              {% endif %}
 
             </div>
           </div>

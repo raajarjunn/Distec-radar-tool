@@ -1,3 +1,4 @@
+{% load perm_tags %}
 <nav class="sidenav navbar navbar-vertical  fixed-left  navbar-expand-xs navbar-light bg-darker" id="sidenav-main">
   <div class="scrollbar-inner">
     <!-- Brand -->
@@ -33,6 +34,16 @@
               <span class="nav-link-text text-white">Mind Map</span>
             </a>
           </li>
+           {% url 'role_admin_list' as role_admin_url %}
+          {% if user.is_authenticated and user|can:"manage_roles" %}
+            <li class="nav-item">
+              <a class="nav-link text-white{% if request.path == role_admin_url %} active{% endif %}"
+                href="{{ role_admin_url }}">
+                <i class="ni ni-settings text-white"></i>
+                <span class="nav-link-text text-white">Role Admin</span>
+              </a>
+            </li>
+          {% endif %}      
     </div>
   </div>
 </nav>

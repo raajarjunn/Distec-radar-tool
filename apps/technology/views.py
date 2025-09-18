@@ -7,6 +7,10 @@ import imghdr
 
 from apps.common.activity_log import log_activity
 
+# User permissions
+from apps.authentication.perm import user_has_permission, require_action
+
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -56,6 +60,8 @@ from django.shortcuts import render
 from django.utils.timezone import make_aware, is_naive, localtime
 from django.utils.safestring import mark_safe
 from django.views.decorators.clickjacking import xframe_options_sameorigin
+
+
 
 
 
@@ -173,6 +179,7 @@ def apply_filters_and_sort(request, qs):
 # -------------------------- list / details --------------------------
 
 class TechnologyListView(LoginRequiredMixin, ListView):
+    required_action = "view_technology"
     model = Technology
     template_name = "technology/list.html"
     context_object_name = "items"
@@ -195,6 +202,7 @@ class TechnologyListView(LoginRequiredMixin, ListView):
 
 
 class TechnologyDetailView(LoginRequiredMixin, DetailView):
+    required_action = "view_technology"
     model = Technology
     template_name = "technology/detail.html"
     pk_url_kwarg = "pk"
@@ -214,6 +222,7 @@ class TechnologyDetailView(LoginRequiredMixin, DetailView):
 
 
 class TechnologyCreateView(LoginRequiredMixin, CreateView):
+    required_action = "add_technology"
     model = Technology
     form_class = TechnologyForm
     template_name = "technology/create.html"
@@ -234,6 +243,7 @@ class TechnologyCreateView(LoginRequiredMixin, CreateView):
 
 
 class TechnologyUpdateView(LoginRequiredMixin, UpdateView):
+    required_action = "edit_technology"
     model = Technology
     form_class = TechnologyForm
     template_name = "technology/create.html"  # reuse same page
@@ -275,6 +285,7 @@ class TechnologyUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class TechnologyDeleteView(LoginRequiredMixin, DeleteView):
+    required_action = "delete_technology"
     model = Technology
     template_name = "technology/confirm_delete.html"  # unused; we submit via modal
     pk_url_kwarg = "pk"
@@ -306,6 +317,7 @@ class TechnologyDeleteView(LoginRequiredMixin, DeleteView):
 # -------------------------- taxonomy JSON APIs --------------------------
 
 @require_GET
+@require_action("view_technology")
 def api_macros(request):
     rows = (Technology.objects
             .exclude(macro="")
@@ -314,6 +326,7 @@ def api_macros(request):
     return JsonResponse([{"name": m} for m in rows], safe=False)
 
 @require_GET
+@require_action("view_technology")
 def api_meso1(request, macro):
     rows = (Technology.objects
             .filter(macro=macro)
@@ -323,6 +336,7 @@ def api_meso1(request, macro):
     return JsonResponse([{"name": m} for m in rows], safe=False)
 
 @require_GET
+@require_action("view_technology")
 def api_meso2(request, meso1):
     rows = (Technology.objects
             .filter(meso1=meso1)
@@ -336,6 +350,7 @@ def api_meso2(request, meso1):
 # -------------------------- Extra fields (add/edit/delete) --------------------------
 
 @require_POST
+@require_action("edit_technology")
 def add_extra_field(request, pk):
     tech = get_object_or_404(Technology, pk=pk)
     name = (request.POST.get("field_name") or "").strip()
@@ -351,6 +366,7 @@ def add_extra_field(request, pk):
     return _redirect_back_to_edit(request, pk)
 
 @require_POST
+@require_action("edit_technology")
 def edit_extra_field(request, pk, index: int):
     tech = get_object_or_404(Technology, pk=pk)
     fields = _loads(getattr(tech, "extra_fields", "[]"))
@@ -363,6 +379,7 @@ def edit_extra_field(request, pk, index: int):
     return _redirect_back_to_edit(request, pk)
 
 @require_POST
+@require_action("delete_technology")
 def delete_extra_field(request, pk, index: int):
     tech = get_object_or_404(Technology, pk=pk)
     fields = _loads(getattr(tech, "extra_fields", "[]"))
@@ -384,6 +401,7 @@ def _file_to_data_uri(django_file):
     return f"data:image/{kind};base64,{b64}"
 
 @require_POST
+@require_action("edit_technology")
 def add_gallery_image(request, pk):
     """
     Save uploaded image as base64 in Technology.gallery
@@ -447,6 +465,7 @@ def add_gallery_image(request, pk):
 
 
 @require_POST
+@require_action("edit_technology")
 def update_gallery_tag(request, pk):
     tech = get_object_or_404(Technology, pk=pk)
     image_name = request.POST.get("image_name")
@@ -478,6 +497,7 @@ def update_gallery_tag(request, pk):
 
 
 @require_POST
+@require_action("delete_technology")
 def delete_gallery_image(request, pk):
     tech = get_object_or_404(Technology, pk=pk)
     image_name = request.POST.get("image_name")
@@ -591,7 +611,7 @@ def project_positioning(scores, amplification_factor):
         "bar_max": float(np.round(column_sums.max(), 4)),
     }
 
-
+@require_action("evaluate_technology")
 def evaluate(request, pk):
     technology = get_object_or_404(Technology, pk=pk)
 
@@ -818,6 +838,7 @@ def evaluate(request, pk):
 # ------------------------ Save chart image to Technology.gallery (B64) ---------------------------
 
 @csrf_exempt
+@require_action("evaluate_technology")
 def save_chart_image(request, pk):
     if request.method != 'POST':
         return JsonResponse({'status': 'fail'}, status=400)
@@ -863,7 +884,7 @@ def save_chart_image(request, pk):
 def _safe_filename(s: str) -> str:
     return re.sub(r'[<>:"/\\|?*\x00-\x1F]', "", (s or "")).strip().replace("  ", " ")
 
-
+@require_action("evaluate_technology")
 def export_excel(request, pk):
 
     tech = get_object_or_404(Technology, pk=pk)
@@ -935,6 +956,7 @@ def export_excel(request, pk):
 #------------------------------Scorecard--------------------------------------
 
 xframe_options_sameorigin
+@require_action("scorecard_generate")
 def generate_report(request, pk):
     t = get_object_or_404(Technology, pk=pk)
 

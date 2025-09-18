@@ -6,6 +6,18 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, get_user_model
 from .forms import LoginForm, SignUpForm
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, UpdateView
+from django.urls import reverse_lazy
+from django.db.models import Q
+from django.contrib import messages
+
+from apps.authentication.forms import AssignRoleForm
+from apps.authentication.perm import ActionPermissionMixin, require_action
+from bson import ObjectId 
+from django.http import Http404, HttpResponse
+
 logger = logging.getLogger(__name__)  # e.g. "apps.authentication.views"
 User = get_user_model()
 
@@ -100,3 +112,62 @@ def register_user(request):
         msg = "Unexpected error, please try again."
         form = SignUpForm()
         return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": False})
+    
+
+
+class UserRoleListView(LoginRequiredMixin, ActionPermissionMixin, ListView):
+    required_action = "manage_roles"
+    model = User
+    template_name = "accounts/role.html"
+    context_object_name = "users"
+    paginate_by = 20
+
+    def get_queryset(self):
+        q = (self.request.GET.get("q") or "").strip()
+        qs = User.objects.all().select_related("role").order_by("username")
+        if q:
+            qs = qs.filter(Q(username__icontains=q) | Q(email__icontains=q))
+        return qs
+
+class UserRoleUpdateView(LoginRequiredMixin, ActionPermissionMixin, UpdateView):
+    required_action = "manage_roles"
+    model = User
+    form_class = AssignRoleForm
+    template_name = "accounts/edit.html"
+    success_url = reverse_lazy("role_admin_list")
+
+    def get_object(self, queryset=None):
+        pk = self.kwargs.get("pk")
+        qs = queryset or self.get_queryset()
+        try:
+            return qs.get(pk=pk)
+        except self.model.DoesNotExist:
+            pass
+        try:
+            return qs.get(pk=ObjectId(pk))
+        except (self.model.DoesNotExist, Exception):
+            pass
+        obj = (self.model.objects.filter(id=pk).first()
+               or self.model.objects.filter(id=ObjectId(pk)).first())
+        if obj:
+            return obj
+        raise Http404("User not found")
+    
+    def get_template_names(self):
+        # If this is an HTMX request, return the partial used inside the modal
+        if self.request.headers.get("HX-Request"):
+            return ["accounts/edit.html"]
+        return [self.template_name]
+
+    def form_valid(self, form):
+        messages.success(self.request, "User role updated.")
+        response = super().form_valid(form)
+
+        # If HTMX, trigger client-side event to close modal + refresh list
+        if self.request.headers.get("HX-Request"):
+            resp = HttpResponse("<div class='p-3'>Saved.</div>")
+            resp["HX-Trigger"] = "roleSaved"
+            return resp
+
+        # Normal POST: follow success_url redirect
+        return response

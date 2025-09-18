@@ -19,7 +19,7 @@ class Role(models.Model):
 
 class User(AbstractUser):
     # Core
-    id = dj.ObjectIdField(primary_key=True, default=ObjectId)
+    id = dj.ObjectIdField(primary_key=True, default=ObjectId, db_column="_id")
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     is_super_admin = models.BooleanField(default=False)
 

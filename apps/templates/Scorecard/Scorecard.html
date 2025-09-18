@@ -146,27 +146,27 @@
     }
    
   .image-slot {
-  border: 1px solid #045823;
-  border-radius: 0;
-  height: 60mm;              /* or 55mm for the right column instance */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8fafc;
-  color: #6b7280;
-  font-size: 14px;
-  text-align: center;
-  overflow: hidden;           /* prevents bleed */
-}
+      border: 1px solid #045823;
+      border-radius: 0;
+      height: 60mm;              /* or 55mm for the right column instance */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8fafc;
+      color: #6b7280;
+      font-size: 14px;
+      text-align: center;
+      overflow: hidden;           /* prevents bleed */
+    }
 
 .image-slot img {
-  max-height: 100%;
-  max-width: 100%;
-  width: auto;                /* keep aspect ratio */
-  height: auto;
-  object-fit: contain;        /* never overflow the slot */
-  display: block;
-}
+      max-height: 100%;
+      max-width: 100%;
+      width: auto;                /* keep aspect ratio */
+      height: auto;
+      object-fit: contain;        /* never overflow the slot */
+      display: block;
+    }
 
 
 
@@ -207,6 +207,45 @@
     .footer-item:last-child {
       margin-right: 0;
     }
+
+    .actions {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .action-btn {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .pdf-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .jpg-btn {
+      background: linear-gradient(135deg, #059669, #047857);
+    }
+
+    .action-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
   @media print {
       @page {
         size: A4 landscape;
@@ -239,6 +278,15 @@
         font-size: 26px;
       }
     }
+
+    @media (max-width: 640px) {
+          .actions {        /* stack on small screens */
+            flex-direction: column;
+            right: 16px;
+          }
+          .actions button { width: 160px; }
+}
+@media print { .actions { display: none !important; } }
     
   </style>
 </head>
@@ -361,24 +409,18 @@
   </div>
 
   {% if not compendium_mode %}
-    <button onclick="downloadPDF()" style="
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      padding: 8px 12px;
-      background-color: #1d4ed8;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      z-index: 1000;
-    ">
-      Download PDF
-    </button>
-  {% endif %}
+  <div class="actions">
+    <button class="action-btn pdf-btn" onclick="downloadPDF()">⬇ PDF</button>
+    <button class="action-btn jpg-btn" onclick="downloadJPEG()">⬇ JPEG</button>
+  </div>
+{% endif %}
+
+
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  
   <script>
   function downloadPDF() {
   const element = document.querySelector('.scorecard-container');
@@ -404,6 +446,60 @@
     })
     .save();
 }
+
+async function downloadJPEG() {
+  const element = document.querySelector('.scorecard-container');
+
+  // A4 landscape target size (pixels) for a crisp image. 
+  // 2480x3508 is A4 @ 300dpi portrait; landscape swaps sides.
+  const targetWidth  = 3508; // px
+  const targetHeight = 2480; // px
+
+  // Compute scale so html2canvas renders at the target pixel width.
+  // This keeps your mm-based layout accurate.
+  const rect = element.getBoundingClientRect();
+  const scale = Math.min(targetWidth / rect.width, targetHeight / rect.height);
+
+  // html2canvas is bundled inside html2pdf, so it's available as window.html2canvas
+  // html2canvas is bundled inside html2pdf, so it's available as window.html2canvas
+const canvas = await html2canvas(element, {
+  scale,               // render at high resolution
+  useCORS: true,       // allow external images (static files & base64)
+  backgroundColor: '#ffffff',
+  windowWidth: Math.ceil(rect.width),
+  windowHeight: Math.ceil(rect.height),
+  scrollX: 0,
+  scrollY: 0,
+});
+
+  // If the rendered canvas slightly exceeds target dims, fit it into a clean A4-landscape canvas
+  const out = document.createElement('canvas');
+  out.width = targetWidth;
+  out.height = targetHeight;
+  const ctx = out.getContext('2d');
+
+  // Center the rendered result within the A4 canvas without cropping
+  const scaleToFit = Math.min(targetWidth / canvas.width, targetHeight / canvas.height);
+  const drawW = Math.floor(canvas.width * scaleToFit);
+  const drawH = Math.floor(canvas.height * scaleToFit);
+  const dx = Math.floor((targetWidth - drawW) / 2);
+  const dy = Math.floor((targetHeight - drawH) / 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
+  ctx.drawImage(canvas, dx, dy, drawW, drawH);
+
+  const dataURL = out.toDataURL('image/jpeg', 0.95);
+
+  // Trigger download
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = '{{ technology.Name|slugify }}_scorecard.jpg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
 
   </script>
 </body>

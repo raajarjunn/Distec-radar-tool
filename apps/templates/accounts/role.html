@@ -1,0 +1,260 @@
+
+{% load perm_tags %}
+{% load static %}
+{% block content %}
+
+<style>
+
+  .role-bg {
+  min-height: 100vh;             
+  width: 100%;                    
+  background: url("{% static 'assets/img/Safran2.jpg' %}") no-repeat center center;
+  background-size: cover;         
+  background-attachment: fixed;  
+}
+
+  .role-content {
+    position: relative;
+    z-index: 1;
+    padding: 40px 20px;
+  }
+
+  /* Main card */
+  .role-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.08);
+    overflow: hidden;
+  }
+  .role-card-header {
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .role-card-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #222;
+  }
+
+  /* Search */
+  .search-box {
+    display: flex;
+    gap: 8px;
+    max-width: 400px;
+    width: 100%;
+  }
+  .search-box input {
+    flex: 1;
+  }
+
+  /* Table */
+  .role-table { width: 100%; border-collapse: collapse; margin: 0; }
+  .role-table th, .role-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+  }
+  .role-table thead th {
+    font-size: .9rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #555;
+    background: #fafafa;
+  }
+  .role-table tbody tr:hover { background: #f9f9f9; }
+
+  .badge-role {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #f0f0f0;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  /* Buttons */
+  .btn-action {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: .9rem;
+    background: #fff;
+    color: #333;
+    text-decoration: none;
+  }
+  .btn-action:hover {
+    background: #f2f2f2;
+    border-color: #999;
+    color: #000;
+  }
+  .btn-primary-action {
+    background: #007bff;
+    border-color: #007bff;
+    color: #fff;
+  }
+  .btn-primary-action:hover {
+    background: #0069d9;
+    border-color: #0062cc;
+  }
+
+  /* Pagination */
+  .pagination .page-link {
+    border-radius: 6px;
+    margin: 0 2px;
+  }
+
+   @media (min-width: 1400px){
+           #editRoleModal .modal-dialog { max-width: 1100px; } /* adjust as you like */
+  }
+</style>
+
+<div class="role-bg">
+  <div class="role-content">
+    <div class="container" style="max-width: 1100px;">
+      <div class="role-card">
+
+        <div class="role-card-header">
+          <h2>User Role Administration</h2>
+          <form method="get" class="search-box">
+            <input type="text" name="q" value="{{ request.GET.q }}" class="form-control"
+                   placeholder="Search username or email">
+            <button class="btn btn-primary-action" type="submit">Search</button>
+          </form>
+        </div>
+
+        <div class="p-3 p-md-4">
+          <p class="text-muted mb-3">Total: {{ page_obj.paginator.count }}</p>
+
+          <div class="table-responsive">
+            <table class="role-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Superadmin</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+                <tbody>
+                  {% for u in users %}
+                  <tr id="row-{{ u.pk }}">
+                    <td class="fw-semibold">{{ u.username }}</td>
+                    <td class="text-muted">{{ u.email }}</td>
+
+                    {# FRONT-END MAPPING: role_id -> label #}
+                    <td>
+                      {% if u.role_id == 1 %}
+                        <span class="badge-role">Super Admin</span>
+                      {% elif u.role_id == 2 %}
+                        <span class="badge-role">Admin</span>
+                      {% elif u.role_id == 3 %}
+                        <span class="badge-role">Read Only User</span>
+                      {% elif u.role_id == 4 %}
+                        <span class="badge-role">Basic User</span>
+                      {% else %}
+                        <span class="badge-role">Unknown</span>
+                      {% endif %}
+                    </td>
+
+                    <td>{% if u.is_super_admin %}✅{% else %}—{% endif %}</td>
+                    <td class="text-end">
+                      {% if user|can:"manage_roles" %}
+                      <a href="#"
+                        class="btn-action"
+                        hx-get="{% url 'role_admin_edit' u.pk %}"
+                        hx-target="#editRoleBody"
+                        hx-swap="innerHTML">
+                        Edit
+                      </a>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="5" class="text-muted">No users found.</td></tr>
+                  {% endfor %}
+                </tbody>
+            </table>
+          </div>
+
+          {% if is_paginated %}
+          <nav class="mt-3">
+            <ul class="pagination justify-content-end">
+              {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&laquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&lsaquo;</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&lsaquo;</span></li>
+              {% endif %}
+
+              <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+
+              {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&rsaquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&raquo;</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">&rsaquo;</span></li>
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+              {% endif %}
+            </ul>
+          </nav>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for edit -->
+<div class="modal fade" id="editRoleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+      <div class="modal-header bg-white border-bottom">
+        <h5 class="modal-title fw-bold text-dark">Edit User Role</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div id="editRoleBody" class="modal-body p-0"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Required libraries (omit if already in base.html) -->
+<script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+  // Show modal when HTMX loads edit form
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
+    if (evt.detail.target && evt.detail.target.id === 'editRoleBody') {
+      const modalEl = document.getElementById('editRoleModal');
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+  });
+
+  // Close modal + refresh after save
+  document.body.addEventListener('roleSaved', function () {
+    const modalEl = document.getElementById('editRoleModal');
+    bootstrap.Modal.getInstance(modalEl)?.hide();
+    window.location.reload();
+  });
+  (function(){
+    const LABELS = { 1:'Super Admin', 2:'Admin', 3:'Read Only User', 4:'Basic User' };
+    document.querySelectorAll('[data-role-id]').forEach(el => {
+      const id = parseInt(el.dataset.roleId, 10);
+      el.textContent = LABELS[id] || 'Unknown';
+    });
+  })();
+
+</script>
+
+{% endblock %}
