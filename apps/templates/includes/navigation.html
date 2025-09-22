@@ -1,37 +1,59 @@
-<nav class="navbar navbar-top navbar-expand navbar-dark bg-darker border-bottom">
+<nav id="topbar" class="navbar navbar-top navbar-expand navbar-dark bg-darker border-bottom">
   <div class="container-fluid">
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <!-- Navbar links -->
-      <ul class="navbar-nav align-items-center  ml-md-auto ">
+
+      <!-- Left: toggles / search -->
+      <ul class="navbar-nav align-items-center ml-md-auto">
         <li class="nav-item d-xl-none">
           <!-- Sidenav toggler -->
-          <div class="pr-3 sidenav-toggler sidenav-toggler-dark" data-action="sidenav-pin" data-target="#sidenav-main">
-            <div class="sidenav-toggler-inner">
-              <i class="sidenav-toggler-line"></i>
-              <i class="sidenav-toggler-line"></i>
-              <i class="sidenav-toggler-line"></i>
-            </div>
-          </div>
+          <a class="nav-link px-2 py-1 rounded-lg top-icon"
+             href="#"
+             role="button"
+             data-action="sidenav-pin"
+             data-target="#sidenav-main"
+             aria-label="Toggle sidenav">
+            <span class="sidenav-toggler sidenav-toggler-dark">
+              <span class="sidenav-toggler-inner">
+                <i class="sidenav-toggler-line"></i>
+                <i class="sidenav-toggler-line"></i>
+                <i class="sidenav-toggler-line"></i>
+              </span>
+            </span>
+          </a>
         </li>
+
         <li class="nav-item d-sm-none">
-          <a class="nav-link" href="#" data-action="search-show" data-target="#navbar-search-main">
+          <a class="nav-link px-3 py-2 rounded-lg top-icon"
+             href="#"
+             data-action="search-show"
+             data-target="#navbar-search-main"
+             aria-label="Search">
             <i class="ni ni-zoom-split-in"></i>
           </a>
         </li>
       </ul>
-      <ul class="navbar-nav align-items-center  ml-auto ml-md-0 ">
+
+      <!-- Right: user -->
+      <ul class="navbar-nav align-items-center ml-auto ml-md-0">
         <li class="nav-item dropdown">
-          <a class="nav-link pr-0" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a class="nav-link pr-0 px-2 py-1 rounded-lg top-chip"
+             href="#"
+             role="button"
+             data-toggle="dropdown"
+             aria-haspopup="true"
+             aria-expanded="false">
             <div class="media align-items-center">
-              <!--<span class="avatar avatar-sm rounded-circle"><img alt="Image placeholder" src="/static/assets/img/theme/default.jpg"></span>-->
-              <div class="media-body  ml-2  d-none d-lg-block">
-                <span class="mb-0 text-sm  font-weight-bold">
-                  {{ request.user.username }}
-                </span>
+              <!-- optional initial badge; remove if you don't want it -->
+              <!-- <span class="avatar avatar-sm rounded-circle bg-white text-dark font-weight-bold d-flex align-items-center justify-content-center">
+                {{ request.user.username|slice:":1"|upper }}
+              </span> -->
+              <div class="media-body ml-2 d-none d-lg-block">
+                <span class="mb-0 text-sm font-weight-bold user-name">{{ request.user.username }}</span>
               </div>
             </div>
           </a>
-          <div class="dropdown-menu  dropdown-menu-right ">
+
+          <div class="dropdown-menu dropdown-menu-right">
             <div class="dropdown-header noti-title">
               <h6 class="text-overflow m-0">Welcome!</h6>
             </div>
@@ -47,6 +69,78 @@
           </div>
         </li>
       </ul>
+
     </div>
   </div>
 </nav>
+
+<style>
+  /* ---------- Theme match with sidenav ---------- */
+  #topbar {
+    --top-bg: #0b0b0b;                 /* same as sidenav */
+    --link: #cfd3da;
+    --link-hover: #ffffff;
+    --chip-hover: rgba(255,255,255,.10);
+    --divider: rgba(255,255,255,.08);
+  }
+
+  #topbar.navbar {
+    background: var(--top-bg) !important;
+    border-bottom: 1px solid var(--divider) !important;
+    min-height: 64px;
+  }
+
+  /* Bigger, pill-like hit areas for top icons/links */
+  #topbar .navbar-nav .nav-link {
+    color: var(--link);
+    border-radius: 12px;
+    transition: background .2s ease, color .2s ease, transform .15s ease;
+  }
+  #topbar .navbar-nav .nav-link.top-icon,
+  #topbar .navbar-nav .nav-link.top-chip {
+    font-weight: 600;
+  }
+  #topbar .navbar-nav .nav-link:hover {
+    color: var(--link-hover);
+    background: var(--chip-hover);
+    transform: translateY(-1px);
+  }
+  #topbar .ni { font-size: 1.1rem; }
+
+  /* Toggler lines visible on dark */
+  #topbar .sidenav-toggler-line { background: #fff; }
+
+  /* Username color/weight */
+  #topbar .user-name { color: #fff; font-weight: 700; }
+
+  /* Dropdown polish (light card with soft radius/shadow) */
+  #topbar .dropdown-menu {
+    border: 0;
+    border-radius: 14px;
+    padding: .5rem;
+    margin-top: .5rem;
+    box-shadow: 0 10px 28px rgba(0,0,0,.28);
+  }
+  #topbar .dropdown-item {
+    border-radius: 10px;
+    padding: .55rem .75rem;
+    font-weight: 600;
+    color: #111;
+  }
+  #topbar .dropdown-item:hover { background: #f5f6f8; }
+
+  #topbar .noti-title {
+    padding-bottom: .35rem;
+    margin-bottom: .35rem;
+    border-bottom: 1px solid #eef1f4;
+  }
+
+  /* Space items a touch */
+  #topbar .navbar-nav { display: flex; align-items: center; gap: 6px; }
+  #topbar .navbar-nav > .nav-item { margin: 0 2px; }
+
+  /* Compact slightly on smaller heights */
+  @media (max-height: 700px){
+    #topbar.navbar { min-height: 58px; }
+  }
+</style>

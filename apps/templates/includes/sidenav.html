@@ -1,9 +1,10 @@
 {% load perm_tags %}
-{% load static %}
 
 <style>
-  /* ---- Sidenav polish ---- */
+  /* ---------- knobs you can tweak ---------- */
   #sidenav-main {
+    --brand-offset: 28px;   /* how far down to drop the SAFRAN TECH text */
+    --nav-offset: 18px;     /* extra space before the first menu item */
     --sidenav-bg: #0b0b0b;
     --link-color: #cfd3da;
     --link-hover: #ffffff;
@@ -11,35 +12,45 @@
     --active-color: #000000;
   }
 
-  /* keep the dark background solid */
+  /* background + basic look */
   #sidenav-main.navbar { background: var(--sidenav-bg) !important; }
 
-  /* brand sizing */
-  #sidenav-main .navbar-brand-img { height: 40px; }
+  /* move the brand down and make it larger */
+  #sidenav-main .sidenav-header { padding-top: var(--brand-offset); }
+  #sidenav-main .brand-text-only{
+    display:flex; align-items:center;
+    padding:14px 16px;
+    text-decoration:none;
+  }
+  #sidenav-main .brand-text{
+    color:#fff;
+    font-family:"Open Sans", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight:800;
+    font-size:1.35rem;
+    letter-spacing:.18em;
+    line-height:1; white-space:nowrap;
+  }
+  #sidenav-main .brand-text .brand-tech{
+    font-weight:700; letter-spacing:.32em; margin-left:.45em; opacity:.95;
+  }
 
-  /* bigger, pill-like nav links */
+  /* put some extra space before menu starts */
+  #sidenav-collapse-main { margin-top: var(--nav-offset); }
+
+  /* bigger, pill-like links */
   #sidenav-main .navbar-nav .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0.9rem 1rem;                  /* bigger click target */
+    display:flex; align-items:center; gap:12px;
+    padding: 0.9rem 1rem;
     margin: 6px 8px;
-    font-size: 1.05rem;                    /* slightly larger text */
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--link-color);
     border-radius: 14px;
     transition: background .2s ease, color .2s ease, transform .15s ease;
   }
-
-  /* icon sizing + spacing (BS4 uses mr- classes; we also hard-set width) */
   #sidenav-main .navbar-nav .nav-link i {
-    font-size: 1.15rem;
-    width: 1.6rem;
-    text-align: center;
-    opacity: .9;
+    font-size: 1.15rem; width: 1.6rem; text-align:center; opacity:.9;
   }
-
-  /* hover state on dark */
   #sidenav-main .navbar-nav .nav-link:hover {
     background: rgba(255,255,255,.10);
     color: var(--link-hover);
@@ -47,67 +58,35 @@
   }
   #sidenav-main .navbar-nav .nav-link:hover i { color: var(--link-hover) !important; }
 
-  /* ACTIVE state: white chip with BLACK text/icon */
+  /* active = white chip with BLACK text/icon */
   #sidenav-main .navbar-nav .nav-link.active {
     background: var(--active-bg) !important;
     color: var(--active-color) !important;
     box-shadow: 0 8px 22px rgba(0,0,0,.22);
   }
   #sidenav-main .navbar-nav .nav-link.active .nav-link-text,
-  #sidenav-main .navbar-nav .nav-link.active i {
-    color: var(--active-color) !important; /* overrides text-primary/text-white */
-  }
- /* --- Text-only brand for the dark sidenav --- */
-#sidenav-main .brand-text-only{
-  display:flex;
-  align-items:center;
-  padding:14px 16px;
-  text-decoration:none;
-}
+  #sidenav-main .navbar-nav .nav-link.active i { color: var(--active-color) !important; }
 
-#sidenav-main .brand-text{
-  color:#fff;
-  font-family:"Open Sans", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-weight:800;                 /* strong SAFRAN */
-  font-size:1.35rem;               /* bigger text */
-  letter-spacing:.18em;            /* spaced-out caps */
-  line-height:1;
-  white-space:nowrap;
-}
-
-#sidenav-main .brand-text .brand-tech{
-  font-weight:700;                 /* TECH slightly lighter */
-  letter-spacing:.32em;
-  margin-left:.45em;
-  opacity:.95;
-}
-
-/* subtle hover polish */
-#sidenav-main .brand-text-only:hover .brand-text{
-  text-decoration:none;
-  opacity:.98;
-}
-
-/* compact slightly on short viewports */
-@media (max-height:700px){
-  #sidenav-main .brand-text{ font-size:1.2rem; letter-spacing:.16em; }
-  #sidenav-main .brand-text .brand-tech{ letter-spacing:.28em; }
-}
-
-  /* ensure text span inherits color always */
+  /* ensure span inherits color */
   #sidenav-main .navbar-nav .nav-link .nav-link-text { color: inherit !important; }
+
+  /* compact slightly on short screens */
+  @media (max-height:700px){
+    #sidenav-main { --brand-offset: 18px; --nav-offset: 10px; }
+    #sidenav-main .brand-text{ font-size:1.2rem; letter-spacing:.16em; }
+    #sidenav-main .brand-text .brand-tech{ letter-spacing:.28em; }
+  }
 </style>
 
 <nav class="sidenav navbar navbar-vertical fixed-left navbar-expand-xs navbar-light bg-darker" id="sidenav-main">
   <div class="scrollbar-inner">
-    <!-- Brand -->
+
+    <!-- Brand (text only, dropped down) -->
     <div class="sidenav-header align-items-center">
       <a class="navbar-brand brand-text-only" href="/" aria-label="Safran Tech">
         <span class="brand-text">SAFRAN <span class="brand-tech">TECH</span></span>
       </a>
     </div>
-
-
 
     <div class="navbar-inner">
       <div class="collapse navbar-collapse" id="sidenav-collapse-main">
