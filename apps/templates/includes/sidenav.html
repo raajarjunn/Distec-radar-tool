@@ -1,49 +1,153 @@
 {% load perm_tags %}
-<nav class="sidenav navbar navbar-vertical  fixed-left  navbar-expand-xs navbar-light bg-darker" id="sidenav-main">
+{% load static %}
+
+<style>
+  /* ---- Sidenav polish ---- */
+  #sidenav-main {
+    --sidenav-bg: #0b0b0b;
+    --link-color: #cfd3da;
+    --link-hover: #ffffff;
+    --active-bg: #ffffff;
+    --active-color: #000000;
+  }
+
+  /* keep the dark background solid */
+  #sidenav-main.navbar { background: var(--sidenav-bg) !important; }
+
+  /* brand sizing */
+  #sidenav-main .navbar-brand-img { height: 40px; }
+
+  /* bigger, pill-like nav links */
+  #sidenav-main .navbar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.9rem 1rem;                  /* bigger click target */
+    margin: 6px 8px;
+    font-size: 1.05rem;                    /* slightly larger text */
+    font-weight: 600;
+    color: var(--link-color);
+    border-radius: 14px;
+    transition: background .2s ease, color .2s ease, transform .15s ease;
+  }
+
+  /* icon sizing + spacing (BS4 uses mr- classes; we also hard-set width) */
+  #sidenav-main .navbar-nav .nav-link i {
+    font-size: 1.15rem;
+    width: 1.6rem;
+    text-align: center;
+    opacity: .9;
+  }
+
+  /* hover state on dark */
+  #sidenav-main .navbar-nav .nav-link:hover {
+    background: rgba(255,255,255,.10);
+    color: var(--link-hover);
+    transform: translateX(2px);
+  }
+  #sidenav-main .navbar-nav .nav-link:hover i { color: var(--link-hover) !important; }
+
+  /* ACTIVE state: white chip with BLACK text/icon */
+  #sidenav-main .navbar-nav .nav-link.active {
+    background: var(--active-bg) !important;
+    color: var(--active-color) !important;
+    box-shadow: 0 8px 22px rgba(0,0,0,.22);
+  }
+  #sidenav-main .navbar-nav .nav-link.active .nav-link-text,
+  #sidenav-main .navbar-nav .nav-link.active i {
+    color: var(--active-color) !important; /* overrides text-primary/text-white */
+  }
+ /* --- Text-only brand for the dark sidenav --- */
+#sidenav-main .brand-text-only{
+  display:flex;
+  align-items:center;
+  padding:14px 16px;
+  text-decoration:none;
+}
+
+#sidenav-main .brand-text{
+  color:#fff;
+  font-family:"Open Sans", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight:800;                 /* strong SAFRAN */
+  font-size:1.35rem;               /* bigger text */
+  letter-spacing:.18em;            /* spaced-out caps */
+  line-height:1;
+  white-space:nowrap;
+}
+
+#sidenav-main .brand-text .brand-tech{
+  font-weight:700;                 /* TECH slightly lighter */
+  letter-spacing:.32em;
+  margin-left:.45em;
+  opacity:.95;
+}
+
+/* subtle hover polish */
+#sidenav-main .brand-text-only:hover .brand-text{
+  text-decoration:none;
+  opacity:.98;
+}
+
+/* compact slightly on short viewports */
+@media (max-height:700px){
+  #sidenav-main .brand-text{ font-size:1.2rem; letter-spacing:.16em; }
+  #sidenav-main .brand-text .brand-tech{ letter-spacing:.28em; }
+}
+
+  /* ensure text span inherits color always */
+  #sidenav-main .navbar-nav .nav-link .nav-link-text { color: inherit !important; }
+</style>
+
+<nav class="sidenav navbar navbar-vertical fixed-left navbar-expand-xs navbar-light bg-darker" id="sidenav-main">
   <div class="scrollbar-inner">
     <!-- Brand -->
-    <div class="sidenav-header  align-items-center">
-      <a class="navbar-brand" href="/">
-        <img src="/static/assets/img/brand/Safran.png" class="navbar-brand-img" alt="Argon Design - Jinja Template Logo.">
+    <div class="sidenav-header align-items-center">
+      <a class="navbar-brand brand-text-only" href="/" aria-label="Safran Tech">
+        <span class="brand-text">SAFRAN <span class="brand-tech">TECH</span></span>
       </a>
-     
-
     </div>
+
+
+
     <div class="navbar-inner">
-      <!-- Collapse -->
       <div class="collapse navbar-collapse" id="sidenav-collapse-main">
-        <!-- Nav items -->
+
+        {% url 'mindmap' as mindmap_url %}
+        {% url 'role_admin_list' as role_admin_url %}
+
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link {% if 'index' in segment %} active {% endif %}" href="/">
-              <i class="ni ni-tv-2 text-primary"></i>
-              <span class="nav-link-text text-white">Dashboard </span>
+            <a class="nav-link{% if 'index' in segment %} active{% endif %}" href="/">
+              <i class="ni ni-tv-2"></i>
+              <span class="nav-link-text">Dashboard</span>
             </a>
           </li>
+
           <li class="nav-item">
-           <a class="nav-link {% if segment == 'technology' %} active {% endif %}" href="{% url 'technology_list' %}">
-            <i class="ni ni-planet text-orange"></i>
-            <span class="nav-link-text text-white">Technology</span>
-          </a>
-          </li> 
-          <!-- {% url 'mindmap' as mindmap_url %} -->
-          <li class="nav-item">
-            <a class="nav-link{% if request.path == mindmap_url %} active{% endif %}"
-              href="{{ mindmap_url }}">
-              <i class="ni ni-collection text-primary"></i>
-              <span class="nav-link-text text-white">Mind Map</span>
+            <a class="nav-link{% if segment == 'technology' %} active{% endif %}" href="{% url 'technology_list' %}">
+              <i class="ni ni-planet"></i>
+              <span class="nav-link-text">Technology</span>
             </a>
           </li>
-           {% url 'role_admin_list' as role_admin_url %}
+
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == mindmap_url %} active{% endif %}" href="{{ mindmap_url }}">
+              <i class="ni ni-collection"></i>
+              <span class="nav-link-text">Mind Map</span>
+            </a>
+          </li>
+
           {% if user.is_authenticated and user|can:"manage_roles" %}
-            <li class="nav-item">
-              <a class="nav-link text-white{% if request.path == role_admin_url %} active{% endif %}"
-                href="{{ role_admin_url }}">
-                <i class="ni ni-settings text-white"></i>
-                <span class="nav-link-text text-white">Role Admin</span>
-              </a>
-            </li>
-          {% endif %}      
+          <li class="nav-item">
+            <a class="nav-link{% if request.path == role_admin_url %} active{% endif %}" href="{{ role_admin_url }}">
+              <i class="ni ni-settings"></i>
+              <span class="nav-link-text">Role Admin</span>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+
+      </div>
     </div>
   </div>
 </nav>
