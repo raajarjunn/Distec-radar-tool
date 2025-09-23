@@ -9,6 +9,8 @@ from apps.common.activity_log import log_activity
 
 # User permissions
 from apps.authentication.perm import user_has_permission, require_action
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest
 
 
 from django.conf import settings
@@ -1160,3 +1162,61 @@ def scorecard_compendium(request):
         "combined_html": combined_html,
         "filename": f"scorecards_{localtime(make_aware(datetime.now())).strftime('%Y%m%d')}.pdf"
     })
+
+
+#-----------------------------Notes--------------------------------------------------
+
+def _render_notes_fragment(request, pk: int):
+    # look up by integer id field
+    doc = technologies.find_one({"id": pk}, {"notes": 1, "_id": 0}) or {}
+    notes = doc.get("notes", [])
+
+    # newest first
+    notes.sort(key=lambda x: x.get("created_at") or datetime.min, reverse=True)
+
+    # make note ids printable + format timestamp
+    for n in notes:
+        if "_id" in n:
+            n["_id"] = str(n["_id"])
+        ts = n.get("created_at")
+        if isinstance(ts, datetime):
+            n["created_at"] = ts.strftime("%Y-%m-%d %H:%M")
+
+    return render(request, "technology/_notes.html", {"tech_id": pk, "notes": notes})
+
+@login_required
+@require_http_methods(["GET"])
+def tech_notes(request, pk: int):
+    return _render_notes_fragment(request, pk)
+
+@login_required
+@require_http_methods(["POST"])
+def tech_notes_add(request, pk: int):
+    text = (request.POST.get("text") or "").strip()
+    if not text:
+        return HttpResponseBadRequest("Empty")
+
+    note = {
+        "_id": ObjectId(),  # note id stays an ObjectId
+        "author_id": request.user.id,
+        "author_name": (getattr(request.user, "get_full_name", lambda: "")() or request.user.username),
+        "text": text[:300],
+        "created_at": datetime.utcnow(),
+    }
+    technologies.update_one({"id": pk}, {"$push": {"notes": note}})
+    return _render_notes_fragment(request, pk)
+
+@login_required
+@require_http_methods(["POST"])
+def tech_notes_delete(request, pk: int, note_id: str):
+    try:
+        note_oid = ObjectId(note_id)
+    except Exception:
+        return HttpResponseBadRequest("Bad note id")
+
+    # authors can delete their own notes; drop author_id to allow admins to delete any
+    technologies.update_one(
+        {"id": pk},
+        {"$pull": {"notes": {"_id": note_oid, "author_id": request.user.id}}},
+    )
+    return _render_notes_fragment(request, pk)

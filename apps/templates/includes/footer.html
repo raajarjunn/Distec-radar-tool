@@ -1,8 +1,31 @@
+{# templates/includes/footer.html #}
+<footer class="footer footer-dark py-3 mt-4">
+  <div class="container-fluid">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-sm-6">
+        <span class="small mb-0 d-block text-white">
+          &copy; {% now "Y" %} SAFRAN TECH, Paris.
+        </span>
+      </div>
 
-      <!-- Footer -->
-      <footer class="footer">
-        <div class="row align-items-center justify-content-xl-between">
-          <div class="col-xl-6">
-          </div>
-        </div>
-      </footer>
+      <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
+        <span class="small text-white-50 mr-1">Any concerns? Contact</span>
+        <a href="mailto:support@safran.tech" class="text-white font-weight-bold">support@safran.tech</a>
+        <span class="text-white-50 d-none d-sm-inline"> · </span>
+        <a href="tel:+10000000000" class="text-white small d-none d-sm-inline">+1 000 000 0000</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer-dark,
+  .footer.footer-dark{
+    background:#0f1115!important;  /* same dark tone as your sidenav/header */
+    color:#fff!important;
+    border-top:0!important;
+  }
+  .footer-dark a{ color:#fff!important; text-decoration:none; }
+  .footer-dark a:hover{ text-decoration:underline; }
+</style>
+

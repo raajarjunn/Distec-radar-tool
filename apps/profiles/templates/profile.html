@@ -1,336 +1,179 @@
 {% extends 'layouts/base.html' %}
 {% block title %} Profile {% endblock title %}
 
-{# 
-  ----------------------------------------------------------------------------
-  PROFILE PAGE (DB-backed avatar + permission-gated editing)
-
-  EXPECTED CONTEXT (from view):
-    - u:               the current User instance (select_related('role'), prefetch perms)
-    - can_edit:        bool -> True if user has 'edit_users' or 'delete_users'
-    - messages:        Django messages framework (used for bottom-right toasts)
-
-  ROUTES USED:
-    - 'profile'        -> GET/POST to this page
-    - 'profile_avatar' -> GET /profile/avatar/<user_pk>/  (streams avatar from DB)
-  
-  REQUIREMENTS:
-    - Base layout should include Bootstrap + jQuery (Argon already does)
-    - The view must render with enctype="multipart/form-data" for uploads
-
-  BEHAVIOR:
-    - Initially, all editable fields are disabled (view-only).
-    - If can_edit == True, user sees "Edit profile" button and (hidden) "Save changes".
-    - Clicking "Edit profile" toggles edit mode and shows file chooser for avatar.
-    - Avatar flow: pick file -> preview appears -> click "Use this photo"
-                    -> a hidden field 'avatar_confirmed' becomes 1
-                    -> click "Save changes" to persist to DB.
-    - Toaster notifications appear at bottom-right for Django messages.
-
-  ----------------------------------------------------------------------------
-#}
-
 {% block content %}
+{% load static %}
 
-{# Toast container (bottom-right) #}
+{# ---------- TOASTS ---------- #}
 <div aria-live="polite" aria-atomic="true" class="position-fixed" style="right: 1rem; bottom: 1rem; z-index: 1080;">
   <div id="toast-stack" class="d-flex flex-column gap-2"></div>
 </div>
 
-{# ---------- HERO / HEADER ---------- #}
-<div class="header pb-6 d-flex align-items-center" 
-     style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-saf.jpg); background-size: cover; background-position: center top;">
-  <span class="mask bg-gradient-default opacity-8"></span>
-  <div class="container-fluid d-flex align-items-center">
-    <div class="row w-100">
-      <div class="col-lg-8 col-md-9">
-        <h1 class="display-2 text-white">Hello {{ u.username }}</h1>
-        <p class="text-white mt-0 mb-5">
-          This is your profile page. You can see the progress you've made with your work and manage your projects or assigned tasks
-        </p>
-      </div>
-
-      {# Header actions + status badge (Save is bound to main form via form="profile-form") #}
-      <div class="col-lg-4 col-md-3 text-lg-right text-md-right text-left mb-3 mb-lg-0">
-        {% if can_edit %}
-          <button type="button" id="btn-edit" class="btn btn-secondary btn-sm">Edit profile</button>
-          <button type="submit" id="btn-save" class="btn btn-primary btn-sm"form="profile-form">Save changes</button>
-          <span class="badge badge-success ml-2 align-middle">You can edit &amp;/or delete</span>
-        {% else %}
-          <span class="badge badge-secondary align-middle">View only</span>
-        {% endif %}
+{# ---------- HEADER (black) ---------- #}
+<div class="header bg-darker pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">Hello, {{ u.full_name|default:u.username }}</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links mb-0 crumb-light">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active" aria-current="page">Profile</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-auto text-right">
+          {% if can_edit %}
+            <button type="button" id="btn-edit" class="btn btn-outline-light btn-sm">Edit profile</button>
+            <button type="submit" id="btn-save" class="btn btn-light btn-sm" form="profile-form">Save changes</button>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-{# ---------- MAIN CONTENT ---------- #}
+{# ---------- MAIN ---------- #}
 <div class="container-fluid mt--6">
-  <div class="row">
+  <div class="row justify-content-center">
+    <div class="col-xl-8 col-lg-9">
 
-    {# LEFT: Profile card + live avatar preview (served from DB) #}
-    <div class="col-xl-4 order-xl-2">
-      <div class="card card-profile">
-        <img src="/static/assets/img/theme/2.jpg" alt="Image placeholder" class="card-img-top">
-        <div class="row justify-content-center">
-          <div class="col-lg-3 order-lg-2">
-            <div class="card-profile-image">
-              <a href="#">
-                {# Always render the streaming URL; backend returns placeholder if none #}
-                <img id="avatarPreview"
-                src="{% url 'profile_avatar' u.pk %}?v={{ u.avatar_sha1|default:'/static/assets/img/theme/default.jpg' }}"
-                class="rounded-circle"
-                alt="Avatar">
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4"></div>
-        <div class="card-body pt-0">
-          <div class="row">
-            <div class="col">
-              <div class="card-profile-stats d-flex justify-content-center">
-                <div>
-                  <span class="heading">22</span>
-                  <span class="description">Technologies Added</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="text-center">
-            <h5 class="h3">{{ u.full_name|default:u.username }}</h5>
-            <div class="h5 font-weight-300">{{ u.email|default:'' }}</div>
-            <div class="h5 mt-4">
-              <i class="ni business_briefcase-24 mr-2"></i>
-              Designation - {{ u.role.name|default:'—' }}
-            </div>
-            <div>
-              <i class="ni education_hat mr-2"></i>
-              Role: {{ u.role.name|default:'—' }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {# RIGHT: Edit card + form #}
-    <div class="col-xl-8 order-xl-1">
-      <div class="card">
-        <div class="card-header">
-          <div class="row align-items-center">
-
-
-            <div class="col-12"><span class="badge badge-primary">Profile</span></div>
-          </div>
+      <div class="card profile-card shadow-sm card-glass">
+        {# Banner / cover #}
+        <div class="profile-cover">
+          <div class="cover-overlay"></div>
         </div>
 
-        <div class="card-body">
-          {# IMPORTANT: enctype required for avatar file uploads #}
+        <div class="card-body p-4 p-md-5">
           <form id="profile-form" method="post" action="" enctype="multipart/form-data">
             {% csrf_token %}
 
-            {# ----- User info: view-only fields ----- #}
-            <h6 class="heading-small text-muted mb-4">User information</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-username">Username</label>
-                    <input type="text" id="input-username" class="form-control" value="{{ u.username }}" readonly>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-email">Email address</label>
-                    <input type="email" id="input-email" class="form-control" value="{{ u.email|default:'' }}" readonly>
-                  </div>
-                </div>
+            {# AVATAR + NAME #}
+            <div class="d-flex flex-column align-items-center text-center">
+              <div class="profile-avatar">
+                <img
+                  id="avatarPreview"
+                  src="{% url 'profile_avatar' u.pk %}{% if u.avatar_sha1 %}?v={{ u.avatar_sha1 }}{% endif %}"
+                  class="rounded-circle avatar-xxl"
+                  alt="Avatar">
               </div>
 
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-first-name">First name</label>
-                    <input type="text" id="input-first-name" class="form-control" value="{{ u.first_name|default:'' }}" readonly>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-last-name">Last name</label>
-                    <input type="text" id="input-last-name" class="form-control" value="{{ u.last_name|default:'' }}" readonly>
-                  </div>
-                </div>
+              <h2 class="profile-name mb-1 mt-2">{{ u.full_name|default:u.username }}</h2>
+              <div class="text-muted">{{ u.email|default:'' }}</div>
+            </div>
+
+            <hr class="section-divider">
+
+            {# USER INFO (single column) #}
+            <h6 class="section-title mb-3">User information</h6>
+
+            <div class="form-group">
+              <label class="form-control-label">Username</label>
+              <input type="text" class="form-control" value="{{ u.username }}" readonly>
+            </div>
+
+            <div class="form-group">
+              <label class="form-control-label">Email</label>
+              <input type="email" class="form-control" value="{{ u.email|default:'' }}" readonly>
+            </div>
+
+            <div class="form-group">
+              <label class="form-control-label" for="input-full-name">Full name</label>
+              <input type="text" name="full_name" id="input-full-name" class="form-control"
+                     value="{{ u.full_name|default:'' }}" data-editable="1" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-control-label" for="input-phone">Phone</label>
+              <input type="text" name="phone_number" id="input-phone" class="form-control"
+                     value="{{ u.phone_number|default:'' }}" data-editable="1" disabled>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label class="form-control-label" for="input-dob">Date of Birth</label>
+                <input type="date" name="date_of_birth" id="input-dob" class="form-control"
+                       value="{{ u.date_of_birth|date:'Y-m-d' }}" data-editable="1" disabled>
+              </div>
+              <div class="form-group col-md-6">
+                <label class="form-control-label" for="input-gender">Gender</label>
+                <input type="text" name="gender" id="input-gender" class="form-control"
+                       value="{{ u.gender|default:'' }}" data-editable="1" disabled>
               </div>
             </div>
 
-            <hr class="my-4" />
+            {# ===== Avatar editor moved DOWN here ===== #}
+            {% if can_edit %}
+            <hr class="section-divider">
+            <h6 class="section-title mb-3">Change avatar</h6>
 
-            {# ----- Editable details (disabled until Edit is clicked) ----- #}
-            <h6 class="heading-small text-muted mb-4">User details</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-full-name">Full name</label>
-                    <input type="text" name="full_name" id="input-full-name" class="form-control"
-                           value="{{ u.full_name|default:'' }}" data-editable="1" disabled>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-phone">Phone</label>
-                    <input type="text" name="phone_number" id="input-phone" class="form-control"
-                           value="{{ u.phone_number|default:'' }}" data-editable="1" disabled>
-                  </div>
-                </div>
+            <div id="avatar-edit-section">
+              <div id="avatar-upload-group" class="custom-file d-none" style="max-width:420px;">
+                <input
+                  type="file"
+                  class="custom-file-input"
+                  id="input-avatar"
+                  name="avatar_file"
+                  accept=".jpg,.jpeg,.png,.webp"
+                  data-editable="1">
+                <label class="custom-file-label text-truncate" id="input-avatar-label" for="input-avatar">Choose file</label>
               </div>
+              <div id="avatar-actions" class="mt-2 d-none">
+                <button type="button" class="btn btn-sm btn-dark" id="btn-avatar-confirm">Use this photo</button>
+                <button type="button" class="btn btn-sm btn-outline-dark" id="btn-avatar-clear">Clear</button>
+                <span id="avatar-ready" class="badge badge-success ml-2 d-none">Ready to save</span>
+              </div>
+              <input type="hidden" name="avatar_confirmed" id="avatar_confirmed" value="0">
+            </div>
+            {% endif %}
 
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-dob">Date of Birth</label>
-                    <input type="date" name="date_of_birth" id="input-dob" class="form-control"
-                           value="{{ u.date_of_birth|date:'Y-m-d' }}" data-editable="1" disabled>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-gender">Gender</label>
-                    <input type="text" name="gender" id="input-gender" class="form-control"
-                           value="{{ u.gender|default:'' }}" data-editable="1" disabled>
-                  </div>
-                </div>
+            <hr class="section-divider">
+
+            {# ADDRESS #}
+            <h6 class="section-title mb-3">Contact information</h6>
+
+            <div class="form-group">
+              <label class="form-control-label" for="input-address1">Address line 1</label>
+              <input id="input-address1" name="address_line1" class="form-control" type="text"
+                     value="{{ u.address_line1|default:'' }}" data-editable="1" disabled>
+            </div>
+
+            <div class="form-group">
+              <label class="form-control-label" for="input-address2">Address line 2</label>
+              <input id="input-address2" name="address_line2" class="form-control" type="text"
+                     value="{{ u.address_line2|default:'' }}" data-editable="1" disabled>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label class="form-control-label" for="input-city">City</label>
+                <input type="text" name="city" id="input-city" class="form-control"
+                       value="{{ u.city|default:'' }}" data-editable="1" disabled>
+              </div>
+              <div class="form-group col-md-4">
+                <label class="form-control-label" for="input-country">Country</label>
+                <input type="text" name="country" id="input-country" class="form-control"
+                       value="{{ u.country|default:'' }}" data-editable="1" disabled>
+              </div>
+              <div class="form-group col-md-4">
+                <label class="form-control-label" for="input-postal-code">Postal code</label>
+                <input type="text" name="postcode" id="input-postal-code" class="form-control"
+                       value="{{ u.postcode|default:'' }}" data-editable="1" disabled>
               </div>
             </div>
 
-            <hr class="my-4" />
+            <hr class="section-divider">
 
-            {# ----- Address ----- #}
-            <h6 class="heading-small text-muted mb-4">Contact information</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-address1">Address line 1</label>
-                    <input id="input-address1" name="address_line1" class="form-control" type="text"
-                           value="{{ u.address_line1|default:'' }}" data-editable="1" disabled>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-address2">Address line 2</label>
-                    <input id="input-address2" name="address_line2" class="form-control" type="text"
-                           value="{{ u.address_line2|default:'' }}" data-editable="1" disabled>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-lg-4">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-city">City</label>
-                    <input type="text" name="city" id="input-city" class="form-control"
-                           value="{{ u.city|default:'' }}" data-editable="1" disabled>
-                  </div>
-                </div>
-                <div class="col-lg-4">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-country">Country</label>
-                    <input type="text" name="country" id="input-country" class="form-control"
-                           value="{{ u.country|default:'' }}" data-editable="1" disabled>
-                  </div>
-                </div>
-                <div class="col-lg-4">
-                  <div class="form-group">
-                    <label class="form-control-label" for="input-postal-code">Postal code</label>
-                    <input type="text" name="postcode" id="input-postal-code" class="form-control"
-                           value="{{ u.postcode|default:'' }}" data-editable="1" disabled>
-                  </div>
-                </div>
-              </div>
+            {# ROLE #}
+            <h6 class="section-title mb-3">Role</h6>
+            <div class="mb-2">
+              <span class="badge badge-info">{{ u.role.name|default:'—' }}</span>
             </div>
-
-            <hr class="my-4" />
-
-            {# ----- About + preferences + Avatar upload (gated by Edit) ----- #}
-            <h6 class="heading-small text-muted mb-4">About me</h6>
-            <div class="pl-lg-4">
-              <div class="form-group">
-                <label class="form-control-label" for="input-lang">Language</label>
-                <input type="text" name="language_preference" id="input-lang" class="form-control"
-                       value="{{ u.language_preference|default:'en' }}" data-editable="1" disabled>
-              </div>
-              <div class="form-group">
-                <label class="form-control-label" for="input-tz">Timezone</label>
-                <input type="text" name="timezone" id="input-tz" class="form-control"
-                       value="{{ u.timezone|default:'UTC' }}" data-editable="1" disabled>
-              </div>
-
-              {# Avatar image picker (hidden until edit mode) #}
-              <div class="form-group">
-                <label class="form-control-label d-block" for="input-avatar">
-                  Avatar image <small class="text-muted">(JPG/PNG/WebP, max 5MB)</small>
-                </label>
-
-                <div id="avatar-upload-group" class="custom-file d-none">
-                 <input
-                    type="file"
-                    class="custom-file-input"
-                    id="input-avatar"
-                    name="avatar_file"
-                    accept=".jpg,.jpeg,.png,.webp"
-                    data-editable="1">
-                  <label class="custom-file-label text-truncate" id="input-avatar-label" for="input-avatar">Choose file</label>
-                </div>
-
-                <div id="avatar-actions" class="mt-2 d-none">
-                  <button type="button" class="btn btn-sm btn-success" id="btn-avatar-confirm">Use this photo</button>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-avatar-clear">Clear</button>
-                  <span id="avatar-ready" class="badge badge-success ml-2 d-none">Ready to save</span>
-                </div>
-
-                {# This hidden flag is set to "1" only after "Use this photo" is clicked #}
-                <input type="hidden" name="avatar_confirmed" id="avatar_confirmed" value="0">
-              </div>
-            </div>
-
-            <hr class="my-4" />
-
-            {# ----- Role + permissions (badges) ----- #}
-            <h6 class="heading-small text-muted mb-4">Roles & Policy info</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="form-group mb-2">
-                    <label class="form-control-label d-block">Role</label>
-                    <span class="badge badge-info">{{ u.role.name|default:'—' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="form-group mb-0">
-                    <label class="form-control-label d-block">Permissions</label>
-                    {% if u.role_id %}
-                      {% for rp in u.role.permissions.all %}
-                        <span class="badge badge-default mr-1 mb-1">{{ rp.permission }}</span>
-                      {% empty %}
-                        <span class="text-muted">No permissions</span>
-                      {% endfor %}
-                    {% else %}
-                      <span class="text-muted">—</span>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {# No bottom Save: we use the header Save button #}
           </form>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -338,21 +181,90 @@
 </div>
 {% endblock content %}
 
-{% block javascripts %}
+{% block stylesheets %}
+{{ block.super }}
 <style>
-  /* Keep file label single-line even for long filenames */
-  .custom-file-label.text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Breadcrumb chip (dark text on white chip over black header) */
+  .header.bg-darker .crumb-light{
+    background:#fff; padding:.35rem .75rem; border-radius:.5rem; display:inline-flex;
+  }
+  .header.bg-darker .crumb-light .breadcrumb-item,
+  .header.bg-darker .crumb-light .breadcrumb-item a,
+  .header.bg-darker .crumb-light .breadcrumb-item i{ color:#111 !important; }
+  .header.bg-darker .crumb-light .breadcrumb-item + .breadcrumb-item::before{ color:#111 !important; opacity:.85; }
+
+  /* Card & banner */
+  .card-glass{
+    background: rgba(255,255,255,0.88) !important;
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 8px 24px rgba(0,0,0,.10);
+    backdrop-filter: saturate(120%) blur(6px);
+    -webkit-backdrop-filter: saturate(120%) blur(6px);
+    border-radius:18px; overflow:hidden;
+  }
+
+
+  #panel{
+    background: url("{% static 'assets/img/2.jpg' %}") center center / cover no-repeat;
+    min-height: 100dvh;                 /* avoid mobile gaps */
+    position: relative;                 /* for optional overlays */
+  }
+
+  @media (min-width: 992px){
+    #panel{ background-attachment: fixed; }
+  }
+
+  /* If you want a subtle dark veil for readability, uncomment:
+  #panel::before{
+    content:"";
+    position: fixed; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.12));
+  } */
+
+  /* Keep the footer on the same background (or your black footer style) */
+  .footer, footer{
+    background: transparent;  /* or your .footer-dark black if you prefer */
+    border-top: 0;
+  }
+
+  @media (min-width: 1200px){ .profile-cover{ height: 280px; } }
+  .cover-overlay{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,0)); }
+
+  /* Bigger avatar + better overlap */
+  .profile-avatar{ margin-top: -96px; }
+  .avatar-xxl{
+    width: 180px; height: 180px; object-fit: cover;
+    box-shadow: 0 10px 28px rgba(0,0,0,.25);
+    border: 4px solid #fff; border-radius: 50%;
+  }
+
+  .profile-name{ font-weight:800; font-size:1.7rem; color:#111; }
+  @media (min-width: 1200px){ .profile-name{ font-size:1.85rem; } }
+
+  .section-title{ font-weight:700; color:#111; }
+  .section-divider{ margin: 1.75rem 0; }
+
+  /* Editable inputs highlight */
+  #profile-form [data-editable="1"].border-primary{
+    border-color:#212529 !important; box-shadow:0 0 0 .15rem rgba(33,37,41,.08);
+  }
+
+  /* File label truncation */
+  .custom-file-label.text-truncate{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+{% endblock stylesheets %}
+
+{% block javascripts %}
+{{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // ----- Permission + controls -----
-  const canEdit = {{ can_edit|yesno:"true,false" }};   // emits literal true/false
+  const canEdit = {{ can_edit|yesno:"true,false" }};
   const btnEdit = document.getElementById('btn-edit');
   const btnSave = document.getElementById('btn-save');
   const form    = document.getElementById('profile-form');
   const editables = document.querySelectorAll('#profile-form [data-editable="1"]');
 
-  // ----- Avatar controls -----
+  // Avatar controls
   const avatarUploadGroup = document.getElementById('avatar-upload-group');
   const avatarInput       = document.getElementById('input-avatar');
   const avatarLabel       = document.getElementById('input-avatar-label');
@@ -363,14 +275,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const avatarConfirmed   = document.getElementById('avatar_confirmed');
   const avatarPreview     = document.getElementById('avatarPreview');
 
-  if (!btnEdit || !btnSave || !form) return;
-
-  // Remember original values / avatar; keep disabled initially
-  editables.forEach(el => { if (el.type !== 'file') el.dataset.orig = el.value || ''; el.disabled = true; });
-  btnSave.classList.add('d-none');
   if (avatarPreview) avatarPreview.dataset.origsrc = avatarPreview.src;
 
-  // Toggle edit mode UI
+  editables.forEach(el => { if (el.type !== 'file') el.dataset.orig = el.value || ''; el.disabled = true; });
+  if (btnSave) btnSave.classList.add('d-none');
+
   function setEditMode(enabled, { reset=false } = {}) {
     editables.forEach(el => {
       if (!enabled && reset && el.type !== 'file') el.value = el.dataset.orig || '';
@@ -378,29 +287,23 @@ document.addEventListener('DOMContentLoaded', function () {
       el.classList.toggle('border-primary', enabled);
     });
 
-    // Toggle avatar UI group visibility
+    // Show the editor section lower on the page (no overlap with email)
     if (avatarUploadGroup) avatarUploadGroup.classList.toggle('d-none', !enabled);
-
-    // Reset avatar pick when leaving edit mode
     if (!enabled) {
       if (avatarInput) avatarInput.value = '';
       if (avatarLabel) avatarLabel.textContent = 'Choose file';
       if (avatarActions) avatarActions.classList.add('d-none');
       if (avatarReadyBadge) avatarReadyBadge.classList.add('d-none');
       if (avatarConfirmed) avatarConfirmed.value = '0';
-      if (avatarPreview && avatarPreview.dataset.origsrc) {
-        avatarPreview.src = avatarPreview.dataset.origsrc;
-      }
+      if (avatarPreview && avatarPreview.dataset.origsrc) avatarPreview.src = avatarPreview.dataset.origsrc;
     }
 
-    btnSave.classList.toggle('d-none', !enabled);
-    btnEdit.textContent = enabled ? 'Cancel' : 'Edit profile';
-    btnEdit.dataset.mode = enabled ? 'edit' : 'view';
+    if (btnSave) btnSave.classList.toggle('d-none', !enabled);
+    if (btnEdit) { btnEdit.textContent = enabled ? 'Cancel' : 'Edit profile'; btnEdit.dataset.mode = enabled ? 'edit' : 'view'; }
   }
   setEditMode(false);
 
-  // Wire edit toggling only if user can edit
-  if (canEdit) {
+  if (canEdit && btnEdit) {
     btnEdit.addEventListener('click', function () {
       const inEdit = btnEdit.dataset.mode === 'edit';
       setEditMode(!inEdit, { reset: inEdit });
@@ -409,17 +312,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (first) first.focus();
       }
     });
-  } else {
+  } else if (btnEdit) {
     btnEdit.classList.add('d-none');
   }
 
-  // Avatar change -> basic client-side validation + live preview + show confirm bar
   if (avatarInput) {
     avatarInput.addEventListener('change', function () {
       const file = this.files && this.files[0];
-      avatarConfirmed.value = '0';  // must re-confirm every time
+      if (avatarConfirmed) avatarConfirmed.value = '0';
 
-      // If cleared
       if (!file) {
         if (avatarLabel) avatarLabel.textContent = 'Choose file';
         if (avatarActions) avatarActions.classList.add('d-none');
@@ -449,12 +350,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       if (avatarLabel) avatarLabel.textContent = file.name;
-
-      // Show confirm actions
       if (avatarActions) avatarActions.classList.remove('d-none');
       if (avatarReadyBadge) avatarReadyBadge.classList.add('d-none');
 
-      // Live preview via object URL (freed later)
       try {
         const url = URL.createObjectURL(file);
         if (avatarPreview) avatarPreview.src = url;
@@ -463,34 +361,33 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Confirm chosen avatar (sets hidden flag to 1)
   if (avatarConfirmBtn) {
     avatarConfirmBtn.addEventListener('click', function () {
       if (!avatarInput || !avatarInput.files || !avatarInput.files[0]) return;
-      avatarConfirmed.value = '1';
+      if (avatarConfirmed) avatarConfirmed.value = '1';
       if (avatarReadyBadge) avatarReadyBadge.classList.remove('d-none');
     });
   }
 
-  // Clear chosen avatar (revert preview + reset confirm)
   if (avatarClearBtn) {
     avatarClearBtn.addEventListener('click', function () {
       if (avatarInput) avatarInput.value = '';
       if (avatarLabel) avatarLabel.textContent = 'Choose file';
       if (avatarActions) avatarActions.classList.add('d-none');
       if (avatarReadyBadge) avatarReadyBadge.classList.add('d-none');
-      avatarConfirmed.value = '0';
+      if (avatarConfirmed) avatarConfirmed.value = '0';
       if (avatarPreview && avatarPreview.dataset.origsrc) avatarPreview.src = avatarPreview.dataset.origsrc;
     });
   }
 
-  // Prevent double submission
-  form.addEventListener('submit', function () {
-    btnSave.disabled = true;
-    setTimeout(() => { btnSave.disabled = false; }, 2000);
-  });
+  if (form && btnSave) {
+    form.addEventListener('submit', function () {
+      btnSave.disabled = true;
+      setTimeout(() => { btnSave.disabled = false; }, 2000);
+    });
+  }
 
-  // Bottom-right Bootstrap toasts for Django messages
+  /* Toasts (if using Django messages) */
   const toastsData = [
     {% for message in messages %}
       { text: {{ message|escapejs }}, level: "{{ message.tags|default:'info' }}" }{% if not forloop.last %},{% endif %}

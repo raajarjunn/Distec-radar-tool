@@ -5,92 +5,106 @@
 
 {% block stylesheets %}
 <style>
-  /* Make the background cover the entire main content area (right of the sidenav) */
-  #panel {
-    background: url("{% static 'assets/img/Safran2.jpg' %}") center center / cover no-repeat fixed;
-    min-height: 100vh;
+  /* Panel-wide background */
+  #panel{
+    background: url("{% static 'assets/img/wall_2.jpg' %}") center center / cover no-repeat;
+    min-height: 100dvh;
+  }
+  @media (min-width: 992px){
+    #panel{ background-attachment: fixed; }
   }
 
-  /* Ensure wrappers are transparent so the image shows through */
-  #panel .container-fluid,
-  #panel .container {
-    background: transparent !important;
-    padding-top: 0 !important;
+  /* Header breadcrumb chip: dark text on white over black header */
+  .header.bg-darker .crumb-light{
+    background:#fff; padding:.35rem .75rem; border-radius:.5rem; display:inline-flex;
+  }
+  .header.bg-darker .crumb-light .breadcrumb-item,
+  .header.bg-darker .crumb-light .breadcrumb-item a,
+  .header.bg-darker .crumb-light .breadcrumb-item i{ color:#111 !important; }
+  .header.bg-darker .crumb-light .breadcrumb-item + .breadcrumb-item::before{
+    color:#111 !important; opacity:.85;
   }
 
-  /* Footer often paints white in Argon — make it transparent */
-  footer.footer,
-  footer.footer .container-fluid,
-  footer.footer .row {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: 0 !important;
-  }
+  /* Containers transparent so bg shows through (but keep spacing) */
+  #panel .container-fluid, #panel .container{ background: transparent; }
 
-  /* Page content */
-  .role-content { position: relative; z-index: 1; padding: 40px 20px; }
-
-  /* Card */
-  .role-card {
-    background:#fff;
-    border:1px solid #ddd;
-    border-radius:12px;
-    box-shadow:0 6px 20px rgba(0,0,0,.08);
+  /* Glass card */
+  .role-card{
+    background: rgba(255,255,255,0.9);
+    border:1px solid rgba(255,255,255,0.25);
+    border-radius:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,.10);
+    backdrop-filter: saturate(120%) blur(6px);
+    -webkit-backdrop-filter: saturate(120%) blur(6px);
     overflow:hidden;
   }
-  .role-card-header {
-    border-bottom:1px solid #eee;
-    background:#fff;
-    padding:20px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+  .role-card-header{
+    border-bottom:1px solid #eee; background:transparent;
+    padding:20px; display:flex; justify-content:space-between; align-items:center;
   }
-  .role-card-header h2 { margin:0; font-size:1.4rem; font-weight:700; color:#222; }
+  .role-card-header h2{ margin:0; font-size:1.4rem; font-weight:800; color:#111; }
 
   /* Search */
-  .search-box { display:flex; gap:8px; max-width:400px; width:100%; }
-  .search-box input { flex:1; }
+  .search-box{ display:flex; gap:8px; max-width:420px; width:100%; }
+  .search-box input{ flex:1; }
 
   /* Table */
-  .role-table { width:100%; border-collapse:collapse; margin:0; }
-  .role-table th, .role-table td { padding:14px 16px; border-bottom:1px solid #eee; text-align:left; }
-  .role-table thead th {
-    font-size:.9rem; text-transform:uppercase; font-weight:600; color:#555; background:#fafafa;
+  .role-table{ width:100%; border-collapse:collapse; margin:0; }
+  .role-table th, .role-table td{ padding:14px 16px; border-bottom:1px solid #eee; text-align:left; }
+  .role-table thead th{
+    font-size:.9rem; text-transform:uppercase; font-weight:700; color:#444; background:#f7f9fc;
   }
-  .role-table tbody tr:hover { background:#f9f9f9; }
+  .role-table tbody tr:hover{ background:#f9fafb; }
 
-  .badge-role {
+  .badge-role{
     display:inline-block; padding:4px 10px; border-radius:20px; background:#f0f0f0;
     font-size:.85rem; font-weight:600; color:#333;
   }
 
-  /* Buttons */
-  .btn-action { border:1px solid #ccc; border-radius:8px; padding:6px 14px; font-size:.9rem; background:#fff; color:#333; text-decoration:none; }
-  .btn-action:hover { background:#f2f2f2; border-color:#999; color:#000; }
-  .btn-primary-action { background:#007bff; border-color:#007bff; color:#fff; }
-  .btn-primary-action:hover { background:#0069d9; border-color:#0062cc; }
+  /* Buttons – dark theme */
+  .btn-action{ border:1px solid #ccc; border-radius:8px; padding:6px 14px; font-size:.9rem; background:#fff; color:#333; text-decoration:none; }
+  .btn-action:hover{ background:#f2f2f2; border-color:#999; color:#000; }
+  .btn-primary-action{ background:#111; border-color:#111; color:#fff; }
+  .btn-primary-action:hover{ background:#000; border-color:#000; }
 
   /* Pagination */
-  .pagination .page-link { border-radius:6px; margin:0 2px; }
-
-  @media (min-width:1400px){
-    #editRoleModal .modal-dialog { max-width:1100px; }
-  }
+  .pagination .page-link{ border-radius:6px; margin:0 2px; }
 </style>
 {% endblock stylesheets %}
 
 {% block content %}
-<div class="container-fluid"><!-- removed mt--6 to avoid white strip -->
+
+<!-- Header — same size/font as Home, black with dark breadcrumb chip -->
+<div class="header bg-darker pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">User Role Administration</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links mb-0 crumb-light">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active" aria-current="page">Roles</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-auto">
+          {# header actions spot (optional) #}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
   <div class="role-content">
     <div class="container" style="max-width:1100px;">
       <div class="role-card">
-
         <div class="role-card-header">
           <h2>User Role Administration</h2>
           <form method="get" class="search-box">
-            <input type="text" name="q" value="{{ request.GET.q }}" class="form-control"
-                   placeholder="Search username or email">
+            <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search username or email">
             <button class="btn btn-primary-action" type="submit">Search</button>
           </form>
         </div>
@@ -174,8 +188,6 @@
       </div>
     </div>
   </div>
-
-  {% include "includes/footer.html" %}
 </div>
 
 <!-- Modal -->
@@ -195,7 +207,7 @@
 {% endblock content %}
 
 {% block javascripts %}
-  <!-- Include HTMX here only if not already globally loaded -->
+  <!-- HTMX (only if not globally loaded) -->
   <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
 
   <script>
@@ -212,6 +224,7 @@
       window.location.reload();
     });
 
+    // Optional: role label helper for any [data-role-id] placeholders
     (function(){
       const LABELS = { 1:'Super Admin', 2:'Admin', 3:'Read Only User', 4:'Basic User' };
       document.querySelectorAll('[data-role-id]').forEach(el => {

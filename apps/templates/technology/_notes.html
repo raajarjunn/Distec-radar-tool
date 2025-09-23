@@ -1,0 +1,41 @@
+{# Minimal notes panel; expects: tech_id (str), notes (list of dicts) #}
+<div id="tech-notes">
+  <div class="mb-2"><strong>Notes</strong></div>
+
+  <div class="mb-2">
+    {% for n in notes %}
+      <div class="d-flex align-items-start mb-1">
+        <div class="flex-grow-1 p-2 bg-light border rounded">
+          {{ n.text }}
+          <div class="small text-muted mt-1">
+            by {{ n.author_name|default:"Someone" }}
+            {% if n.created_at %} • {{ n.created_at }}{% endif %}
+          </div>
+        </div>
+        <form method="post"
+              class="ml-2"
+              hx-post="{% url 'tech_notes_delete' tech_id n._id %}"
+              hx-target="#tech-notes"
+              hx-swap="outerHTML">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-danger" title="Delete">&times;</button>
+        </form>
+      </div>
+    {% empty %}
+      <div class="text-muted small">No notes yet.</div>
+    {% endfor %}
+  </div>
+
+  <form method="post"
+        hx-post="{% url 'tech_notes_add' tech_id %}"
+        hx-target="#tech-notes"
+        hx-swap="outerHTML">
+    {% csrf_token %}
+    <div class="input-group input-group-sm">
+      <input name="text" maxlength="300" class="form-control" placeholder="Add a note…" required>
+      <div class="input-group-append">
+        <button class="btn btn-dark" type="submit">Add</button>
+      </div>
+    </div>
+  </form>
+</div>

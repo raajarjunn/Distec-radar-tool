@@ -7,7 +7,8 @@ from .views import (
     api_macros, api_meso1, api_meso2, api_techs,
     add_extra_field, edit_extra_field, delete_extra_field,
     add_gallery_image, update_gallery_tag, delete_gallery_image,
-    evaluate, save_chart_image, export_excel,
+    evaluate, save_chart_image, export_excel, tech_notes,tech_notes_add,
+    tech_notes_delete
 )
 
 
@@ -41,6 +42,10 @@ urlpatterns = [
     path("<int:pk>/scorecard/", generate_report, name="technology_scorecard"),
     path("api/techs/", api_techs, name="technology_api_techs"),
     path("scorecards/build/", scorecard_compendium, name="technology_scorecard_compendium"),
+
+    path('<int:pk>/notes/', tech_notes, name='tech_notes'),
+    path('<int:pk>/notes/add/', tech_notes_add, name='tech_notes_add'),
+    path('<int:pk>/notes/<str:note_id>/delete/', tech_notes_delete, name='tech_notes_delete'),
  
 
 ]

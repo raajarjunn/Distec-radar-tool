@@ -61,6 +61,8 @@ def _persist_avatar_from_upload(user, upload):
     logger.info("avatar saved uid=%s bytes=%s mime=%s sha1=%s", user.pk, len(blob), user.avatar_mime, sha1)
     return (True, "Avatar updated.")
 
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def profile_view(request):
@@ -80,20 +82,20 @@ def profile_view(request):
         return HttpResponse("Unable to load profile", status=500)
 
     role_permissions = list(u.role.permissions.values_list("permission", flat=True)) if u.role_id else []
-    can_edit_or_delete = any(p in role_permissions for p in ("edit_users", "delete_users"))
-    logger.debug("role_permissions=%s can_edit=%s", role_permissions, can_edit_or_delete)
+    can_admin = any(p in role_permissions for p in ("edit_users", "delete_users"))
+    # NEW: any authenticated user can edit **their own** profile here
+    can_edit = True
 
     # --- AVATAR PRECHECK (name=avatar_file) ---
-    # Note: this runs before form processing to give early feedback if not confirmed
     incoming_file = request.FILES.get("avatar_file")
     avatar_confirmed = request.POST.get("avatar_confirmed") == "1"
     logger.debug("avatar_precheck file_present=%s confirmed=%s file_keys=%s",
                  bool(incoming_file), avatar_confirmed, list(request.FILES.keys()))
 
     if request.method == "POST":
-        if not can_edit_or_delete:
-            logger.warning("profile_view POST forbidden (no edit/delete) uid=%s", request.user.pk)
-            return HttpResponseForbidden("You do not have permission to edit this profile.")
+        # NOTE: This profile view is always "self". So allow POST for any logged-in user.
+        # If you later allow editing other users here, protect with:
+        # if u.pk != request.user.pk and not can_admin: return HttpResponseForbidden(...)
 
         # If a file was chosen but not confirmed, bounce with a message
         if incoming_file and not avatar_confirmed:
@@ -107,43 +109,26 @@ def profile_view(request):
         form = ProfileForm(request.POST, request.FILES, instance=u)
         if form.is_valid():
             before = model_to_dict(u, fields=form.fields.keys())
-            # Save profile fields (non-avatar_blob)
             saved = form.save()
             after = model_to_dict(saved, fields=form.fields.keys())
             changed = {k: (before.get(k), after.get(k)) for k in after if before.get(k) != after.get(k)}
             logger.info("profile_view updated uid=%s field_changes=%s", request.user.pk, changed)
 
-            # ---- AVATAR (DB) -------------------------------------------------
+            # ---- AVATAR (DB) via helper -------------------------------------
             f = request.FILES.get("avatar_file")
             if f and avatar_confirmed:
-                MAX_BYTES = 5 * 1024 * 1024  # 5 MB
-                logger.debug("avatar_file name=%s size=%s content_type=%s",
-                             getattr(f, 'name', None), getattr(f, 'size', None),
-                             getattr(f, 'content_type', None))
-
-                if f.size and f.size > MAX_BYTES:
-                    messages.error(request, "Avatar too large (max 5MB).")
-                    logger.warning("profile_view avatar too large size=%s uid=%s", f.size, request.user.pk)
-                else:
-                    try:
-                        blob = f.read()
-                        mime = getattr(f, 'content_type', 'application/octet-stream') or 'application/octet-stream'
-                        sha1 = hashlib.sha1(blob).hexdigest()
-                        # Use queryset.update to guarantee a DB write
-                        with transaction.atomic():
-                            rows = (User.objects
-                                        .filter(pk=u.pk)
-                                        .update(avatar_blob=blob, avatar_mime=mime, avatar_sha1=sha1))
-                        logger.info("profile_view avatar update uid=%s rows=%s bytes=%s mime=%s sha1=%s",
-                                    request.user.pk, rows, len(blob or b""), mime, sha1)
-                        if rows != 1:
-                            logger.error("profile_view avatar update affected %s rows (expected 1)", rows)
-                            messages.error(request, "Could not save avatar. Please try again.")
-                        else:
-                            messages.success(request, "Avatar updated.")
-                    except Exception:
-                        logger.exception("profile_view avatar update failed uid=%s", request.user.pk)
-                        messages.error(request, "Could not save avatar. Please try again.")
+                try:
+                    changed, msg = _persist_avatar_from_upload(u, f)
+                    if changed:
+                        messages.success(request, msg)
+                    else:
+                        messages.info(request, msg)
+                except ValueError as ve:
+                    messages.error(request, str(ve))
+                    logger.warning("profile_view avatar validation failed uid=%s err=%s", request.user.pk, ve)
+                except Exception:
+                    logger.exception("profile_view avatar update failed uid=%s", request.user.pk)
+                    messages.error(request, "Could not save avatar. Please try again.")
             else:
                 logger.debug("avatar_save skipped (file=%s confirmed=%s)", bool(f), avatar_confirmed)
             # ------------------------------------------------------------------
@@ -161,11 +146,13 @@ def profile_view(request):
         "form": form,
         "role_name": u.role.name if u.role_id else "",
         "role_permissions": role_permissions,
-        "can_edit": can_edit_or_delete,
+        "can_edit": can_edit,     # ALWAYS True for self-profile
+        "can_admin": can_admin,   # NEW: for UI badge/logic
     })
     logger.info("profile_view ok uid=%s status=%s dur_ms=%.1f",
                 request.user.pk, resp.status_code, (perf_counter()-t0)*1000)
     return resp
+
 
 @login_required
 @require_http_methods(["POST"])

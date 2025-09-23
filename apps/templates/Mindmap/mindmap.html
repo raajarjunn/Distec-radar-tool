@@ -1,102 +1,174 @@
+{% extends "layouts/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Mind Map</title>
-  <meta charset="UTF-8">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mind-elixir@0.8.2/dist/mind-elixir.min.css" />
-  <script src="{% static 'js/MindElixir.min.js' %}"></script>
 
-  <!-- html2canvas for screenshots -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+{% block title %}Mind Map{% endblock title %}
+
+{% block stylesheets %}
+  {# MindElixir CSS #}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mind-elixir@0.8.2/dist/mind-elixir.min.css"/>
 
   <style>
-    #mindMapContainer { width: 100%; height: 700px; border: 1px solid #2c0101; }
-    .actions { margin: 10px 0 14px; }
-    .actions button { padding: 8px 12px; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h2>Mind Map</h2>
+    /* Breadcrumb chip: dark text on white chip over black header */
+    .header.bg-darker .crumb-light{
+      background:#fff; padding:.35rem .75rem; border-radius:.5rem; display:inline-flex;
+    }
+    .header.bg-darker .crumb-light .breadcrumb-item,
+    .header.bg-darker .crumb-light .breadcrumb-item a,
+    .header.bg-darker .crumb-light .breadcrumb-item i{ color:#111 !important; }
+    .header.bg-darker .crumb-light .breadcrumb-item + .breadcrumb-item::before{
+      color:#111 !important; opacity:.85;
+    }
 
-  <div class="actions">
-    <button id="captureBtn">Capture as PNG</button>
+    /* Page card aesthetics (slight glass/soft) */
+    .mind-card{
+      border:1px solid rgba(255,255,255,0.25);
+      border-radius:16px;
+      background: rgba(255,255,255,0.9);
+      box-shadow:0 8px 24px rgba(0,0,0,.10);
+      backdrop-filter:saturate(120%) blur(6px);
+      -webkit-backdrop-filter:saturate(120%) blur(6px);
+      overflow:hidden;
+    }
+
+    /* Actions bar */
+    .mind-actions{ gap:.5rem; }
+    .mind-actions .btn + .btn{ margin-left:.25rem; }
+
+    /* The canvas/viewport for the mind map */
+    #mindMapContainer{
+      width:100%;
+      height:72vh;                 /* responsive height */
+      min-height:560px;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:12px;
+      background:#fff;             /* keep map crisp on busy backgrounds */
+    }
+
+    /* Make capture button compact and on-theme */
+    .btn-dark, .btn-outline-dark{ border-width:1px; }
+  </style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- Header — same size and color as your other black headers -->
+<div class="header bg-darker pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">Mind Map</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links mb-0 crumb-light">
+              <li class="breadcrumb-item">
+                <a href="/"><i class="fas fa-home"></i></a>
+              </li>
+              <li class="breadcrumb-item active" aria-current="page">Mind Map</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-auto">
+          <!-- optional header actions could go here -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <div class="card mind-card">
+    <div class="card-body">
+      <div class="d-flex flex-wrap align-items-center justify-content-between mind-actions mb-3">
+        <h4 class="mb-2 mb-sm-0">Workspace</h4>
+        <div class="d-flex flex-wrap">
+          <button id="captureBtn" class="btn btn-dark btn-sm">Capture as PNG</button>
+        </div>
+      </div>
+
+      <div id="mindMapContainer"></div>
+    </div>
   </div>
 
-  <div id="mindMapContainer"></div>
+</div>
+{% endblock content %}
 
-<script>
-  let mind;
+{% block javascripts %}
+  {# MindElixir JS (served from your static folder) #}
+  <script src="{% static 'js/MindElixir.min.js' %}"></script>
+  {# html2canvas for screenshots #}
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-  function generateUUID() {
-    return 'id-' + Math.random().toString(36).substr(2, 9);
-  }
+  <script>
+    let mind;
 
-  function getNodeDepth(root, id, depth = 0) {
-    if (root.id === id) return depth;
-    if (root.children) {
-      for (let child of root.children) {
-        const d = getNodeDepth(child, id, depth + 1);
-        if (d !== -1) return d;
-      }
+    function generateUUID() {
+      return 'id-' + Math.random().toString(36).substr(2, 9);
     }
-    return -1;
-  }
 
-  function assignIdsAndTypes(node, depth = 0) {
-    if (!node.id) node.id = generateUUID();
-    if (!node.data) node.data = {};
-    node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
-    if (!node.children) node.children = [];
-    node.children.forEach(child => assignIdsAndTypes(child, depth + 1));
-  }
-
-  // Capture screenshot
-  async function captureMindMap() {
-    const el = document.getElementById('mindMapContainer');
-    const canvas = await html2canvas(el, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true,
-      logging: false
-    });
-    const dataURL = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    a.href = dataURL;
-    a.download = `mindmap-${timestamp}.png`;
-    a.click();
-  }
-
-  window.onload = function () {
-    const mindmapData = JSON.parse('{{ mindmap_json|escapejs }}');
-    mind = new MindElixir({
-      el: '#mindMapContainer',
-      direction: MindElixir.RIGHT,
-      draggable: true,
-      contextMenu: true,
-      toolBar: true,
-      nodeMenu: true,
-      keypress: true,
-    });
-
-    assignIdsAndTypes(mindmapData.nodeData);
-    mind.init(mindmapData);
-
-    mind.bus.addListener('operation', op => {
-      if (op.name === 'addChild' || op.name === 'addSibling') {
-        const node = op.obj;
-        if (!node.id) node.id = generateUUID();
-        if (!node.data) node.data = {};
-        const depth = getNodeDepth(mind.getData().nodeData, node.id);
-        node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
-        console.log("Assigned:", node.topic, node.id, node.data.type);
+    function getNodeDepth(root, id, depth = 0) {
+      if (root.id === id) return depth;
+      if (root.children) {
+        for (let child of root.children) {
+          const d = getNodeDepth(child, id, depth + 1);
+          if (d !== -1) return d;
+        }
       }
-    });
+      return -1;
+    }
 
-    // Only Capture button
-    document.getElementById('captureBtn').addEventListener('click', captureMindMap);
-  };
-</script>
-</body>
-</html>
+    function assignIdsAndTypes(node, depth = 0) {
+      if (!node.id) node.id = generateUUID();
+      if (!node.data) node.data = {};
+      node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
+      if (!node.children) node.children = [];
+      node.children.forEach(child => assignIdsAndTypes(child, depth + 1));
+    }
+
+    async function captureMindMap() {
+      const el = document.getElementById('mindMapContainer');
+      const canvas = await html2canvas(el, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      const dataURL = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      a.href = dataURL;
+      a.download = `mindmap-${timestamp}.png`;
+      a.click();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const dataStr = '{{ mindmap_json|escapejs }}';
+      const mindmapData = JSON.parse(dataStr);
+
+      mind = new MindElixir({
+        el: '#mindMapContainer',
+        direction: MindElixir.RIGHT,
+        draggable: true,
+        contextMenu: true,
+        toolBar: true,
+        nodeMenu: true,
+        keypress: true,
+      });
+
+      assignIdsAndTypes(mindmapData.nodeData);
+      mind.init(mindmapData);
+
+      mind.bus.addListener('operation', op => {
+        if (op.name === 'addChild' || op.name === 'addSibling') {
+          const node = op.obj;
+          if (!node.id) node.id = generateUUID();
+          if (!node.data) node.data = {};
+          const depth = getNodeDepth(mind.getData().nodeData, node.id);
+          node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
+        }
+      });
+
+      document.getElementById('captureBtn').addEventListener('click', captureMindMap);
+    });
+  </script>
+{% endblock javascripts %}

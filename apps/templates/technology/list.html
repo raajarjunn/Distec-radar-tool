@@ -3,88 +3,123 @@
 {% load perm_tags %}
 
 {% block content %}
+
+<!-----------------------------------------------------Header-------------------------->
+
+<div class="header bg-darker pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Technology</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark mb-0">
+              <li class="breadcrumb-item">
+                <a href="/"><i class="fas fa-home text-darker"></i></a>
+              </li>
+              <li class="breadcrumb-item">
+                <a class="text-darker" href="#">Dashboards</a>
+              </li>
+              <li class="breadcrumb-item active text-darker" aria-current="page">Technology</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          {# place optional header actions here, e.g. buttons #}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="container-fluid mt-3">
 
   {% if messages %}
-  <div class="row"><div class="col-12">
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-    {% endfor %}
-  </div></div>
-  {% endif %}
-
-  <div class="row align-items-center mb-3">
-    <div class="col">
-      <h2 class="mb-0">Technology Listings</h2>
-      <p class="text-muted mb-0">List of current technologies.</p>
-    </div>
-    <div class="col-auto">
-      {% if user|can:"add_technology" %}
-      <a href="{% url 'technology_create' %}" class="btn btn-primary">Add Technology</a>
-      {% endif %}
+  <div class="row">
+    <div class="col-12">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      {% endfor %}
     </div>
   </div>
+  {% endif %}
 
-  <!-- Controls (compact) -->
+  <!-- Controls (SEARCH FIRST, then buttons) -->
   <div class="card mb-3">
     <div class="card-body py-3">
       <form class="w-100" method="get" action=".">
-        <div class="d-flex flex-wrap align-items-center">
-          <div class="flex-grow-1 mr-md-2 mb-2 mb-md-0" style="min-width:220px;">
+        <div class="controls-bar d-flex align-items-center flex-wrap">
+
+          <!-- SEARCH FIRST: grows to consume remaining space -->
+          <div class="search-wrap mb-2 mr-2">
             <div class="input-group input-group-alternative input-group-sm">
               <div class="input-group-prepend">
                 <span class="input-group-text"><i class="ni ni-zoom-split-in"></i></span>
               </div>
-              <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search name, category, description">
+              <input type="text" name="q" value="{{ q }}" class="form-control"
+                     placeholder="Search name, category, description" aria-label="Search technologies">
             </div>
+            {# persist state #}
             {% if view_mode %}<input type="hidden" name="view" value="{{ view_mode }}">{% endif %}
             {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
             {% for c in selected_categories %}<input type="hidden" name="categories" value="{{ c }}">{% endfor %}
             {% for a in active_selected %}<input type="hidden" name="active" value="{{ a }}">{% endfor %}
           </div>
 
-          <div class="mb-2 mb-md-0 mr-2">
-            <button class="btn btn-sm btn-dark" type="submit">Search</button>
-            {% if q or selected_categories or active_selected %}
-              <a class="btn btn-sm btn-link px-2" href="{% url 'technology_list' %}?view={{ view_mode }}&sort={{ sort }}">Clear</a>
-            {% endif %}
-          </div>
+          <!-- ACTION BUTTONS -->
+          <div class="d-flex align-items-center flex-wrap actions">
 
-          <div class="mb-2 mb-md-0 mr-2">
-            <button type="button" class="btn btn-sm btn-outline-dark" data-toggle="modal" data-target="#filterModal">
-              <i class="ni ni-settings-gear-65 mr-1"></i> Filter
-            </button>
-          </div>
-
-          <div class="dropdown mb-2 mb-md-0 mr-2">
-            <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button" id="sortMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ni ni-ui-04 mr-1"></i> Sort
-            </button>
-            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="sortMenu">
-              <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=created_desc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Newest</a>
-              <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=created_asc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Oldest</a>
-              <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=name_asc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Name A→Z</a>
-              <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=name_desc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Name Z→A</a>
-              <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=active_desc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Active first</a>
-              <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=active_asc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Inactive first</a>
+            <div class="mr-2 mb-2">
+              <button class="btn btn-sm btn-dark" type="submit">Search</button>
+              {% if q or selected_categories or active_selected %}
+                <a class="btn btn-sm btn-link text-dark px-2" href="{% url 'technology_list' %}?view={{ view_mode }}&sort={{ sort }}">Clear</a>
+              {% endif %}
             </div>
-          </div>
 
-          <div class="ml-md-auto d-flex flex-wrap">
-            <div class="btn-group btn-group-sm mr-2 mb-2 mb-md-0" role="group" aria-label="View toggle">
+            <div class="mr-2 mb-2">
+              <button type="button" class="btn btn-sm btn-outline-dark" data-toggle="modal" data-target="#filterModal">
+                <i class="ni ni-settings-gear-65 mr-1"></i> Filter
+              </button>
+            </div>
+
+            <div class="dropdown mr-2 mb-2">
+              <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button" id="sortMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="ni ni-ui-04 mr-1"></i> Sort
+              </button>
+              <div class="dropdown-menu dropdown-menu-right" aria-labelledby="sortMenu">
+                <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=created_desc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Newest</a>
+                <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=created_asc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Oldest</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=name_asc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Name A→Z</a>
+                <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=name_desc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Name Z→A</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=active_desc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Active first</a>
+                <a class="dropdown-item" href="?q={{ q|urlencode }}&view={{ view_mode }}&sort=active_asc{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Inactive first</a>
+              </div>
+            </div>
+
+            <div class="btn-group btn-group-sm mr-2 mb-2" role="group" aria-label="View toggle">
               <a class="btn {% if view_mode == 'cards' %}btn-dark{% else %}btn-outline-dark{% endif %}"
                  href="?{% if q %}q={{ q|urlencode }}&{% endif %}view=cards{% if sort %}&sort={{ sort }}{% endif %}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Cards</a>
               <a class="btn {% if view_mode == 'table' %}btn-dark{% else %}btn-outline-dark{% endif %}"
                  href="?{% if q %}q={{ q|urlencode }}&{% endif %}view=table{% if sort %}&sort={{ sort }}{% endif %}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for a in active_selected %}&active={{ a }}{% endfor %}">Table</a>
             </div>
-            <button class="btn btn-primary" id="openSelector" type="button">Scorecard Compendium</button>
+
+            {% if user|can:"add_technology" %}
+            <div class="mr-2 mb-2">
+              <a href="{% url 'technology_create' %}" class="btn btn-sm btn-dark">Add Technology</a>
+            </div>
+            {% endif %}
+
+            <div class="mr-2 mb-2">
+              <button class="btn btn-sm btn-dark" id="openSelector" type="button">Scorecard Compendium</button>
+            </div>
+
           </div>
         </div>
       </form>
@@ -114,12 +149,12 @@
   {% if items %}
     {% if view_mode == 'table' %}
       <!-- TABLE VIEW -->
-      <div class="card">
+      <div class="card enhanced-card">
         <div class="table-responsive">
           <table class="table table-hover align-items-center mb-0">
             <thead class="thead-light">
               <tr>
-                <th>Name</th>
+                <th class="w-30">Name</th>
                 <th>Category</th>
                 <th>Active</th>
                 <th>Created</th>
@@ -129,29 +164,30 @@
             <tbody>
               {% for t in items %}
               <tr>
-                <td class="font-weight-semibold"><a href="{{ t.get_absolute_url }}">{{ t.name }}</a></td>
+                <td class="font-weight-bold">
+                  <a class="tech-link" href="{{ t.get_absolute_url }}">{{ t.name }}</a>
+                </td>
                 <td>{% if t.category %}<span class="badge badge-secondary">{{ t.category }}</span>{% else %}—{% endif %}</td>
                 <td>{% if t.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-warning">Inactive</span>{% endif %}</td>
                 <td>{{ t.created_at|date:"Y-m-d" }}</td>
-               <td class="text-right">
-                <div class="btn-toolbar justify-content-end">
-                  <div class="btn-group">
-                    <a class="btn btn-sm btn-outline-primary mr-1" href="{{ t.get_absolute_url }}">View</a>
-                    {% if user|can:"edit_technology" %}
-                    <a class="btn btn-sm btn-outline-default mr-1" href="{% url 'technology_update' t.pk %}">Edit</a>
-                    {% endif %}
-                    {% if user|can:"delete_technology" %}
-                    <a href="#"
-                      class="btn btn-sm btn-outline-danger js-open-delete"
-                      data-url="{% url 'technology_delete' t.pk %}"
-                      data-name="{{ t.name|escapejs }}">
-                      Delete
-                    </a>
-                    {% endif %}
+                <td class="text-right">
+                  <div class="btn-toolbar justify-content-end">
+                    <div class="btn-group">
+                      <a class="btn btn-sm btn-outline-dark mr-1" href="{{ t.get_absolute_url }}">View</a>
+                      {% if user|can:"edit_technology" %}
+                        <a class="btn btn-sm btn-outline-dark mr-1" href="{% url 'technology_update' t.pk %}">Edit</a>
+                      {% endif %}
+                      {% if user|can:"delete_technology" %}
+                        <a href="#"
+                           class="btn btn-sm btn-outline-danger js-open-delete"
+                           data-url="{% url 'technology_delete' t.pk %}"
+                           data-name="{{ t.name|escapejs }}">
+                          Delete
+                        </a>
+                      {% endif %}
+                    </div>
                   </div>
-                </div>
-              </td>
-
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -164,10 +200,10 @@
         {% for t in items %}
         <div class="col-12 col-sm-6 col-lg-4 col-xl-3 mb-3">
           <div class="card h-100 tech-card">
-            <div class="card-header d-flex justify-content-between align-items-start">
+            <div class="card-header d-flex justify-content-between align-items-start tech-card-header">
               <div class="d-flex align-items-center">
-                <h5 class="mb-0 mr-2 text-truncate" title="{{ t.name }}">{{ t.name }}</h5>
-                {% if t.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-warning">Inactive</span>{% endif %}
+                <h4 class="mb-0 mr-2 text-truncate tech-title" title="{{ t.name }}">{{ t.name }}</h4>
+                {% if t.is_active %}<span class="badge badge-success badge-pill ml-1">Active</span>{% else %}<span class="badge badge-warning badge-pill ml-1">Inactive</span>{% endif %}
               </div>
               {% if t.category %}<span class="badge badge-pill badge-primary">{{ t.category }}</span>{% endif %}
             </div>
@@ -175,6 +211,7 @@
               {% if t.card_image_b64 %}
                 <div class="tech-thumb">
                   <img src="{{ t.card_image_b64 }}" alt="{{ t.name }} image" loading="lazy" class="img-fluid w-100 h-100">
+                  <div class="thumb-gradient"></div>
                 </div>
               {% else %}
                 <div class="p-3">
@@ -184,36 +221,25 @@
                 </div>
               {% endif %}
             </div>
-            {% comment %} <div class="card-footer d-flex justify-content-between align-items-center">
-              <small class="text-muted">Created {{ t.created_at|date:"Y-m-d" }}</small>
-              <div class="btn-toolbar"><div class="btn-group">
-                <a href="{{ t.get_absolute_url }}" class="btn btn-sm btn-outline-primary mr-1">View</a>
-                <a href="{% url 'technology_update' t.pk %}" class="btn btn-sm btn-outline-default mr-1">Edit</a>
-                <a href="#" class="btn btn-sm btn-outline-danger js-open-delete" data-url="{% url 'technology_delete' t.pk %}" data-name="{{ t.name|escapejs }}">Delete</a>
-              </div></div>
-            </div> {% endcomment %}
-
-            <div class="card-footer d-flex justify-content-between align-items-center">
+            <div class="card-footer d-flex justify-content-between align-items-center tech-card-footer">
               <small class="text-muted">Created {{ t.created_at|date:"Y-m-d" }}</small>
               <div class="btn-toolbar">
                 <div class="btn-group">
-                  <a href="{{ t.get_absolute_url }}" class="btn btn-sm btn-outline-primary mr-1">View</a>
-                  
+                  <a href="{{ t.get_absolute_url }}" class="btn btn-sm btn-outline-dark mr-1">View</a>
                   {% if user|can:"edit_technology" %}
-                  <a href="{% url 'technology_update' t.pk %}" class="btn btn-sm btn-outline-default mr-1">Edit</a>
+                    <a href="{% url 'technology_update' t.pk %}" class="btn btn-sm btn-outline-dark mr-1">Edit</a>
                   {% endif %}
                   {% if user|can:"delete_technology" %}
-                  <a href="#"
-                    class="btn btn-sm btn-outline-danger js-open-delete"
-                    data-url="{% url 'technology_delete' t.pk %}"
-                    data-name="{{ t.name|escapejs }}">
-                    Delete
-                  </a>
+                    <a href="#"
+                       class="btn btn-sm btn-outline-danger js-open-delete"
+                       data-url="{% url 'technology_delete' t.pk %}"
+                       data-name="{{ t.name|escapejs }}">
+                      Delete
+                    </a>
                   {% endif %}
                 </div>
               </div>
             </div>
-
           </div>
         </div>
         {% endfor %}
@@ -234,76 +260,80 @@
       </nav>
     {% endif %}
   {% else %}
-    <div class="card"><div class="card-body text-center text-muted">
-      <p class="mb-2">No technologies found.</p>
-      {% if user|can:"add_technology" %}
-      <a href="{% url 'technology_create' %}" class="btn btn-primary">Create your first one</a>
-      {% endif %}
-    </div></div>
+    <div class="card enhanced-card">
+      <div class="card-body text-center text-muted">
+        <p class="mb-2">No technologies found.</p>
+        {% if user|can:"add_technology" %}
+          <a href="{% url 'technology_create' %}" class="btn btn-dark">Create your first one</a>
+        {% endif %}
+      </div>
+    </div>
   {% endif %}
 </div>
 
-<!-- FILTER MODAL (vertical, scrollable categories; black theme pills) -->
+<!-- FILTER MODAL -->
 <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="filterLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document"><div class="modal-content">
-    <form method="get" action=".">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title" id="filterLabel">Filter technologies</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-      </div>
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="get" action=".">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title" id="filterLabel">Filter technologies</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
 
-      <div class="modal-body pt-2">
-        <input type="hidden" name="q" value="{{ q }}">
-        <input type="hidden" name="view" value="{{ view_mode }}">
-        <input type="hidden" name="sort" value="{{ sort }}">
+        <div class="modal-body pt-2">
+          <input type="hidden" name="q" value="{{ q }}">
+          <input type="hidden" name="view" value="{{ view_mode }}">
+          <input type="hidden" name="sort" value="{{ sort }}">
 
-        <!-- Categories -->
-        <div class="mb-3">
-          <label class="form-label d-block mb-2">Categories</label>
-          <div class="category-scroll">
-            {% for c in all_categories %}
-              <div class="badge-check small dark w-100 mb-2">
-                <input type="checkbox" id="cat-{{ forloop.counter }}" name="categories" value="{{ c }}" {% if c in selected_categories %}checked{% endif %}>
-                <label class="d-flex align-items-center justify-content-between" for="cat-{{ forloop.counter }}">
-                  <span><i class="ni ni-tag mr-2"></i>{{ c }}</span>
-                </label>
+          <!-- Categories -->
+          <div class="mb-3">
+            <label class="form-label d-block mb-2">Categories</label>
+            <div class="category-scroll">
+              {% for c in all_categories %}
+                <div class="badge-check small dark w-100 mb-2">
+                  <input type="checkbox" id="cat-{{ forloop.counter }}" name="categories" value="{{ c }}" {% if c in selected_categories %}checked{% endif %}>
+                  <label class="d-flex align-items-center justify-content-between" for="cat-{{ forloop.counter }}">
+                    <span><i class="ni ni-tag mr-2"></i>{{ c }}</span>
+                  </label>
+                </div>
+              {% empty %}
+                <small class="text-muted">No categories yet.</small>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="mb-1">
+            <label class="form-label d-block mb-2">Status</label>
+            <div class="form-row">
+              <div class="col-auto">
+                <div class="custom-control custom-checkbox">
+                  <input class="custom-control-input" type="checkbox" id="act1" name="active" value="1" {% if "1" in active_selected %}checked{% endif %}>
+                  <label class="custom-control-label" for="act1">Active</label>
+                </div>
               </div>
-            {% empty %}
-              <small class="text-muted">No categories yet.</small>
-            {% endfor %}
+              <div class="col-auto">
+                <div class="custom-control custom-checkbox">
+                  <input class="custom-control-input" type="checkbox" id="act0" name="active" value="0" {% if "0" in active_selected %}checked{% endif %}>
+                  <label class="custom-control-label" for="act0">Inactive</label>
+                </div>
+              </div>
+            </div>
+            <small class="text-muted d-block mt-1">Select both to include all.</small>
           </div>
         </div>
 
-        <!-- Status (plain checkboxes to avoid JS toggle issues) -->
-        <div class="mb-1">
-          <label class="form-label d-block mb-2">Status</label>
-          <div class="form-row">
-            <div class="col-auto">
-              <div class="custom-control custom-checkbox">
-                <input class="custom-control-input" type="checkbox" id="act1" name="active" value="1" {% if "1" in active_selected %}checked{% endif %}>
-                <label class="custom-control-label" for="act1">Active</label>
-              </div>
-            </div>
-            <div class="col-auto">
-              <div class="custom-control custom-checkbox">
-                <input class="custom-control-input" type="checkbox" id="act0" name="active" value="0" {% if "0" in active_selected %}checked{% endif %}>
-                <label class="custom-control-label" for="act0">Inactive</label>
-              </div>
-            </div>
-          </div>
-          <small class="text-muted d-block mt-1">Select both to include all.</small>
+        <div class="modal-footer border-0 pt-0">
+          <a href="{% url 'technology_list' %}?view={{ view_mode }}&sort={{ sort }}" class="btn btn-link">Reset</a>
+          <button type="submit" class="btn btn-dark btn-sm">Apply filters</button>
         </div>
-      </div>
-
-      <div class="modal-footer border-0 pt-0">
-        <a href="{% url 'technology_list' %}?view={{ view_mode }}&sort={{ sort }}" class="btn btn-link">Reset</a>
-        <button type="submit" class="btn btn-dark btn-sm">Apply filters</button>
-      </div>
-    </form>
-  </div></div>
+      </form>
+    </div>
+  </div>
 </div>
 
-<!-- DELETE MODAL (unchanged) -->
+<!-- DELETE MODAL -->
 <div class="modal fade" id="deleteTechModal" tabindex="-1" role="dialog" aria-labelledby="deleteTechModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-danger modal-dialog-centered modal-10" role="document">
     <div class="modal-content bg-gradient-danger text-white">
@@ -335,8 +365,114 @@
   </div>
 </div>
 
+{% include "Scorecard/Selector.html" %}
+
+{% endblock %}
+
+{% block stylesheets %}
+{{ block.super }}
+<style>
+  /* Header breadcrumb slashes + text on WHITE header → black */
+  .header.bg-white .breadcrumb .breadcrumb-item + .breadcrumb-item::before { color: #343a40 !important; opacity: .9; }
+  .header.bg-white .breadcrumb .breadcrumb-item,
+  .header.bg-white .breadcrumb .breadcrumb-item a,
+  .header.bg-white .breadcrumb .breadcrumb-item i { color: #111 !important; }
+
+  /* Slightly larger page title on white header */
+  .header .h2 { font-size: 1.75rem; color:#111; }
+
+  /* Controls bar */
+  .controls-bar { gap: .5rem; }
+  .controls-bar .actions > * { flex: 0 0 auto; }
+  .controls-bar .search-wrap { flex: 1 1 360px; min-width: 260px; }
+  .controls-bar .search-wrap .input-group { width: 100%; }
+
+  /* Buttons theme */
+  .btn-outline-dark, .btn-outline-danger { border-width: 1px; }
+  .btn-group .btn + .btn { margin-left: 1px; }
+
+  /* Enhanced neutral cards (NO green/red borders) */
+  .enhanced-card { border-radius: 16px; overflow: hidden; border: 1px solid #e9ecef; }
+  .tech-card {
+    border-radius: 16px;
+    border: 1px solid #e9ecef;   /* neutral border only */
+    box-shadow: 0 6px 18px rgba(0,0,0,.06);
+    transition: box-shadow .18s ease, transform .18s ease;
+    overflow: hidden;
+  }
+  /* remove colored status borders (kept empty intentionally) */
+  .tech-card.tech-active {}
+  .tech-card.tech-inactive {}
+
+  .tech-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.12); transform: translateY(-2px); }
+
+  .tech-card-header {
+    background: #fff;
+    border-bottom: 1px solid #f0f2f5;
+    padding: .9rem 1rem;
+  }
+  .tech-card-footer {
+    background: #fff;
+    border-top: 1px solid #f0f2f5;
+    padding: .65rem 1rem;
+  }
+
+  /* Bigger, bolder card title */
+  .tech-title {
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: .01em;
+    color: #111;
+    max-width: 16ch;
+  }
+  @media (min-width: 1200px){
+    .tech-title { font-size: 1.3rem; }
+  }
+
+  /* Thumbnail polish */
+  .tech-thumb { position: relative; width: 100%; padding-top: 56.25%; overflow: hidden; }
+  .tech-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.001); }
+  .thumb-gradient { position:absolute; left:0; right:0; bottom:0; height:42%; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.08) 40%, rgba(0,0,0,.18) 100%); }
+
+  /* Clamp description in card view */
+  .tech-desc { display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; min-height:5.2em; }
+
+  /* Table link style */
+  .tech-link { color:#172b4d; }
+  .tech-link:hover { color:#000; text-decoration:none; }
+
+  /* Filter modal category list */
+  .badge-check input { display:none; }
+  .badge-check.small.dark label{
+    display:block; width:100%; cursor:pointer; user-select:none;
+    padding:.35rem .65rem; border-radius:999px;
+    border:1px solid rgba(0,0,0,.18); background:#f6f9fc; color:#212529; font-weight:600; font-size:.8rem;
+    transition:all .15s ease;
+  }
+  .badge-check.small.dark input:checked + label{ background:#212529; border-color:#212529; color:#fff; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  .badge-check.small.dark label:hover{ transform:translateY(-1px); }
+  .category-scroll{ max-height:240px; overflow-y:auto; overflow-x:hidden; padding-right:.25rem; }
+
+  /* Delete modal polish */
+  #deleteTechModal .name-chip{ display:inline-block; padding:.5rem 1rem; font-weight:700; font-size:1.125rem; color:#e63946; background:#fff; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,.15); }
+  #deleteTechModal .confirm-box{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:.75rem; padding:1rem; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+  #deleteTechModal .confirm-box .form-control{ background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:.5rem; }
+  #deleteTechModal .form-control.is-valid{ border-color:#2dce89!important; box-shadow:0 0 0 .2rem rgba(45,206,137,.25); }
+  #deleteTechModal .form-control.is-invalid{ border-color:#f5365c!important; box-shadow:0 0 0 .2rem rgba(245,54,92,.25); }
+
+  /* Mobile nits */
+  @media (max-width:575.98px){
+    .input-group-text{ padding:.375rem .5rem; }
+    .tech-title { font-size: 1.15rem; }
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block javascripts %}
+{{ block.super }}
 <script>
 (function () {
+  // Delete modal wiring
   function bindDeleteModal($) {
     var targetName = "", actionUrl = "";
     var $modal = $('#deleteTechModal'), $form = $('#deleteTechForm'), $input = $('#deleteConfirmInput');
@@ -370,57 +506,4 @@
   })();
 })();
 </script>
-
-{% block stylesheets %}
-{{ block.super }}
-<style>
-  /* Controls & buttons */
-  .btn-outline-default, .btn-outline-dark, .btn-outline-danger { border-width:1px; }
-  .btn-group .btn + .btn { margin-left:1px; }
-  .badge + .badge { margin-left:.25rem; }
-
-  /* Cards */
-  .tech-card { transition: box-shadow .15s ease, transform .15s ease; }
-  .tech-card:hover { box-shadow:0 8px 24px rgba(0,0,0,.12); transform: translateY(-1px); }
-  .tech-desc{ display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; min-height:5.2em; }
-  .tech-thumb{position: relative; width: 100%; padding-top: 56.25%; /* 16:9 */
-  overflow: hidden;
-  border-bottom: 1px solid rgba(0,0,0,.05);
-}
-.tech-thumb img{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-
-  /* Filter modal category list (vertical scroll) */
-  .badge-check input{ display:none; }
-  .badge-check.small.dark label{
-    display:block; width:100%; cursor:pointer; user-select:none;
-    padding:.35rem .65rem; border-radius:999px;
-    border:1px solid rgba(0,0,0,.18); background:#f6f9fc; color:#212529; font-weight:600; font-size:.8rem;
-    transition:all .15s ease;
-  }
-  .badge-check.small.dark input:checked + label{ background:#212529; border-color:#212529; color:#fff; box-shadow:0 4px 12px rgba(0,0,0,.25); }
-  .badge-check.small.dark label:hover{ transform:translateY(-1px); }
-  .category-scroll{ max-height:240px; overflow-y:auto; overflow-x:hidden; padding-right:.25rem; }
-
-  /* Delete modal polish */
-  #deleteTechModal .name-chip{ display:inline-block; padding:.5rem 1rem; font-weight:700; font-size:1.125rem; color:#e63946; background:#fff; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,.15); }
-  #deleteTechModal .confirm-box{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:.75rem; padding:1rem; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
-  #deleteTechModal .confirm-box .form-control{ background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:.5rem; }
-  #deleteTechModal .form-control.is-valid{ border-color:#2dce89!important; box-shadow:0 0 0 .2rem rgba(45,206,137,.25); }
-  #deleteTechModal .form-control.is-invalid{ border-color:#f5365c!important; box-shadow:0 0 0 .2rem rgba(245,54,92,.25); }
-
-  /* Mobile nits */
-  @media (max-width:575.98px){ .input-group-text{ padding:.375rem .5rem; } }
-</style>
-{% endblock stylesheets %}
-
-
-{% include "Scorecard/Selector.html" %}
-
-{% endblock %}
+{% endblock javascripts %}
