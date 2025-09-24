@@ -1166,28 +1166,37 @@ def scorecard_compendium(request):
 
 #-----------------------------Notes--------------------------------------------------
 
+def _safe_sort_key(n):
+    v = n.get("created_at")
+    if isinstance(v, datetime):
+        try: return v.timestamp()
+        except Exception: return 0
+    if isinstance(v, str):
+        try:
+            return datetime.fromisoformat(v.replace("T"," ")).timestamp()
+        except Exception:
+            return 0
+    return 0
+
 def _render_notes_fragment(request, pk: int):
-    # look up by integer id field
     doc = technologies.find_one({"id": pk}, {"notes": 1, "_id": 0}) or {}
     notes = doc.get("notes", [])
 
-    # newest first
-    notes.sort(key=lambda x: x.get("created_at") or datetime.min, reverse=True)
-
-    # make note ids printable + format timestamp
+    # expose a safe key for templates (no leading underscore)
     for n in notes:
-        if "_id" in n:
-            n["_id"] = str(n["_id"])
-        ts = n.get("created_at")
-        if isinstance(ts, datetime):
-            n["created_at"] = ts.strftime("%Y-%m-%d %H:%M")
+        if "_id" in n and n["_id"] is not None:
+            n["note_id"] = str(n["_id"])
+            n.pop("_id", None)
+        if isinstance(n.get("created_at"), datetime):
+            n["created_at"] = n["created_at"].strftime("%Y-%m-%d %H:%M")
 
+    notes.sort(key=_safe_sort_key, reverse=True)
     return render(request, "technology/_notes.html", {"tech_id": pk, "notes": notes})
 
 @login_required
 @require_http_methods(["GET"])
 def tech_notes(request, pk: int):
-    return _render_notes_fragment(request, pk)
+    return _render_notes_fragment(request, pk)   # <-- return!
 
 @login_required
 @require_http_methods(["POST"])
@@ -1197,14 +1206,14 @@ def tech_notes_add(request, pk: int):
         return HttpResponseBadRequest("Empty")
 
     note = {
-        "_id": ObjectId(),  # note id stays an ObjectId
+        "_id": ObjectId(),
         "author_id": request.user.id,
         "author_name": (getattr(request.user, "get_full_name", lambda: "")() or request.user.username),
         "text": text[:300],
         "created_at": datetime.utcnow(),
     }
     technologies.update_one({"id": pk}, {"$push": {"notes": note}})
-    return _render_notes_fragment(request, pk)
+    return _render_notes_fragment(request, pk)   # <-- return!
 
 @login_required
 @require_http_methods(["POST"])
@@ -1214,9 +1223,8 @@ def tech_notes_delete(request, pk: int, note_id: str):
     except Exception:
         return HttpResponseBadRequest("Bad note id")
 
-    # authors can delete their own notes; drop author_id to allow admins to delete any
     technologies.update_one(
         {"id": pk},
         {"$pull": {"notes": {"_id": note_oid, "author_id": request.user.id}}},
     )
-    return _render_notes_fragment(request, pk)
+    return _render_notes_fragment(request, pk)   # <-- return!

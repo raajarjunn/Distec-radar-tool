@@ -5,7 +5,7 @@
 {% block title %}Technology · {{ object.name }}{% endblock title %}
 
 {% block stylesheets %}
-<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js" integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ" crossorigin="anonymous"></script>
+
 <style>
   /* Header breadcrumb chip: dark text on white over black header */
   .header.bg-darker .crumb-light{
@@ -70,6 +70,58 @@
 
   /* Buttons – colorful & theme-consistent */
   .btn-toolbar .btn + .btn{ margin-left:.25rem; }
+   
+
+    /* Quick Facts card polish */
+  /* Quick Facts – clean, no dark strip/shadow */
+  .qf-card{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:12px;
+    box-shadow:none;           /* no outer shadow */
+  }
+  .qf-header{
+    background:#fff;
+    border-bottom:1px solid rgba(0,0,0,.06);
+    padding:.75rem 1rem;
+    position:static;           /* no accent bar */
+  }
+  .qf-header::before{display:none;} /* kill left dark bar */
+  .qf-title{margin:0; font-weight:800; letter-spacing:.2px; color:#111827;}
+
+  /* Icon with no background “badge” */
+  .qf-icon{
+    display:inline-flex; align-items:center; justify-content:center;
+    margin-right:.5rem; width:auto; height:auto;
+    background:transparent; border:0; border-radius:0;
+    color:#0d6efd;        /* subtle blue icon only */
+  }
+
+  .qf-body{padding:1rem;}
+
+  /* Soft callout for the scorecard note */
+  .qf-callout{
+    background:#f5f7ff; border:1px solid #dbe4ff; border-left:4px solid #0d6efd;
+    border-radius:.5rem; padding:.65rem .75rem; margin-bottom:.85rem;
+  }
+  .qf-callout .ni{opacity:.85; margin-right:.5rem;}
+
+  /* Notes list + highlight first note (kept) */
+  #tech-notes .d-flex.align-items-start.mb-1 .flex-grow-1{
+    background:#f8f9fa; border:1px solid #e6eaf1; border-radius:.5rem;
+  }
+  #tech-notes .d-flex.align-items-start.mb-1:first-child .flex-grow-1{
+    background:#e9f2ff; border-color:#b6d4fe; box-shadow:0 0 0 2px rgba(13,110,253,.12) inset;
+  }
+  #tech-notes .btn-outline-danger{border-color:#dc3545; color:#dc3545;}
+  #tech-notes .btn-outline-danger:hover{background:#dc3545; color:#fff;}
+  #tech-notes .note{background:#f8f9fa;border:1px solid #e6eaf1;border-radius:.5rem;padding:.75rem}
+  #tech-notes .note:first-child{background:#e9f2ff;border-color:#b6d4fe;box-shadow:0 0 0 2px rgba(13,110,253,.12) inset}
+  #tech-notes .note-text{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}
+  #tech-notes .note-footer{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.35rem}
+  #tech-notes .note-footer .sep{opacity:.5}
+  #tech-notes .note-footer form{display:inline}
+  #tech-notes .note-footer .btn-link{padding:0;line-height:1}
+  
 </style>
 {% endblock stylesheets %}
 
@@ -367,27 +419,29 @@
           {% endif %}
         </div>
       </div>
-   
-      <div class="card section-card">
-        <div class="card-header py-2"><h4 class="section-title mb-0"><i class="ni ni-single-copy-04 text-default"></i> Quick Facts</h4></div>
-
-        <div class="card-body">
-          {# One-line notice #}
-            <p class="small mb-2"><strong>Note:</strong> Only the first 6 fields will be available for the scorecard.</p>
-            {# Notes panel (HTMX) #}
-            <div id="tech-notes"
-                hx-get="{% url 'tech_notes' object.pk %}"
-                hx-trigger="load"
-                hx-swap="outerHTML">
-              <span class="text-muted small">Loading notes…</span>
-            </div>
-
+      <div class="card qf-card">
+        <div class="card-header qf-header d-flex align-items-center">
+          <span class="qf-icon"><i class="ni ni-single-copy-04"></i></span>
+          <h4 class="qf-title mb-0">Quick Facts</h4>
         </div>
-      </div>
+
+        <div class="card-body qf-body">
+          <div class="qf-callout d-flex align-items-center">
+            <i class="ni ni-bulb-61 mr-2"></i>
+            <div><strong>Note:</strong> Only the first 6 fields will be available for the scorecard.</div>
+          </div>
+
+          <div id="tech-notes"
+              hx-get="{% url 'tech_notes' object.pk %}"
+              hx-trigger="revealed once, from:body"
+              hx-swap="outerHTML">
+            <span class="text-muted small">Loading notes…</span>
+          </div>
+        </div>
     </div>
   </div>
 
-  {% include "includes/footer.html" %}
+
 </div>
 
 <!-- Image Viewer Modal -->
@@ -436,6 +490,7 @@
 {{ block.super }}
 
 
+<script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
 
 <script>
 (function(){

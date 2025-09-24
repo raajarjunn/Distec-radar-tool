@@ -1,72 +1,225 @@
-{% extends 'layouts/base-fullscreen.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-{% block title %} Login {% endblock title %}
+  <title>Login — TECHNOLOGY RADAR TOOL</title>
 
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}{% endblock stylesheets %}
+  <!-- Vendor / Argon CSS -->
+  <link rel="icon" href="{% static 'assets/img/brand/favicon.png' %}" type="image/png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700">
+  <link rel="stylesheet" href="{% static 'assets/vendor/nucleo/css/nucleo.css' %}">
+  <link rel="stylesheet" href="{% static 'assets/vendor/@fortawesome/fontawesome-free/css/all.min.css' %}">
+  <link rel="stylesheet" href="{% static 'assets/css/argon.css' %}?v=1.2.0">
 
-{% block content %}
+  <style>
+    :root{
+      --brand-font: "Avenir Next", Avenir, "Segoe UI", Inter, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+      --glass: rgba(255,255,255,.78);
+    }
+    html, body { height: 100%; }
+    body { font-family: var(--brand-font); }
 
-    <!-- Page content -->
-    <div class="container mt--8 pb-5">
-      <div class="row justify-content-center">
-        <div class="col-lg-5 col-md-7">
-          <div class="card bg-secondary shadow border-0">
-            <div class="card-header bg-transparent pb-5">
-              <div class="text-muted text-center mt-2 mb-3">
-                Sign IN
-              </div>
-            </div>
-            <div class="card-body px-lg-5 py-lg-5">
-              <div class="text-center text-muted mb-4">
+    /* Background */
+    .auth-wrap{
+      min-height: 100svh; min-height: 100vh;
+      background: url("{% static 'assets/img/wall_2.jpg' %}") center center / cover no-repeat fixed;
+      display: grid;
+      grid-template-columns: 1fr;         /* card centered by grid + auto margins */
+      align-items: center;                /* vertical center */
+      position: relative;
+      padding-left: max(env(safe-area-inset-left), 0px);
+      padding-right: max(env(safe-area-inset-right), 0px);
+    }
+    @media (max-width: 991.98px){
+      .auth-wrap{ background-attachment: scroll; }
+    }
 
-                {% if msg %}
-                  <p>{{ msg }}</p>
-                {% else %}
-                  <p>
-                    Add your credentials
-                  </p>
-                {% endif %}  
+    /* Top-center brand (no logo) */
+    .brand-block{
+      position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+      display:flex; flex-direction:column; align-items:center; gap:.3rem;
+      color:#fff; z-index: 10; text-align:center; padding:.25rem .75rem;
+      max-width: calc(100vw - 24px);
+    }
+    .brand-title{
+      margin:0; font-weight:300; letter-spacing:.06em; color:#fff;
+      text-shadow:0 3px 14px rgba(0,0,0,.45);
+      font-size: clamp(1.8rem, 5.5vw, 3.6rem);
+      line-height:1.05; white-space:nowrap;
+    }
+    .brand-subtitle{
+      margin:0; font-weight:600; letter-spacing:.04em; color:#fff; opacity:.95;
+      text-shadow:0 3px 14px rgba(0,0,0,.45);
+      font-size: clamp(1rem, 2.6vw, 1.6rem);
+      white-space:nowrap;
+    }
 
-              </div>
+    /* Centered card container */
+    .center-wrap{
+      display:flex; justify-content:center; /* horizontal center */
+      padding: 6rem 1rem 2rem;  /* room so header never overlaps */
+    }
 
-              <form method="POST">
+    /* Glass sign-in card */
+    .auth-card.card{
+      width: 100%;
+      max-width: 480px;
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.20);
+      overflow: hidden;
+    }
+    .auth-card .card-header{
+      background: transparent; border-bottom: 1px solid rgba(0,0,0,.08);
+      padding: 1rem 1.25rem .85rem;
+    }
+    .auth-card .card-header h3{
+      margin: 0; font-weight: 800; color: #0b0b0b; font-size: clamp(1.4rem, 2vw, 1.7rem);
+    }
+    .auth-card .card-body{ padding: 1.25rem 1.5rem 1.6rem; }
+    .text-muted{ color:#6b7280 !important; }
 
-                {% csrf_token %}
+    .input-group-text{ background:#f8f9fe; border-color:rgba(0,0,0,.08); }
+    .input-group .form-control{ border-color:rgba(0,0,0,.10); min-height:44px; }
+    .form-control::placeholder{ color:#9aa4b2; }
 
-                <div class="form-group mb-3">
-                  <div class="input-group input-group-alternative">
-                    <div class="input-group-prepend">
-                      <span class="input-group-text"><i class="ni ni-hat-3"></i></span>
-                    </div>
-                    {{ form.username }}
-                  </div>
-                </div>
-                <div class="form-group">
-                  <div class="input-group input-group-alternative">
-                    <div class="input-group-prepend">
-                      <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
-                    </div>
-                    {{ form.password }}
-                  </div>
-                </div>
-                <div class="custom-control custom-control-alternative custom-checkbox">
-                  <input class="custom-control-input" id=" customCheckLogin" type="checkbox">
-                  <label class="custom-control-label" for=" customCheckLogin">
-                    <span class="text-muted">Remember me</span>
-                  </label>
-                </div>
-                <div class="text-center">
-                  <button type="submit" class="btn btn-primary my-4">Sign in</button>
-                </div>
-              </form>
-            </div>
+    .btn-dark{ background:#0b0b0b; border-color:#0b0b0b; }
+    .btn-dark:hover{ background:#111; border-color:#111; }
+    .btn-xl{ padding:1rem 1.25rem; font-size:1.1rem; border-radius:.65rem; font-weight:700; }
+
+    /* Extreme-right welcome panel */
+    .welcome-panel{
+      position: fixed; right: 2.2rem; top: 50%;
+      transform: translateY(-50%);
+      max-width: 32rem;
+      text-align: right;
+      z-index: 5;
+    }
+    .welcome-panel h2{
+      color:#fff; font-weight:300;            /* thinner */
+      letter-spacing:.02em; margin-bottom:.5rem;
+      font-size: clamp(1.4rem, 3.2vw, 2.4rem);
+      text-shadow: 0 3px 14px rgba(0,0,0,.45);
+    }
+    .welcome-panel p{
+      color:#fff; font-weight:300; opacity:.95;
+      font-size: clamp(.95rem, 1.2vw, 1.1rem);
+      text-shadow: 0 3px 14px rgba(0,0,0,.45);
+      margin: 0;
+    }
+    /* 1) On smaller/short screens, stop fixing the header so it won't overlap the card */
+@media (max-width: 1399.98px), (max-height: 800px){
+  .brand-block{
+    position: static;           /* was fixed */
+    transform: none;
+    margin: 14px auto 8px;
+  }
+  .auth-wrap{
+    align-items: flex-start;    /* start the content under the heading */
+  }
+}
+
+/* 2) Tone down the heading sizes a bit so they’re never huge */
+.brand-title{
+  font-size: clamp(1.6rem, 4.2vw, 3rem);     /* was clamp(1.8rem, 5.5vw, 3.6rem) */
+}
+.brand-subtitle{
+  font-size: clamp(0.95rem, 2.1vw, 1.35rem); /* was clamp(1rem, 2.6vw, 1.6rem)  */
+}
+
+/* 3) Always keep some space below the header when it IS fixed on big screens */
+.center-wrap{
+  /* enough top padding so the card never touches the titles */
+  padding-top: clamp(6rem, 12vh, 10rem);
+  padding-bottom: 2rem;
+}
+
+/* 4) Tighten the card on very small screens */
+@media (max-width: 575.98px){
+  .auth-card .card-header h3{ font-size: 1.25rem; }
+  .input-group .form-control{ min-height: 40px; }  /* slightly shorter inputs */
+  .auth-card.card{ max-width: 94vw; }
+}
+
+    @media (max-width: 1199.98px){
+      .welcome-panel{ display:none; }  /* hide on small/med so it never crowds the card */
+    }
+  </style>
+</head>
+<body class="bg-default">
+
+  <div class="auth-wrap">
+    <!-- Top center brand (titles only) -->
+    <div class="brand-block">
+      <h1 class="brand-title">SAFRAN TECH</h1>
+      <h2 class="brand-subtitle">TECHNOLOGY RADAR TOOL</h2>
+    </div>
+
+    <!-- Centered sign-in card -->
+    <div class="center-wrap">
+      <div class="card auth-card border-0">
+        <div class="card-header">
+          <h3>Sign in</h3>
+        </div>
+        <div class="card-body">
+          <div class="text-muted mb-4 text-center">
+            {% if msg %}<p class="mb-0">{{ msg }}</p>
+            {% else %}<p class="mb-0">Enter your credentials to continue.</p>{% endif %}
           </div>
+
+          <form method="POST" novalidate>
+            {% csrf_token %}
+            <div class="form-group mb-3">
+              <label class="form-control-label d-block mb-1">Username</label>
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend"><span class="input-group-text"><i class="ni ni-hat-3"></i></span></div>
+                {{ form.username }}
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <label class="form-control-label d-block mb-1">Password</label>
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend"><span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span></div>
+                {{ form.password }}
+              </div>
+            </div>
+
+            <div class="form-group mb-4">
+              <div class="custom-control custom-checkbox">
+                <input class="custom-control-input" id="customCheckLogin" type="checkbox">
+                <label class="custom-control-label" for="customCheckLogin">
+                  <span class="text-muted">Remember me</span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-dark btn-xl btn-block">Sign in</button>
+            <!-- CREATE ACCOUNT -->
+            <a href="/register/" class="btn btn-outline-dark btn-block mt-2">Create account</a>
+            {# ↑ Change href if your register route is different #}
+          </form>
         </div>
       </div>
     </div>
 
-{% endblock content %}
+    <!-- Extreme-right welcome text (white + thin) -->
+    <aside class="welcome-panel" aria-hidden="false">
+      <h2>Welcome to DISTEC</h2>
+      <p>
+        A streamlined workspace to capture emerging technologies,
+        organize knowledge, and generate objective scorecards
+        across SAFRAN TECH.
+      </p>
+    </aside>
+  </div>
 
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}{% endblock javascripts %}
+  <!-- Minimal JS (no argon.js to avoid Cookies dep) -->
+  <script src="{% static 'assets/vendor/jquery/dist/jquery.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

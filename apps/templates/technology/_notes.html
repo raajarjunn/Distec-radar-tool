@@ -1,25 +1,24 @@
-{# Minimal notes panel; expects: tech_id (str), notes (list of dicts) #}
 <div id="tech-notes">
   <div class="mb-2"><strong>Notes</strong></div>
 
   <div class="mb-2">
     {% for n in notes %}
-      <div class="d-flex align-items-start mb-1">
-        <div class="flex-grow-1 p-2 bg-light border rounded">
-          {{ n.text }}
-          <div class="small text-muted mt-1">
-            by {{ n.author_name|default:"Someone" }}
-            {% if n.created_at %} • {{ n.created_at }}{% endif %}
-          </div>
+      <div class="note mb-2">
+        <div class="note-text">{{ n.text }}</div>
+        <div class="note-footer small text-muted">
+          <span>by {{ n.author_name|default:"Someone" }}</span>
+          {% if n.created_at %}<span class="sep">•</span><span>{{ n.created_at }}</span>{% endif %}
+
+          {# Delete button inline after the meta #}
+          <span class="sep">•</span>
+          <form method="post"
+                hx-post="{% url 'tech_notes_delete' tech_id n.note_id %}"
+                hx-target="#tech-notes"
+                hx-swap="outerHTML">
+            {% csrf_token %}
+            <button class="btn btn-link text-danger" title="Delete">Delete</button>
+          </form>
         </div>
-        <form method="post"
-              class="ml-2"
-              hx-post="{% url 'tech_notes_delete' tech_id n._id %}"
-              hx-target="#tech-notes"
-              hx-swap="outerHTML">
-          {% csrf_token %}
-          <button class="btn btn-sm btn-outline-danger" title="Delete">&times;</button>
-        </form>
       </div>
     {% empty %}
       <div class="text-muted small">No notes yet.</div>
