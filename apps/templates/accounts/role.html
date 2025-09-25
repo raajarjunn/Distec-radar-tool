@@ -133,9 +133,9 @@
                       <span class="badge-role">Super Admin</span>
                     {% elif u.role_id == 2 %}
                       <span class="badge-role">Admin</span>
-                    {% elif u.role_id == 3 %}
-                      <span class="badge-role">Read Only User</span>
                     {% elif u.role_id == 4 %}
+                      <span class="badge-role">Read Only User</span>
+                    {% elif u.role_id == 3 %}
                       <span class="badge-role">Basic User</span>
                     {% else %}
                       <span class="badge-role">Unknown</span>
@@ -226,7 +226,7 @@
 
     // Optional: role label helper for any [data-role-id] placeholders
     (function(){
-      const LABELS = { 1:'Super Admin', 2:'Admin', 3:'Read Only User', 4:'Basic User' };
+      const LABELS = { 1:'Super Admin', 2:'Admin', 3:'Basic User', 4:'Read Only User' };
       document.querySelectorAll('[data-role-id]').forEach(el => {
         const id = parseInt(el.dataset.roleId, 10);
         el.textContent = LABELS[id] || 'Unknown';

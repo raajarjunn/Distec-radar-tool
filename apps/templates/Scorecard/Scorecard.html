@@ -411,7 +411,7 @@
   {% if not compendium_mode %}
   <div class="actions">
     <button class="action-btn pdf-btn" onclick="downloadPDF()">⬇ PDF</button>
-    <button class="action-btn jpg-btn" onclick="downloadJPEG()">⬇ JPEG</button>
+    <button class="action-btn jpg-btn" onclick="downloadPNG()">⬇ PNG</button>
   </div>
 {% endif %}
 
@@ -447,7 +447,7 @@
     .save();
 }
 
-async function downloadJPEG() {
+async function downloadPNG() {
   const element = document.querySelector('.scorecard-container');
 
   // A4 landscape target size (pixels) for a crisp image. 
@@ -488,12 +488,12 @@ const canvas = await html2canvas(element, {
   ctx.fillRect(0, 0, targetWidth, targetHeight);
   ctx.drawImage(canvas, dx, dy, drawW, drawH);
 
-  const dataURL = out.toDataURL('image/jpeg', 0.95);
+  const dataURL = out.toDataURL('image/png', 0.95);
 
   // Trigger download
   const a = document.createElement('a');
   a.href = dataURL;
-  a.download = '{{ technology.Name|slugify }}_scorecard.jpg';
+  a.download = '{{ technology.Name|slugify }}_scorecard.png';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

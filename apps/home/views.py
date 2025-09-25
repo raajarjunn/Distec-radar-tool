@@ -104,3 +104,4 @@ def dashboard(request):
     ]
 
     return render(request, "home/templates/index.html", {"rows": rows}) 
+

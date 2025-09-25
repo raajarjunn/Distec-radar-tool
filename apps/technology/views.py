@@ -84,6 +84,7 @@ from django.utils.timezone import make_aware, localtime
 client = MongoClient("mongodb://localhost:27017/")
 db = client["tech_tool_db"]
 technologies = db["technology_technology"] 
+qualifications = db["qualifications"]
 
 
 # -------------------------- small helpers --------------------------
@@ -578,7 +579,7 @@ def mindmap_view(request):
 
 
 
-# -------------------------------------------------------Evaluation form + charts ---------------------------------------------------
+# ---------------------------------------------------------------------------------------------Evaluation form + charts ---------------------------------------------------------------------------------------------------------------------------
 
 
 def _load_eval_history(tech):
@@ -634,8 +635,8 @@ def evaluate(request, pk):
         "Business Readiness Level",
         "Marketability / Commercialization feasibility",
         "Level of investments Demonstration Non Recurring Costs",
-        "Demo.NRC",
         "Funding",
+        "Other major risk(s)",
     ]
     radar1_short = [
         "Strategy and image","Differentiation","Barriers to entry","Addressable market (revenue)",
@@ -643,7 +644,7 @@ def evaluate(request, pk):
     ]
     radar2_short = [
         "Critical technos maturity","Competences accessibility","Industrial feasibility","Business readiness level",
-        "Commercialization feasibility","Investments (demo NRC)","Demo.NRC","Funding"
+        "Commercialization feasibility","Investments (demo NRC)","Funding","Other major risk(s)"
     ]
     score_options = [1, 3, 5, 9]
     confidence_levels = CONFIDENCE_LEVELS
@@ -727,11 +728,21 @@ def evaluate(request, pk):
         stake_conf_bar_info = project_positioning(conf_scores[:8],  amplification)
         feas_conf_bar_info  = project_positioning(conf_scores[8:16], amplification)
 
-        def get_statement(param, val): return f"Qualification statement for {param} at {val}"
+        def get_qualification_statement(parameter: str, value: int) -> str:
+            """
+            Fetch qualification statement for a given parameter + value (1,3,5,9).
+            """
+            doc = qualifications.find_one({"parameter": parameter}, {"statements": 1})
+            if not doc:
+                return "—"
+            stmts = doc.get("statements", {})
+            return stmts.get(str(value), "—")
+
+        all_labels_full = radar1_labels_full + radar2_labels_full
         qualification_statements = [
-            (param, values[i], get_statement(param, values[i]),
-             confidences[i] if i < len(confidences) else "")
-            for i, param in enumerate(radar1_labels_full + radar2_labels_full)
+            (param, values[i], get_qualification_statement(param, values[i]),
+            confidences[i] if i < len(confidences) else "")
+            for i, param in enumerate(all_labels_full)
             if i < len(values)
         ]
 
@@ -809,13 +820,25 @@ def evaluate(request, pk):
         stake_conf_bar_info = project_positioning(conf_scores[:8],  amplification)
         feas_conf_bar_info  = project_positioning(conf_scores[8:16], amplification)
 
-        def get_statement(param, val): return f"Qualification statement for {param} at {val}"
+
+        def get_qualification_statement(parameter: str, value: int) -> str:
+            """
+            Fetch qualification statement for a given parameter + value (1,3,5,9).
+            """
+            doc = qualifications.find_one({"parameter": parameter}, {"statements": 1})
+            if not doc:
+                return "—"
+            stmts = doc.get("statements", {})
+            return stmts.get(str(value), "—")
+
+        all_labels_full = radar1_labels_full + radar2_labels_full
         qualification_statements = [
-            (param, values[i], get_statement(param, values[i]),
-             confidences[i] if i < len(confidences) else "")
-            for i, param in enumerate(radar1_labels_full + radar2_labels_full)
+            (param, values[i], get_qualification_statement(param, values[i]),
+            confidences[i] if i < len(confidences) else "")
+            for i, param in enumerate(all_labels_full)
             if i < len(values)
         ]
+
 
         context.update({
             "show_chart": True,
@@ -955,7 +978,7 @@ def export_excel(request, pk):
     return resp
 
 
-#------------------------------Scorecard--------------------------------------
+#---------------------------------------------------------------------------------------Scorecard-------------------------------------------------------------------------------------------------------------------------------
 
 xframe_options_sameorigin
 @require_action("scorecard_generate")
