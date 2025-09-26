@@ -903,60 +903,22 @@ def save_chart_image(request, pk):
 
     return JsonResponse({'status': 'success'})
 
-#--------------------------------------------------------Export to excel------------------------------------------------------------
-# apps/technology/views.py  (only the relevant parts)
 
-# apps/technology/views.py  (only the relevant parts)
-
-import os, re, shutil, tempfile, zipfile
-from urllib.parse import quote
-
-from django.conf import settings
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-
-# ✅ CORRECT import for the .NET wheel you installed: aspose-cells-python
-from aspose.cells import Workbook
-
-# from .models import Technology
-# from .decorators import require_action
-# from .constants import CONFIDENCE_MAP   # wherever you define it
+# ----- Excel export (uses session values) -----
 
 def _safe_filename(s: str) -> str:
     return re.sub(r'[<>:"/\\|?*\x00-\x1F]', "", (s or "")).strip().replace("  ", " ")
 
-def _detect_output_ext(template_path: str) -> str:
-    """Return '.xlsm' if template is macro-enabled, else '.xlsx'."""
-    try:
-        with zipfile.ZipFile(template_path, "r") as z:
-            names = {n.lower() for n in z.namelist()}
-            if "xl/vbaproject.bin" in names:
-                return ".xlsm"
-            ct = z.read("[Content_Types].xml").decode("utf-8", "ignore").lower()
-            if "macroenabled" in ct:
-                return ".xlsm"
-    except Exception:
-        pass
-    return ".xlsx"
-
-def _numish(x):
-    if isinstance(x, (int, float)) or x is None:
-        return x
-    s = str(x).strip().replace(",", ".")
-    try:
-        return float(s)
-    except Exception:
-        return x
-
 @require_action("evaluate_technology")
 def export_excel(request, pk):
+
     tech = get_object_or_404(Technology, pk=pk)
     tech_name = tech.name or "Technology"
     safe_name = _safe_filename(tech_name)
 
     values = request.session.get("user_values")
     confidences = request.session.get("user_confidences")
-    comments = request.session.get("user_comments") or [""] * 16
+    comments = request.session.get("user_comments") or [""]*16 
 
     try:
         amplification = float(request.session.get("amplification", 2))
@@ -966,68 +928,54 @@ def export_excel(request, pk):
     if not values or not confidences:
         return HttpResponse("No evaluation data found.", status=400)
 
-    # point to your template (xlsx or xlsm)
-    template_path = os.path.join(
-        str(settings.BASE_DIR), "apps", "templates", "Evaluation", "evaluation_template.xlsx"
-    )
+    template_path = os.path.join(settings.BASE_DIR / "apps" / "templates" / "Evaluation" / "evaluation_template.xlsx")
     if not os.path.exists(template_path):
         return HttpResponse("Template file not found", status=404)
 
-    # copy to a temp file we'll modify and stream back
+    pythoncom.CoInitialize()
+
     tmp_dir = tempfile.mkdtemp()
-    ext = _detect_output_ext(template_path)  # keep .xlsm if macro-enabled
-    out_name = f"{safe_name} evaluation result{ext}"
-    export_path = os.path.join(tmp_dir, out_name)
+    export_path = os.path.join(tmp_dir, f"{safe_name} Evaluation result.xlsx")
     shutil.copy(template_path, export_path)
 
-    # ✅ Open with Aspose.Cells (.NET) – no JVM / JPype needed
-    wb = Workbook(export_path)
-
-    # get sheet (adjust name if different)
-    try:
-        ws = wb.worksheets.get("iS0 evaluation")
-        if ws is None:
-            ws = wb.worksheets[0]
-    except Exception:
-        ws = wb.worksheets[0]
-
-    cells = ws.cells
+    excel = win32.gencache.EnsureDispatch("Excel.Application")
+    excel.Visible = False
+    wb = excel.Workbooks.Open(os.path.abspath(export_path))
+    ws = wb.Worksheets("iS0 evaluation")
 
     confidence_map = CONFIDENCE_MAP
-    if len(comments) < 16:
-        comments += [""] * (16 - len(comments))
 
-    # write values exactly like your COM version
+    if len(comments) < 16:
+        comments = comments + [""]*(16 - len(comments))
+
     for i in range(16):
         row = 6 + i * 2
-        cells.get(f"F{row}").put_value(_numish(values[i]))
-        cells.get(f"J{row}").put_value(f"{confidences[i]} level of confidence in the evaluation")
-        cells.get(f"K{row}").put_value(_numish(confidence_map.get(confidences[i], 1)))
-        cells.get(f"L{row}").put_value(comments[i])
+        ws.Range(f"F{row}").Value = values[i]
+        ws.Range(f"J{row}").Value = f"{confidences[i]} level of confidence in the evaluation"
+        ws.Range(f"K{row}").Value = confidence_map.get(confidences[i], 1)
+        ws.Range(f"L{row}").Value = comments[i] 
 
-    cells.get("F39").put_value(_numish(amplification))
-    cells.get("L2").put_value(tech_name)
+    ws.Range("F39").Value = amplification
+    ws.Range("L2").Value = tech_name
 
-    # recalc formulas so charts are up-to-date in the file
-    wb.calculate_formula()
-    wb.save(export_path)
+    wb.RefreshAll()
+    excel.CalculateFull()
+    wb.SaveAs(export_path, FileFormat=51)
+    wb.Close(SaveChanges=0)
+    excel.Quit()
 
-    # stream to browser
     with open(export_path, "rb") as f:
         data = f.read()
 
-    content_type = (
-        "application/vnd.ms-excel.sheet.macroEnabled.12"
-        if out_name.lower().endswith(".xlsm")
-        else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    download_name = f"{safe_name} evaluation result.xlsx"
+    resp = HttpResponse(
+        data,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-    resp = HttpResponse(data, content_type=content_type)
     resp["Content-Disposition"] = (
-        f'attachment; filename="{out_name}"; filename*=UTF-8\'\'{quote(out_name)}'
+        f'attachment; filename="{download_name}"; filename*=UTF-8\'\'{quote(download_name)}'
     )
     return resp
-
-
 
 
 #---------------------------------------------------------------------------------------Scorecard-------------------------------------------------------------------------------------------------------------------------------
