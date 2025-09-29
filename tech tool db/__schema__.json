@@ -1,0 +1,443 @@
+[{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef384"
+  },
+  "name": "django_migrations",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 29
+  },
+  "fields": {
+    "app": {
+      "type_code": "string"
+    },
+    "applied": {
+      "type_code": "date"
+    },
+    "id": {
+      "type_code": "long"
+    },
+    "name": {
+      "type_code": "string"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef385"
+  },
+  "name": "django_content_type",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 9
+  },
+  "fields": {
+    "app_label": {
+      "type_code": "string"
+    },
+    "id": {
+      "type_code": "int"
+    },
+    "model": {
+      "type_code": "string"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef386"
+  },
+  "name": "auth_permission",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 36
+  },
+  "fields": {
+    "codename": {
+      "type_code": "string"
+    },
+    "content_type_id": {
+      "type_code": "int"
+    },
+    "id": {
+      "type_code": "int"
+    },
+    "name": {
+      "type_code": "string"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef387"
+  },
+  "name": "auth_group",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 0
+  },
+  "fields": {
+    "id": {
+      "type_code": "int"
+    },
+    "name": {
+      "type_code": "string"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef388"
+  },
+  "name": "auth_group_permissions",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 0
+  },
+  "fields": {
+    "group_id": {
+      "type_code": "int"
+    },
+    "id": {
+      "type_code": "long"
+    },
+    "permission_id": {
+      "type_code": "int"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef389"
+  },
+  "name": "user_role",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 17
+  },
+  "fields": {
+    "description": {
+      "type_code": "string"
+    },
+    "id": {
+      "type_code": "objectId"
+    },
+    "name": {
+      "type_code": "string"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef38a"
+  },
+  "name": "role_permission",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 144
+  },
+  "fields": {
+    "id": {
+      "type_code": "long"
+    },
+    "permission": {
+      "type_code": "string"
+    },
+    "role_id": {
+      "type_code": "objectId"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef38b"
+  },
+  "name": "user",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 9
+  },
+  "fields": {
+    "date_joined": {
+      "type_code": "date"
+    },
+    "email": {
+      "type_code": "string"
+    },
+    "first_name": {
+      "type_code": "string"
+    },
+    "id": {
+      "type_code": "objectId"
+    },
+    "is_active": {
+      "type_code": "bool"
+    },
+    "is_staff": {
+      "type_code": "bool"
+    },
+    "is_super_admin": {
+      "type_code": "bool"
+    },
+    "is_superuser": {
+      "type_code": "bool"
+    },
+    "last_login": {
+      "type_code": "date"
+    },
+    "last_name": {
+      "type_code": "string"
+    },
+    "password": {
+      "type_code": "string"
+    },
+    "role_id": {
+      "type_code": "objectId"
+    },
+    "username": {
+      "type_code": "string"
+    },
+    "account_locked_until": {
+      "type_code": "date"
+    },
+    "address_line1": {
+      "type_code": null
+    },
+    "address_line2": {
+      "type_code": null
+    },
+    "alternate_email": {
+      "type_code": null
+    },
+    "avatar": {
+      "type_code": null
+    },
+    "avatar_blob": {
+      "type_code": null
+    },
+    "avatar_mime": {
+      "type_code": null
+    },
+    "avatar_sha1": {
+      "type_code": null
+    },
+    "city": {
+      "type_code": null
+    },
+    "country": {
+      "type_code": null
+    },
+    "created_at": {
+      "type_code": "date"
+    },
+    "created_by": {
+      "type_code": null
+    },
+    "date_of_birth": {
+      "type_code": "date"
+    },
+    "failed_login_attempts": {
+      "type_code": "long"
+    },
+    "full_name": {
+      "type_code": null
+    },
+    "gender": {
+      "type_code": null
+    },
+    "is_email_verified": {
+      "type_code": null
+    },
+    "is_phone_verified": {
+      "type_code": null
+    },
+    "language_preference": {
+      "type_code": null
+    },
+    "last_password_change": {
+      "type_code": "date"
+    },
+    "mfa_enabled": {
+      "type_code": null
+    },
+    "mfa_secret": {
+      "type_code": null
+    },
+    "phone_number": {
+      "type_code": null
+    },
+    "postcode": {
+      "type_code": null
+    },
+    "state": {
+      "type_code": null
+    },
+    "timezone": {
+      "type_code": null
+    },
+    "updated_at": {
+      "type_code": "date"
+    },
+    "updated_by": {
+      "type_code": null
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef38c"
+  },
+  "name": "user_groups",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 0
+  },
+  "fields": {
+    "group_id": {
+      "type_code": "int"
+    },
+    "id": {
+      "type_code": "long"
+    },
+    "user_id": {
+      "type_code": "objectId"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef38d"
+  },
+  "name": "user_permissions",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 0
+  },
+  "fields": {
+    "id": {
+      "type_code": "long"
+    },
+    "permission_id": {
+      "type_code": "int"
+    },
+    "user_id": {
+      "type_code": "objectId"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59322cbf8b24cce0ef38e"
+  },
+  "name": "django_admin_log",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 0
+  },
+  "fields": {
+    "action_flag": {
+      "type_code": "int"
+    },
+    "action_time": {
+      "type_code": "date"
+    },
+    "change_message": {
+      "type_code": "string"
+    },
+    "content_type_id": {
+      "type_code": "int"
+    },
+    "id": {
+      "type_code": "int"
+    },
+    "object_id": {
+      "type_code": "string"
+    },
+    "object_repr": {
+      "type_code": "string"
+    },
+    "user_id": {
+      "type_code": "objectId"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59323cbf8b24cce0ef38f"
+  },
+  "name": "django_session",
+  "fields": {
+    "expire_date": {
+      "type_code": "date"
+    },
+    "session_data": {
+      "type_code": "string"
+    },
+    "session_key": {
+      "type_code": "string"
+    }
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59324cbf8b24cce0ef390"
+  },
+  "name": "technology_technology",
+  "auto": {
+    "field_names": [
+      "id"
+    ],
+    "seq": 9
+  },
+  "fields": {
+    "category": {
+      "type_code": "string"
+    },
+    "created_at": {
+      "type_code": "date"
+    },
+    "description": {
+      "type_code": "string"
+    },
+    "id": {
+      "type_code": "objectId"
+    },
+    "is_active": {
+      "type_code": "bool"
+    },
+    "name": {
+      "type_code": "string"
+    },
+    "slug": {
+      "type_code": "string"
+    },
+    "updated_at": {
+      "type_code": "date"
+    },
+    "extra_fields": {
+      "type_code": null
+    }
+  }
+}]

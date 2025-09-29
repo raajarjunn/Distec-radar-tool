@@ -1,0 +1,204 @@
+[{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9eca"
+  },
+  "parameter": "Benefits for Safran image & strategy",
+  "statements": {
+    "1": "The concept/project has no benefit for Safran image or strategy",
+    "3": "The concept/project has benefits for Safran image",
+    "5": "The concept has benefits directly for Safran core activities or other benefits related to Safran",
+    "9": "The concept/project is a must-have regarding the Group strategy"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ecb"
+  },
+  "parameter": "Level of differentiation VS. market / competitors",
+  "statements": {
+    "1": "Follower – Enable to reduce the gap regarding competitor",
+    "3": "Player – Enable to maintain Safran current competitive position (Renovation/ evolution)",
+    "5": "Leader – Enable to improve Safran current competitive position (Incremental innovation)",
+    "9": "Game changer – Enable to create a new market / Positively beyond Safran current core business (Breakthrough innovation)"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ecc"
+  },
+  "parameter": "Sustainability of the differentiation / Barriers to entry",
+  "statements": {
+    "1": "Competitors will have to invest less than Safran to catch up",
+    "3": "Competitors' investments to catch up will be significant",
+    "5": "Competitors will have to invest more than Safran to catch up",
+    "9": "Barriers are so high that no competitor can realistically catch up"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ecd"
+  },
+  "parameter": "Addressable market for Safran (qualitative scale)",
+  "statements": {
+    "1": "Revenues on 10 years < few hundred M€",
+    "3": "Revenues on 10 years < 1 B€",
+    "5": "Revenues on 10 years < 4 B€",
+    "9": "Revenues on 10 years > several B€"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ece"
+  },
+  "parameter": "Market robustness (stability regarding external events)",
+  "statements": {
+    "1": "Market situation can be affected after Entry in Service / Time of commercialization by Safran",
+    "3": "Market allocation can be affected before Entry in Service / Time of commercialization by Safran",
+    "5": "Market situation is predictable at Entry in Service / Time of commercialization by Safran",
+    "9": "Market situation is predictable long term, high resilience to external events"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ecf"
+  },
+  "parameter": "Economic value creation (qualitative scale)",
+  "statements": {
+    "1": "Project with unfavorable business model / low profitability expected",
+    "3": "Project with reasonable business model / average profitability expected",
+    "5": "Project with favorable business model evolution / high profitability expected",
+    "9": "Project with very high profitability expected"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed0"
+  },
+  "parameter": "Group transversality level",
+  "statements": {
+    "1": "Only 1 company concerned / 1 leading company playing or contributing (TOCMF model)",
+    "3": "1 leading company + big several contributing companies",
+    "5": "2 companies contributing at same level to the project (TOCMF model) implemented",
+    "9": "3+ companies contributing at same level to the project with TOCMF model"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed1"
+  },
+  "parameter": "Other value creation",
+  "statements": {
+    "1": "No other type of value creation identified",
+    "3": "Other type(s) of value creation expected, to be explored",
+    "5": "1 type of non economic value creation clearly identified",
+    "9": "Several types of non economic value creation clearly identified"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed2"
+  },
+  "parameter": "Maturity of the critical technologies needed",
+  "statements": {
+    "1": "Lowest TRL among critical technologies ≤ 2",
+    "3": "Lowest TRL among critical technologies = 3",
+    "5": "Lowest TRL among critical technologies = 4",
+    "9": "Lowest TRL among critical technologies ≥ 5"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed3"
+  },
+  "parameter": "Technical competences accessibility",
+  "statements": {
+    "1": "New technological field. Difficult access to know-how and expertises / A partner is necessary but no identification of potential partner",
+    "3": "Technological field partially known / A partner is necessary and potential partners already identified",
+    "5": "Significant experience in this technological field / A partner is necessary and potential partner ready to become involved",
+    "9": "Leadership in this technological field. No need for partner"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed4"
+  },
+  "parameter": "Industrial feasibility",
+  "statements": {
+    "1": "No accessible solution to industrialize the concept",
+    "3": "Accessible solutions to industrialize the concept but requiring significant evolution of the current industrial know-how",
+    "5": "Accessible solutions to industrialize the concept requiring limited evolution of the current industrial know-how",
+    "9": "Available solutions to industrialize the concept"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed5"
+  },
+  "parameter": "Business Readiness Level",
+  "statements": {
+    "1": "The market need is not identified, the value creation potential for the market is not formalized",
+    "3": "The market need is identified, a preliminary assessment of the value creation potential is formalized, the market is segmented and quantifiable",
+    "5": "The value creation potential is confirmed by customers with related key success factors identified, the business model and market access conditions are defined",
+    "9": "The market potential is confirmed through a precise quantification and valorization of the business. The commercial strategy is structured"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed6"
+  },
+  "parameter": "Marketability / Commercialization feasibility",
+  "statements": {
+    "1": "Very difficult. Lack of legitimacy or credibility for Safran to commercialize the concept / Need for a strategic partner not identified or difficult to convince",
+    "3": "Difficult. Important efforts will be necessary to commercialize the concept / Need for a strategic partner identified",
+    "5": "Easy. Few efforts will be necessary to commercialize the concept / Request for proposal already identified or strategic partner already on board",
+    "9": "Very easy. Direct partnership with customer"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed7"
+  },
+  "parameter": "Level of investments Demonstration Non Recurring Costs",
+  "statements": {
+    "1": "Demo NRCs > 50 M€",
+    "3": "20 M€ < Demo NRCs ≤ 50 M€",
+    "5": "5 M€ < Demo NRCs ≤ 20 M€",
+    "9": "Demo NRCs ≤ 5M€"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed8"
+  },
+  "parameter": "Time to market and Pay-back",
+  "statements": {
+    "1": "TTM > 10 years & Pay-back > 30 years",
+    "3": "TTM > 10 years & Pay-back > 20 years",
+    "5": "TTM ≤ 10 years & Pay-back ≤ 20 years",
+    "9": "TTM ≤ 5 years & Pay-back ≤ 15 years"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9ed9"
+  },
+  "parameter": "Funding",
+  "statements": {
+    "1": "No visibility on the funding possibilities for the project",
+    "3": "Funding modalities to be studied",
+    "5": "Safran internal funding likely or agreed",
+    "9": "External fundings opportunity identified (lever to boost the project)"
+  }
+},
+{
+  "_id": {
+    "$oid": "68775c4774b6d5ab975a9eda"
+  },
+  "parameter": "Other major risk(s)",
+  "statements": {
+    "1": "Major risk(s) identified with high likelihood which could threaten the concept existence / development AND no identified actions plan",
+    "3": "Major risk(s) identified with low likelihood which could threaten the concept existence / development AND no identified actions plan",
+    "5": "Major risk(s) identified which could threaten the concept existence / development AND related actions plan identified",
+    "9": "No major risk(s) identified which could threaten the concept existence / development"
+  }
+}]

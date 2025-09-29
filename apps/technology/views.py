@@ -50,8 +50,6 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Technology
 from django.utils import timezone
 
-#(Excel COM)
-import pythoncom, win32com.client as win32
 
 
 # Scorecard

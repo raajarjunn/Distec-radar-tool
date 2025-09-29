@@ -1,0 +1,32 @@
+[{
+  "_id": {
+    "$oid": "68a59322f01ea6aed9ffda90"
+  },
+  "id": 1,
+  "name": "superadmin",
+  "description": "Full system access"
+},
+{
+  "_id": {
+    "$oid": "68a59322f01ea6aed9ffda91"
+  },
+  "id": 2,
+  "name": "admin",
+  "description": "Admin access to most features"
+},
+{
+  "_id": {
+    "$oid": "68a59322f01ea6aed9ffda92"
+  },
+  "id": 3,
+  "name": "user1",
+  "description": "Basic user level 1"
+},
+{
+  "_id": {
+    "$oid": "68c9479c2bd4d4aa23bd1dd6"
+  },
+  "id": 4,
+  "name": "user2",
+  "description": "Read only user"
+}]

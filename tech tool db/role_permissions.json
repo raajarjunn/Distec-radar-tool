@@ -1,0 +1,140 @@
+[{
+  "_id": {
+    "$oid": "68c950d5854428f757a46aee"
+  },
+  "role_id": 1,
+  "permission": "view_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46aef"
+  },
+  "role_id": 1,
+  "permission": "add_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af0"
+  },
+  "role_id": 1,
+  "permission": "edit_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af1"
+  },
+  "role_id": 1,
+  "permission": "delete_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af2"
+  },
+  "role_id": 1,
+  "permission": "evaluate_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af3"
+  },
+  "role_id": 1,
+  "permission": "scorecard_generate"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af4"
+  },
+  "role_id": 2,
+  "permission": "view_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af5"
+  },
+  "role_id": 2,
+  "permission": "add_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af6"
+  },
+  "role_id": 2,
+  "permission": "edit_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af7"
+  },
+  "role_id": 2,
+  "permission": "delete_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af8"
+  },
+  "role_id": 2,
+  "permission": "evaluate_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46af9"
+  },
+  "role_id": 2,
+  "permission": "scorecard_generate"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46afa"
+  },
+  "role_id": 3,
+  "permission": "view_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46afb"
+  },
+  "role_id": 3,
+  "permission": "add_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46afc"
+  },
+  "role_id": 3,
+  "permission": "edit_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46afd"
+  },
+  "role_id": 3,
+  "permission": "evaluate_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46afe"
+  },
+  "role_id": 3,
+  "permission": "scorecard_generate"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46aff"
+  },
+  "role_id": 4,
+  "permission": "view_technology"
+},
+{
+  "_id": {
+    "$oid": "68c950d5854428f757a46b00"
+  },
+  "role_id": 4,
+  "permission": "scorecard_generate"
+},
+{
+  "_id": {
+    "$oid": "68ca79582dedd0400cedc9fc"
+  },
+  "role_id": 1,
+  "permission": "manage_roles"
+}]

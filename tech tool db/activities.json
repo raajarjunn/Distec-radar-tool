@@ -1,0 +1,873 @@
+[{
+  "_id": {
+    "$oid": "68aecf36ad2a2bea676785f1"
+  },
+  "activity": "Login",
+  "username": "alice",
+  "occurred_at": {
+    "$date": "2025-08-27T09:26:14.150Z"
+  },
+  "logged_in": true
+},
+{
+  "_id": {
+    "$oid": "68aecf36ad2a2bea676785f2"
+  },
+  "activity": "Viewed /",
+  "username": "alice",
+  "occurred_at": {
+    "$date": "2025-08-27T09:25:14.150Z"
+  },
+  "logged_in": true
+},
+{
+  "_id": {
+    "$oid": "68aecf36ad2a2bea676785f3"
+  },
+  "activity": "Logout",
+  "username": "alice",
+  "occurred_at": {
+    "$date": "2025-08-27T09:24:14.150Z"
+  },
+  "logged_in": false
+},
+{
+  "_id": {
+    "$oid": "68b56aa4e7fab26aefd59f2c"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-01T09:43:00.745Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Heat Exchangers"
+  }
+},
+{
+  "_id": {
+    "$oid": "68b56ad5e7fab26aefd59f2d"
+  },
+  "activity": "Evaluate technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-01T09:43:49.591Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Heat Exchangers"
+  }
+},
+{
+  "_id": {
+    "$oid": "68b56d28e7fab26aefd59f2e"
+  },
+  "activity": "Delete technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-01T09:53:44.690Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "1",
+    "technology_name": "Example"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bedad429bd6d06e184a342"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T13:32:04.416Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Heat Exchangers"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bedae929bd6d06e184a343"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T13:32:25.037Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "2",
+    "technology_name": "Examble c"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bedb2829bd6d06e184a344"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T13:33:28.646Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "2",
+    "technology_name": "Examble c"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bedb5529bd6d06e184a345"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T13:34:13.775Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "2",
+    "technology_name": "Examble c"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bedb8029bd6d06e184a346"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T13:34:56.486Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "2",
+    "technology_name": "Technology A"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bedb9529bd6d06e184a347"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T13:35:17.415Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Technology B"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bedbd729bd6d06e184a349"
+  },
+  "activity": "Add technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T13:36:23.877Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "4",
+    "technology_name": "Technology C"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bee07529bd6d06e184a34b"
+  },
+  "activity": "Add technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T13:56:05.310Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "5",
+    "technology_name": "Technology D"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bee20529bd6d06e184a34c"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T14:02:45.673Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "5",
+    "technology_name": "Technology D"
+  }
+},
+{
+  "_id": {
+    "$oid": "68bee4b129bd6d06e184a34d"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T14:14:09.670Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "5",
+    "technology_name": "Technology D"
+  }
+},
+{
+  "_id": {
+    "$oid": "68befd2429bd6d06e184a34e"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-08T15:58:28.233Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "4",
+    "technology_name": "Technology C"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c130cdc5a208b7a30a7c0f"
+  },
+  "activity": "Add technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T08:03:25.351Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c132b2c5a208b7a30a7c10"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T08:11:30.562Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "4",
+    "technology_name": "Technology C"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c132e3c5a208b7a30a7c11"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T08:12:19.161Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "5",
+    "technology_name": "Technology D"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c1698a131124df28a2f7e9"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T12:05:30.580Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Technology B"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c16dee0cfef1d7217984f7"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T12:24:14.001Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Technology B"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c16e1a0cfef1d7217984f8"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T12:24:58.018Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Technology B"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c16f0b48145cf47d459b35"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T12:28:59.894Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Technology B"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c16f1748145cf47d459b36"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T12:29:11.472Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Technology B"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c16f2f48145cf47d459b37"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T12:29:35.160Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "2",
+    "technology_name": "Technology A"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c16f4c48145cf47d459b38"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T12:30:04.267Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "2",
+    "technology_name": "Technology A"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c16fd548145cf47d459b39"
+  },
+  "activity": "Evaluate technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-10T12:32:21.139Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Technology B"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2b03b701608b5b4cba955"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T11:19:23.168Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2b074701608b5b4cba956"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T11:20:20.211Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2b0af701608b5b4cba957"
+  },
+  "activity": "Evaluate technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T11:21:19.264Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2b0ea701608b5b4cba958"
+  },
+  "activity": "Evaluate technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T11:22:18.336Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2b103701608b5b4cba959"
+  },
+  "activity": "Evaluate technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T11:22:43.897Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2b138701608b5b4cba95a"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T11:23:36.622Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2c21112ba9871ccfa0bff"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T12:35:29.603Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2d0db5a31bfad0ace41ac"
+  },
+  "activity": "Evaluate technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T13:38:35.107Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2d0f05a31bfad0ace41ad"
+  },
+  "activity": "Evaluate technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T13:38:56.259Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2d1db5a31bfad0ace41ae"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T13:42:51.443Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c3051f3080be4edafb0687"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T17:21:35.295Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c3062d3080be4edafb0688"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-11T17:26:05.989Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "4",
+    "technology_name": "Technology C"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c5a6d6e1f298a4631cd568"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-13T17:16:06.129Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "2",
+    "technology_name": "Technology A"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c5a7b5e1f298a4631cd569"
+  },
+  "activity": "Evaluate technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-13T17:19:49.862Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "2",
+    "technology_name": "Technology A"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c9591795efde2a769afe12"
+  },
+  "activity": "Edit technology",
+  "username": "ashh",
+  "occurred_at": {
+    "$date": "2025-09-16T12:33:27.351Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "3",
+    "technology_name": "Technology B"
+  }
+},
+{
+  "_id": {
+    "$oid": "68ca678923176d8c16710a2a"
+  },
+  "activity": "Add technology",
+  "username": "David",
+  "occurred_at": {
+    "$date": "2025-09-17T07:47:21.766Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "7",
+    "technology_name": "Example 9"
+  }
+},
+{
+  "_id": {
+    "$oid": "68ca689a23176d8c16710a2b"
+  },
+  "activity": "Edit technology",
+  "username": "David",
+  "occurred_at": {
+    "$date": "2025-09-17T07:51:54.745Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d29159aab35ae31dbda980"
+  },
+  "activity": "Delete technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-23T12:23:53.604Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "6",
+    "technology_name": "Technology V"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d29865aab35ae31dbda981"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-23T12:53:57.736Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "7",
+    "technology_name": "Example 9"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d2a58c8c7cd095da26687a"
+  },
+  "activity": "Add technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-23T13:50:04.804Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "8",
+    "technology_name": "1232"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d4ef8a5be130f20399bc82"
+  },
+  "activity": "Add technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T07:30:18.814Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d4f0215be130f20399bc83"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T07:32:49.839Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d4f1d25be130f20399bc84"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T07:40:02.112Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d4f34c5be130f20399bc85"
+  },
+  "activity": "Evaluate technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T07:46:20.486Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d4f466afba12000412b4a5"
+  },
+  "activity": "Evaluate technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T07:51:02.497Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d4f4afafba12000412b4a6"
+  },
+  "activity": "Evaluate technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T07:52:15.349Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d4f6b4afba12000412b4a7"
+  },
+  "activity": "Evaluate technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T08:00:52.350Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d5282859c659f199e458c5"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T11:31:52.375Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d528b359c659f199e458c6"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T11:34:11.170Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "8",
+    "technology_name": "1232"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d53a3159c659f199e458ca"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T12:48:49.334Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d53a6459c659f199e458cb"
+  },
+  "activity": "Edit technology",
+  "username": "getajon",
+  "occurred_at": {
+    "$date": "2025-09-25T12:49:40.254Z"
+  },
+  "logged_in": true,
+  "meta": {
+    "technology_id": "9",
+    "technology_name": "Chevrons"
+  }
+}]

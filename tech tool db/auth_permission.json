@@ -1,0 +1,324 @@
+[{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f487"
+  },
+  "id": 1,
+  "name": "Can add role",
+  "content_type_id": 1,
+  "codename": "add_role"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f488"
+  },
+  "id": 2,
+  "name": "Can change role",
+  "content_type_id": 1,
+  "codename": "change_role"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f489"
+  },
+  "id": 3,
+  "name": "Can delete role",
+  "content_type_id": 1,
+  "codename": "delete_role"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f48a"
+  },
+  "id": 4,
+  "name": "Can view role",
+  "content_type_id": 1,
+  "codename": "view_role"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f48b"
+  },
+  "id": 5,
+  "name": "Can add role permission",
+  "content_type_id": 2,
+  "codename": "add_rolepermission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f48c"
+  },
+  "id": 6,
+  "name": "Can change role permission",
+  "content_type_id": 2,
+  "codename": "change_rolepermission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f48d"
+  },
+  "id": 7,
+  "name": "Can delete role permission",
+  "content_type_id": 2,
+  "codename": "delete_rolepermission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f48e"
+  },
+  "id": 8,
+  "name": "Can view role permission",
+  "content_type_id": 2,
+  "codename": "view_rolepermission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f48f"
+  },
+  "id": 9,
+  "name": "Can add user",
+  "content_type_id": 3,
+  "codename": "add_user"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f490"
+  },
+  "id": 10,
+  "name": "Can change user",
+  "content_type_id": 3,
+  "codename": "change_user"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f491"
+  },
+  "id": 11,
+  "name": "Can delete user",
+  "content_type_id": 3,
+  "codename": "delete_user"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f492"
+  },
+  "id": 12,
+  "name": "Can view user",
+  "content_type_id": 3,
+  "codename": "view_user"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f494"
+  },
+  "id": 13,
+  "name": "Can add technology",
+  "content_type_id": 4,
+  "codename": "add_technology"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f495"
+  },
+  "id": 14,
+  "name": "Can change technology",
+  "content_type_id": 4,
+  "codename": "change_technology"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f496"
+  },
+  "id": 15,
+  "name": "Can delete technology",
+  "content_type_id": 4,
+  "codename": "delete_technology"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f497"
+  },
+  "id": 16,
+  "name": "Can view technology",
+  "content_type_id": 4,
+  "codename": "view_technology"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f499"
+  },
+  "id": 17,
+  "name": "Can add log entry",
+  "content_type_id": 5,
+  "codename": "add_logentry"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f49a"
+  },
+  "id": 18,
+  "name": "Can change log entry",
+  "content_type_id": 5,
+  "codename": "change_logentry"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f49b"
+  },
+  "id": 19,
+  "name": "Can delete log entry",
+  "content_type_id": 5,
+  "codename": "delete_logentry"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f49c"
+  },
+  "id": 20,
+  "name": "Can view log entry",
+  "content_type_id": 5,
+  "codename": "view_logentry"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f49f"
+  },
+  "id": 21,
+  "name": "Can add permission",
+  "content_type_id": 6,
+  "codename": "add_permission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a0"
+  },
+  "id": 22,
+  "name": "Can change permission",
+  "content_type_id": 6,
+  "codename": "change_permission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a1"
+  },
+  "id": 23,
+  "name": "Can delete permission",
+  "content_type_id": 6,
+  "codename": "delete_permission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a2"
+  },
+  "id": 24,
+  "name": "Can view permission",
+  "content_type_id": 6,
+  "codename": "view_permission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a3"
+  },
+  "id": 25,
+  "name": "Can add group",
+  "content_type_id": 7,
+  "codename": "add_group"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a4"
+  },
+  "id": 26,
+  "name": "Can change group",
+  "content_type_id": 7,
+  "codename": "change_group"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a5"
+  },
+  "id": 27,
+  "name": "Can delete group",
+  "content_type_id": 7,
+  "codename": "delete_group"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a6"
+  },
+  "id": 28,
+  "name": "Can view group",
+  "content_type_id": 7,
+  "codename": "view_group"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a8"
+  },
+  "id": 29,
+  "name": "Can add content type",
+  "content_type_id": 8,
+  "codename": "add_contenttype"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a9"
+  },
+  "id": 30,
+  "name": "Can change content type",
+  "content_type_id": 8,
+  "codename": "change_contenttype"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4aa"
+  },
+  "id": 31,
+  "name": "Can delete content type",
+  "content_type_id": 8,
+  "codename": "delete_contenttype"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4ab"
+  },
+  "id": 32,
+  "name": "Can view content type",
+  "content_type_id": 8,
+  "codename": "view_contenttype"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4ad"
+  },
+  "id": 33,
+  "name": "Can add session",
+  "content_type_id": 9,
+  "codename": "add_session"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4ae"
+  },
+  "id": 34,
+  "name": "Can change session",
+  "content_type_id": 9,
+  "codename": "change_session"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4af"
+  },
+  "id": 35,
+  "name": "Can delete session",
+  "content_type_id": 9,
+  "codename": "delete_session"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4b0"
+  },
+  "id": 36,
+  "name": "Can view session",
+  "content_type_id": 9,
+  "codename": "view_session"
+}]

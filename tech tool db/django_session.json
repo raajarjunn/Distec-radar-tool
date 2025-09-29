@@ -1,0 +1,10 @@
+[{
+  "_id": {
+    "$oid": "68d543abbbb7bfe04025f4bd"
+  },
+  "session_key": "san1e81fymk6jfw2anrnlhuncr6cgsvx",
+  "session_data": ".eJyVj8FOxCAQht-Fc9MAW1jo0ZMHfQJjmikMW9yWmpbqwfjuTruNq8aYmDDzD8w3f4Y31sCSu2aZcWqiZzXTBpRVwTshuGhl5bUAOErLiq9oC-6MaeX9E6TTWLox5Sm25YqUe3cu70eP_c3OfjPoYO5o-uDAeytb5Tgqy7VBVMEFieC0qrSojJfCcXG0hATaxqCodOutDkaDMmS62b1Av-DM6gdbHApBcVFBqigumV4fd57WDdFjctsQu42njqx2uRtfP_P6gwky7uWcr9jP-1_yq9lWXjcaBkx5W4f6_zjkAMNzH0N0kOOYWC1L_v4BWZ-Ljw:1v286S:BfpkJVzvfdTRSqpz63LQrrVqIMdDUT4JAn8-qoJE1qk",
+  "expire_date": {
+    "$date": "2025-10-10T13:03:12.476Z"
+  }
+}]

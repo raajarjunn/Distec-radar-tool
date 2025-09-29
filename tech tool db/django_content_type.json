@@ -1,0 +1,72 @@
+[{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f484"
+  },
+  "id": 1,
+  "app_label": "authentication",
+  "model": "role"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f485"
+  },
+  "id": 2,
+  "app_label": "authentication",
+  "model": "rolepermission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f486"
+  },
+  "id": 3,
+  "app_label": "authentication",
+  "model": "user"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f493"
+  },
+  "id": 4,
+  "app_label": "technology",
+  "model": "technology"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f498"
+  },
+  "id": 5,
+  "app_label": "admin",
+  "model": "logentry"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f49d"
+  },
+  "id": 6,
+  "app_label": "auth",
+  "model": "permission"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f49e"
+  },
+  "id": 7,
+  "app_label": "auth",
+  "model": "group"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4a7"
+  },
+  "id": 8,
+  "app_label": "contenttypes",
+  "model": "contenttype"
+},
+{
+  "_id": {
+    "$oid": "68a595879e33a388edd0f4ac"
+  },
+  "id": 9,
+  "app_label": "sessions",
+  "model": "session"
+}]

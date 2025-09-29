@@ -1,3 +1,4 @@
+#G:\Master Thesis\Application\Main\Distec\apps\authentication\migrations\0002_load_roles.py 
 from django.db import migrations
 import json, os
 
