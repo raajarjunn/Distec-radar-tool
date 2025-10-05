@@ -63,6 +63,36 @@
   .tag-badge[data-tag="SC1"]{ color:#0d6efd; border-color:rgba(13,110,253,.35); }
   .tag-badge[data-tag="SC2"]{ color:#198754; border-color:rgba(25,135,84,.35); }
 
+  /* --- Fix gallery overlays hiding under images/cards --- */
+
+  /* Don't clip overlays */
+  .gallery-cell,
+  .gallery-card { overflow: visible; }
+
+  /* Make the tag badge always render above the image */
+  .gallery-card .tag-badge {
+    position: absolute;      /* you already have this, keeping for clarity */
+    z-index: 2;              /* higher than the image */
+    pointer-events: none;    /* optional: badge doesn't block clicks */
+  }
+
+  /* Ensure the image sits "under" overlays */
+  .gallery-card .gallery-thumb {
+    position: relative;
+    z-index: 0;
+  }
+
+  /* Ensure dropdown menus float above neighboring cards */
+  .gallery-card .dropdown-menu {
+    z-index: 2000;           /* > bootstrap cards/shadows */
+  }
+
+  /* When a card is hovered, raise it slightly in stacking order too */
+  .gallery-card.card:hover {
+    z-index: 3;
+  }
+
+
   /* Hints */
   .empty-hint{ border:1px dashed #ced4da; padding:.75rem; border-radius:.5rem; background:#fbfdff; }
   .helper-hint{ margin-top:.75rem; padding:.6rem .75rem; border-radius:.5rem; background:#f8f9fe; border:1px solid #edf2f9; font-size:.9rem; }
@@ -218,13 +248,19 @@
                     <span class="font-weight-bold" style="color:#70AD47;">C1 - PUBLIC</span>
                   {% elif c == "C2" %}
                     <span class="font-weight-bold" style="color:#FF8C00;">C2 - CONFIDENTIAL</span>
-                  {% elif c == "C3" %}
+                  {% elif c == "C3C" %}
+                    <span class="font-weight-bold" style="color:#FF0000;">C3 - STRATEGIC (CIVIL)</span>
+                  {% elif c == "C3M" %}
+                    <span class="font-weight-bold" style="color:#FF0000;">C3 - STRATEGIC (MILITARY)</span>
+                  {% elif c|slice:":2" == "C3" %}
+                    {# fallback if some old records still store plain "C3" #}
                     <span class="font-weight-bold" style="color:#FF0000;">C3 - STRATEGIC</span>
                   {% else %}
                     <span class="badge badge-secondary">{{ object.confidentiality|default:"—" }}</span>
                   {% endif %}
                 {% endwith %}
               </div>
+
 
               <div class="meta-item"><strong>Created:</strong> {{ object.created_at|date:"Y-m-d H:i" }}</div>
               <div class="meta-item"><strong>Last Modified:</strong> {{ object.last_modified|date:"Y-m-d H:i" }}</div>
@@ -387,38 +423,104 @@
 
     <!-- Right column -->
     <div class="col-lg-4">
-      <div class="card section-card mb-3">
-        <div class="card-header py-2 d-flex align-items-center justify-content-between">
-          <h4 class="section-title mb-0"><i class="ni ni-album-2 text-primary"></i> Gallery</h4>
-        </div>
-        <div class="card-body">
-          {% if gallery %}
-            <div class="gallery-grid">
-              {% for img in gallery %}
-                <div class="gallery-cell">
-                  <div class="card gallery-card position-relative">
-                    {% if img.tag %}
-                      <span class="tag-badge" data-tag="{{ img.tag }}">{{ img.tag }}</span>
-                    {% endif %}
-                    <a href="{% if img.b64 %}{{ img.b64 }}{% elif img.image_path %}{{ MEDIA_URL }}{{ img.image_path }}{% endif %}"
-                       class="js-open-image"
-                       data-name="{{ img.name|default:'Image' }}">
-                      <img
-                        loading="lazy"
-                        class="card-img-top gallery-thumb"
-                        src="{% if img.b64 %}{{ img.b64 }}{% elif img.image_path %}{{ MEDIA_URL }}{{ img.image_path }}{% endif %}"
-                        alt="{{ img.name|default:'Image' }}"
-                        title="{{ img.name|default:'Image' }}">
-                    </a>
+      
+        <div class="card section-card mb-3" id="gallery-card">
+            <div class="card-header py-2 d-flex align-items-center justify-content-between">
+              <h4 class="section-title mb-0">
+                <i class="ni ni-album-2 text-primary"></i> Gallery
+              </h4>
+
+              {% if user|can:"edit_technology" %}
+                <div class="d-flex align-items-center">
+                  <span id="gallery-save-indicator" class="badge bg-success me-2" style="display:none;">Saved ✓</span>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-toggle-gallery-edit">
+                      Edit Gallery
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success" id="btn-done-gallery-edit" style="display:none;">
+                      Done
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" id="btn-cancel-gallery-edit" style="display:none;">
+                      Cancel
+                    </button>
                   </div>
                 </div>
-              {% endfor %}
+              {% endif %}
             </div>
-          {% else %}
-            <div class="empty-hint"><span class="badge badge-light mr-1">Info</span> No images uploaded.</div>
-          {% endif %}
-        </div>
+
+            <div class="card-body">
+              {% if user|can:"edit_technology" %}
+                <!-- Upload / Dropzone (hidden until edit mode) -->
+                <div class="dropzone mb-3 edit-only" id="upload-bar"
+                    style="display:none"
+                    data-upload-url="{% url 'technology_gallery_add' object.pk %}">
+                  <input id="gallery-upload-file" type="file" accept="image/*" class="form-control" style="max-width:320px">
+                  <select id="gallery-upload-tag" class="form-select" style="max-width:120px;">
+                    <option value="">-- Tag --</option>
+                    <option value="SC1">SC1</option>
+                    <option value="SC2">SC2</option>
+                  </select>
+                  <button id="btn-gallery-upload" class="btn btn-success btn-sm" type="button">Upload</button>
+                  <span class="text-muted small ms-2">Tip: drag & drop an image onto this bar.</span>
+                </div>
+              {% endif %}
+
+              {% if gallery %}
+                <div class="gallery-grid">
+                  {% for img in gallery %}
+                    <div class="gallery-cell">
+                      <div class="card gallery-card position-relative"
+                          data-image="{{ img.name }}"
+                          {% if user|can:"edit_technology" %}
+                            data-url-update="{% url 'technology_gallery_update_tag' object.pk %}"
+                            data-url-delete="{% url 'technology_gallery_delete' object.pk %}"
+                          {% endif %}>
+                        {% if img.tag %}
+                          <span class="tag-badge" data-tag="{{ img.tag }}">{{ img.tag }}</span>
+                        {% endif %}
+
+                        <a href="{% if img.b64 %}{{ img.b64 }}{% elif img.image_path %}{{ MEDIA_URL }}{{ img.image_path }}{% endif %}"
+                          class="js-open-image"
+                          data-name="{{ img.name|default:'Image' }}">
+                          <img
+                            loading="lazy"
+                            class="card-img-top gallery-thumb"
+                            src="{% if img.b64 %}{{ img.b64 }}{% elif img.image_path %}{{ MEDIA_URL }}{{ img.image_path }}{% endif %}"
+                            alt="{{ img.name|default:'Image' }}"
+                            title="{{ img.name|default:'Image' }}">
+                        </a>
+
+                        {% if user|can:"edit_technology" %}
+                          <!-- Per-card actions (hidden until edit mode) -->
+                          <div class="card-body edit-only" style="display:none">
+                            <div class="d-flex align-items-center justify-content-between actions">
+                              <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-white dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                  <i class="ni ni-settings-gear-65 me-1"></i> Edit
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                  <li><span class="dropdown-header">Set tag</span></li>
+                                  <li><button class="dropdown-item js-quick-tag" type="button" data-tag="SC1">Tag as SC1</button></li>
+                                  <li><button class="dropdown-item js-quick-tag" type="button" data-tag="SC2">Tag as SC2</button></li>
+                                  <li><button class="dropdown-item js-quick-tag" type="button" data-tag="">Clear tag</button></li>
+                                </ul>
+                              </div>
+                              <button class="btn btn-sm btn-outline-danger js-del-image" type="button">
+                                <i class="ni ni-fat-remove me-1"></i> Delete
+                              </button>
+                            </div>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="empty-hint"><span class="badge badge-light mr-1">Info</span> No images uploaded.</div>
+              {% endif %}
+            </div>
       </div>
+
       <div class="card qf-card">
         <div class="card-header qf-header d-flex align-items-center">
           <span class="qf-icon"><i class="ni ni-single-copy-04"></i></span>
@@ -450,7 +552,14 @@
     <div class="modal-content">
       <div class="modal-header py-2">
         <h6 class="modal-title" id="imgModalTitle">Image</h6>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+        <button type="button"
+                class="close btn-close"
+                data-dismiss="modal"
+                data-bs-dismiss="modal"
+                aria-label="Close">
+          <span aria-hidden="true">×</span>
+        </button>
+
       </div>
       <div class="modal-body p-2">
         <img id="imgModalPic" alt="" class="img-fluid rounded w-100" style="max-height:70vh; object-fit:contain;">
@@ -489,49 +598,292 @@
 {% block javascripts %}
 {{ block.super }}
 
-
 <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
 
 <script>
+/* ========= Utilities ========= */
 (function(){
-  // Lightbox for gallery images
-  $(document).on('click', 'a.js-open-image', function(e){
-    e.preventDefault();
-    var src = $(this).attr('href');
-    var name = $(this).data('name') || 'Image';
-    $('#imgModalPic').attr('src', src);
-    $('#imgModalTitle').text(name);
-    $('#imgModal').modal('show');
-  });
+  function csrfValue(){
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return el ? el.value : '';
+  }
+  function showSavedBadge(){
+    const b = document.getElementById('gallery-save-indicator');
+    if (!b) return;
+    b.style.display = '';
+    setTimeout(()=> b.style.display = 'none', 1200);
+  }
+  function editElems(){ return document.querySelectorAll('#gallery-card .edit-only'); }
+  function uploadBar(){ return document.getElementById('upload-bar'); }
+  function fileInput(){ return document.getElementById('gallery-upload-file'); }
+  function tagSelect(){ return document.getElementById('gallery-upload-tag'); }
 
-  // Delete modal (type exact name)
-  var $delModal = $('#deleteTechModal');
-  var $delForm  = $('#deleteTechForm');
-  var $delInput = $('#deleteConfirmInput');
-  var $delBtn   = $('#deleteSubmitBtn');
-  var $delChip  = $('#deleteConfirmTarget');
+  /* ========= Image Modal (Bootstrap 4/5 compatible) ========= */
+  (function(){
+    function showImgModal() {
+      var el = document.getElementById('imgModal');
+      if (window.bootstrap && bootstrap.Modal) {
+        var m = bootstrap.Modal.getOrCreateInstance(el);
+        m.show();
+      } else if (window.jQuery && $('#imgModal').modal) {
+        $('#imgModal').modal('show');
+      }
+    }
+    function hideImgModal() {
+      var el = document.getElementById('imgModal');
+      if (window.bootstrap && bootstrap.Modal) {
+        var m = bootstrap.Modal.getOrCreateInstance(el);
+        m.hide();
+      } else if (window.jQuery && $('#imgModal').modal) {
+        $('#imgModal').modal('hide');
+      }
+    }
+    // Single, unified handler
+    document.addEventListener('click', function(e){
+      const link = e.target.closest('a.js-open-image');
+      if (!link) return;
+      e.preventDefault();
+      var src = link.getAttribute('href');
+      var name = link.dataset.name || 'Image';
+      document.getElementById('imgModalPic').setAttribute('src', src);
+      document.getElementById('imgModalTitle').textContent = name;
+      showImgModal();
+    });
+    // Close buttons (BS4/BS5)
+    document.getElementById('imgModal')?.addEventListener('click', function(e){
+      if (e.target.closest('[data-dismiss="modal"], [data-bs-dismiss="modal"]')) {
+        e.preventDefault();
+        hideImgModal();
+      }
+    });
+  })();
 
-  $(document).on('click', '.js-open-delete', function(e){
-    e.preventDefault();
-    var name = $(this).data('name') || '';
-    var url  = $(this).data('url')  || '';
-    $delForm.attr('action', url);
-    $delChip.text(name);
-    $delInput.val('').attr('placeholder', name).removeClass('is-valid is-invalid');
-    $delBtn.prop('disabled', true);
-    $delModal.modal('show');
-  });
+  /* ========= Delete Technology Modal ========= */
+  (function(){
+    var $delModal = $('#deleteTechModal');
+    var $delForm  = $('#deleteTechForm');
+    var $delInput = $('#deleteConfirmInput');
+    var $delBtn   = $('#deleteSubmitBtn');
+    var $delChip  = $('#deleteConfirmTarget');
 
-  $delModal.on('shown.bs.modal', function(){ $delInput.trigger('focus'); });
+    $(document).on('click', '.js-open-delete', function(e){
+      e.preventDefault();
+      var name = $(this).data('name') || '';
+      var url  = $(this).data('url')  || '';
+      $delForm.attr('action', url);
+      $delChip.text(name);
+      $delInput.val('').attr('placeholder', name).removeClass('is-valid is-invalid');
+      $delBtn.prop('disabled', true);
+      $delModal.modal('show');
+    });
 
-  $delInput.on('input', function(){
-    var target = ($delChip.text() || '').trim();
-    var val = ($(this).val() || '').trim();
-    var match = (val === target);
-    $delBtn.prop('disabled', !match);
-    $(this).toggleClass('is-valid', match)
-           .toggleClass('is-invalid', !match && val.length > 0);
-  });
+    $delModal.on('shown.bs.modal', function(){ $delInput.trigger('focus'); });
+
+    $delInput.on('input', function(){
+      var target = ($delChip.text() || '').trim();
+      var val = ($(this).val() || '').trim();
+      var match = (val === target);
+      $delBtn.prop('disabled', !match);
+      $(this).toggleClass('is-valid', match)
+             .toggleClass('is-invalid', !match && val.length > 0);
+    });
+  })();
+
+  /* ========= Gallery (Edit/Upload/Tag/Delete) ========= */
+  (function(){
+    // --- Edit / Done / Cancel ---
+    const editBtn   = document.getElementById('btn-toggle-gallery-edit');
+    const doneBtn   = document.getElementById('btn-done-gallery-edit');
+    const cancelBtn = document.getElementById('btn-cancel-gallery-edit');
+    let galleryDirty = false;
+
+    function enterEditMode(){
+      editElems().forEach(el => el.style.display = '');
+      if (editBtn)  editBtn.style.display = 'none';
+      if (doneBtn)  doneBtn.style.display = '';
+      if (cancelBtn) cancelBtn.style.display = '';
+      const saved = document.getElementById('gallery-save-indicator');
+      if (saved) saved.style.display = 'none';
+    }
+    function exitEditMode(){
+      editElems().forEach(el => el.style.display = 'none');
+      const fi = fileInput(); if (fi) fi.value = '';
+      const ts = tagSelect(); if (ts) ts.selectedIndex = 0;
+      const dz = uploadBar(); if (dz) dz.classList.remove('dragover');
+      if (editBtn)  editBtn.style.display = '';
+      if (doneBtn)  doneBtn.style.display = 'none';
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+
+    if (editBtn)  editBtn.addEventListener('click', enterEditMode);
+    if (cancelBtn) cancelBtn.addEventListener('click', ()=>{ galleryDirty = false; exitEditMode(); });
+    if (doneBtn)   doneBtn.addEventListener('click', ()=>{ if (galleryDirty) showSavedBadge(); galleryDirty = false; exitEditMode(); });
+
+    // Esc cancels edit mode
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && cancelBtn && cancelBtn.style.display !== 'none') {
+        galleryDirty = false; exitEditMode();
+      }
+    });
+
+    // --- Helper: clear any existing card using the same tag (uniqueness) ---
+    async function clearExistingTagsFor(tag){
+      if (!tag) return;
+      const badges = Array.from(document.querySelectorAll('.gallery-card .tag-badge'))
+        .filter(b => b.dataset.tag === tag);
+
+      const tasks = badges.map(badge => {
+        const card = badge.closest('.gallery-card');
+        if (!card) return Promise.resolve();
+        const url  = card.dataset.urlUpdate;
+        const name = card.dataset.image;
+        const fd = new FormData();
+        fd.append('image_name', name);
+        fd.append('tag', ''); // clear
+        fd.append('csrfmiddlewaretoken', csrfValue());
+
+        return fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: { 'X-CSRFToken': csrfValue() }
+        }).then(r => { if (!r.ok) throw new Error('Failed to clear existing tag'); });
+      });
+
+      await Promise.all(tasks).catch(() => {/* optional: toast/log */});
+    }
+
+    // --- Upload (clear duplicates, then upload, then reload) ---
+    const dz = uploadBar();
+    if (dz) {
+      const btnUpload = document.getElementById('btn-gallery-upload');
+
+      async function doUpload(file){
+        const url = dz.getAttribute('data-upload-url');
+        const chosenTag = (tagSelect()?.value || '').trim();
+
+        try {
+          if (chosenTag) {
+            await clearExistingTagsFor(chosenTag); // enforce uniqueness before upload
+          }
+
+          const fd = new FormData();
+          fd.append('image', file);
+          fd.append('tag', chosenTag);
+          fd.append('csrfmiddlewaretoken', csrfValue());
+
+          const r = await fetch(url, {
+            method: 'POST',
+            body: fd,
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': csrfValue() }
+          });
+          if (!r.ok) throw new Error('Upload failed');
+
+          galleryDirty = true;
+          location.reload();
+        } catch (err) {
+          alert(err && err.message ? err.message : 'Upload failed');
+        }
+      }
+
+      if (btnUpload) btnUpload.addEventListener('click', function(){
+        const f = fileInput() && fileInput().files[0];
+        if (!f) { alert('Choose an image first.'); return; }
+        doUpload(f);
+      });
+      ;['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('dragover'); }));
+      ;['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('dragover'); }));
+      dz.addEventListener('drop', e => {
+        const f = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) doUpload(f);
+      });
+    }
+
+    // --- Per-card quick tag (also enforces uniqueness) ---
+    document.addEventListener('click', async function(e){
+      const btn = e.target.closest('.js-quick-tag');
+      if (!btn) return;
+
+      const card = btn.closest('.gallery-card');
+      if (!card) return;
+
+      const url    = card.dataset.urlUpdate;
+      const name   = card.dataset.image;
+      const newTag = btn.dataset.tag || '';
+
+      try {
+        // If setting SC1/SC2 (or any tag), clear it from others first
+        if (newTag) await clearExistingTagsFor(newTag);
+
+        const fd = new FormData();
+        fd.append('image_name', name);
+        fd.append('tag', newTag);
+        fd.append('csrfmiddlewaretoken', csrfValue());
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: { 'X-CSRFToken': csrfValue() }
+        });
+        if (!resp.ok) throw new Error('Request failed');
+
+        // Update current card badge
+        let badge = card.querySelector('.tag-badge');
+        if (newTag) {
+          if (!badge) { badge = document.createElement('span'); badge.className = 'tag-badge'; card.appendChild(badge); }
+          badge.dataset.tag = newTag;
+          badge.textContent = newTag;
+        } else if (badge) {
+          badge.remove();
+        }
+
+        // Close dropdown (BS5/BS4)
+        const toggleBtn = card.querySelector('[data-bs-toggle="dropdown"]');
+        if (window.bootstrap?.Dropdown && toggleBtn) {
+          bootstrap.Dropdown.getOrCreateInstance(toggleBtn).hide();
+        } else {
+          const menu = btn.closest('.dropdown-menu'); if (menu) menu.classList.remove('show');
+        }
+
+        galleryDirty = true;
+      } catch (err) {
+        alert('Could not update tag');
+      }
+    });
+
+    // --- Delete image ---
+    document.addEventListener('click', function(e){
+      const del = e.target.closest('.js-del-image');
+      if (!del) return;
+      if (!confirm('Delete this image?')) return;
+
+      const card = del.closest('.gallery-card');
+      const url  = card.dataset.urlDelete;
+      const name = card.dataset.image;
+
+      const fd = new FormData();
+      fd.append('image_name', name);
+      fd.append('csrfmiddlewaretoken', csrfValue());
+
+      fetch(url, {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': csrfValue() }
+      })
+      .then(r => { if(!r.ok) throw new Error('Delete failed'); return r.text(); })
+      .then(() => {
+        const cell = card.closest('.gallery-cell');
+        if (cell) cell.remove();
+        galleryDirty = true;
+      })
+      .catch(() => alert('Could not delete image'));
+    });
+
+  })();
 })();
 </script>
+
 {% endblock javascripts %}

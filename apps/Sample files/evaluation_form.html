@@ -150,6 +150,47 @@
             color: #2a0449;
             font-style: italic;
         }
+
+        .parameter-block { align-items: flex-start; }
+
+        .comment-wrap {
+            flex: 3;                 /* give it more horizontal space */
+            min-width: 360px;        /* wider minimum */
+            position: relative;
+            margin-left: 10px;
+        }
+
+        .comment-box {
+            width: 100%;
+            min-height: 38px;        /* smaller default height */
+            max-height: 120px;       /* keep compact */
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #d7e2f8;
+            background: #f8fbff;
+            line-height: 1.3;
+            font-size: 14px;
+            resize: horizontal;      /* allow widening if user wants */
+            box-shadow: inset 0 1px 2px rgba(24,40,76,0.06);
+            transition: border-color .18s, box-shadow .18s, background .18s;
+        }
+        .comment-box::placeholder { color: #9aa8c4; }
+
+        .comment-box:focus {
+            outline: 0;
+            border-color: #3678e0;
+            background: #fff;
+            box-shadow: 0 0 0 2px rgba(54,120,224,.18);
+        }
+
+        .comment-counter {
+            position: absolute;
+            right: 6px;
+            bottom: -16px;
+            font-size: 12px;
+            color: #6c7aad;
+        }
+        
         @media (max-width: 1200px) {
             .main-grid {
                 grid-template-columns: 1fr;
@@ -166,6 +207,11 @@
             table th, table td { font-size: 12px; }
             .chart-card { min-width: 220px; max-width: 99vw; }
         }
+        @media (max-width: 700px) {
+              .comment-wrap { min-width: 240px; }
+              .comment-box { min-height: 30px; }
+        }
+
     </style>
 </head>
 <body>
@@ -176,46 +222,80 @@
 <form method="post" autocomplete="off">
   {% csrf_token %}
 
+
+
+<!---------------------------------------------------------------------------------------------------------------------------------------------->
+
   <h3>Stakes & Value Creation</h3>
   {% for param in radar1 %}
     {% with idx=forloop.counter0 %}
       <div class="parameter-block">
         <label>{{ param }}</label>
+
         <select name="values[]">
-          {% for v in score_options %}
+            {% for v in score_options %}
             {% with user_val=user_values|index:idx %}
-              <option value="{{ v }}" {% if user_val == v %}selected{% endif %}>{{ v }}</option>
+                <option value="{{ v }}" {% if user_val == v %}selected{% endif %}>{{ v }}</option>
             {% endwith %}
-          {% endfor %}
+            {% endfor %}
         </select>
+
         <select name="confidences[]">
-          {% for level in confidence_levels %}
+            {% for level in confidence_levels %}
             {% with user_conf=user_confidences|index:idx %}
-              <option value="{{ level }}" {% if user_conf == level %}selected{% endif %}>{{ level }} confidence</option>
+                <option value="{{ level }}" {% if user_conf == level %}selected{% endif %}>{{ level }} confidence</option>
             {% endwith %}
-          {% endfor %}
+            {% endfor %}
         </select>
-      </div>
+
+        <div class="comment-wrap">
+            <textarea
+            name="comments[]"
+            class="comment-box"
+            rows="1"
+            maxlength="300"
+            placeholder="Comments mandatory"
+            >{{ user_comments|index:idx }}</textarea>
+            <div class="comment-counter"></div>
+        </div>
+     </div>
+
     {% endwith %}
-  {% endfor %}
+ {% endfor %}
 
-  <h3>Feasibility & Risks</h3>
+
+<!---------------------------------------------------------------------------------------------------------------------------------------------->
+
+ <h3>Feasibility & Risks</h3>
  {% load list_utils %}
+ {% for param, idx in radar2|zip_lists:radar2_indexes %}
+<div class="parameter-block">
+  <label>{{ param }}</label>
 
-{% for param, idx in radar2|zip_lists:radar2_indexes %}
-  <div class="parameter-block">
-    <label>{{ param }}</label>
-    <select name="values[]">
-      {% for v in score_options %}
-        <option value="{{ v }}" {% if user_values|index:idx == v %}selected{% endif %}>{{ v }}</option>
-      {% endfor %}
-    </select>
-    <select name="confidences[]">
-      {% for level in confidence_levels %}
-        <option value="{{ level }}" {% if user_confidences|index:idx == level %}selected{% endif %}>{{ level }} confidence</option>
-      {% endfor %}
-    </select>
+  <select name="values[]">
+    {% for v in score_options %}
+      <option value="{{ v }}" {% if user_values|index:idx == v %}selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="confidences[]">
+    {% for level in confidence_levels %}
+      <option value="{{ level }}" {% if user_confidences|index:idx == level %}selected{% endif %}>{{ level }} confidence</option>
+    {% endfor %}
+  </select>
+
+  <div class="comment-wrap">
+    <textarea
+      name="comments[]"
+      class="comment-box"
+      rows="2"
+      maxlength="300"
+      placeholder="Comments mandatory"
+    >{{ user_comments|index:idx }}</textarea>
+    <div class="comment-counter"></div>
   </div>
+</div>
+
 {% endfor %}
 
   <div class="parameter-block">
@@ -349,6 +429,30 @@
 
 
 <script>
+
+                (function () {
+                    const boxes = document.querySelectorAll('.comment-box');
+                    boxes.forEach(t => {
+                    const max = t.getAttribute('maxlength');
+                    const counter = t.parentElement.querySelector('.comment-counter');
+
+                    function updateCounter() {
+                        if (counter) counter.textContent = `${t.value.length}${max ? '/' + max : ''}`;
+                    }
+                    function autoGrow() {
+                        t.style.height = 'auto';
+                        t.style.height = Math.min(t.scrollHeight, 180) + 'px';
+                    }
+
+                    // init once for prefilled comments
+                    updateCounter();
+                    autoGrow();
+
+                    t.addEventListener('input', () => { updateCounter(); autoGrow(); });
+                    });
+                })();
+
+
                 // Radar charts (unchanged)
                 function wrapLabel(label) {
                     if (label.length < 10) return label;
@@ -442,9 +546,9 @@
                     if (stakeConfCanvas) {
                         const ctx = stakeConfCanvas.getContext('2d');
                         const grad = ctx.createLinearGradient(0, stakeConfCanvas.height, 0, 0);
-                        grad.addColorStop(0, '#27ae60');
+                        grad.addColorStop(0, '#e74c3c');
                         grad.addColorStop(0.5, '#f6e58d');
-                        grad.addColorStop(1, '#e74c3c');
+                        grad.addColorStop(1, '#27ae60');
                         new Chart(ctx, {
                             type: 'bar',
                             data: {
@@ -523,9 +627,9 @@
                     if (feasConfCanvas) {
                         const ctx = feasConfCanvas.getContext('2d');
                         const grad = ctx.createLinearGradient(0, feasConfCanvas.height, 0, 0);
-                        grad.addColorStop(0, '#27ae60');
+                        grad.addColorStop(0, '#e74c3c');
                         grad.addColorStop(0.5, '#f6e58d');
-                        grad.addColorStop(1, '#e74c3c');
+                        grad.addColorStop(1, '#27ae60');
                         new Chart(ctx, {
                             type: 'bar',
                             data: {
@@ -1070,11 +1174,6 @@ let formDirty = false;
         </div>
         {% endif %}
     </div>
-
-
-<!-------------------------------------------------Warning box-------------------------------------------------------------->
-
-
 
 </body>
 </html>

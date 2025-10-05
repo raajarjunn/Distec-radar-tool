@@ -148,6 +148,85 @@
     @media (max-width: 1199.98px){
       .welcome-panel{ display:none; }  /* hide on small/med so it never crowds the card */
     }
+
+/* =========================
+   LAPTOP / SHORT-SCREEN TUNING
+   — keep welcome panel visible
+   ========================= */
+
+/* 1) Laptop-ish widths or short heights: make everything a bit smaller */
+@media ( (min-width: 992px) and (max-width: 1650px) ), (max-height: 900px) {
+  html { font-size: 93%; }                 /* ~7% smaller */
+
+  /* Avoid overlap from fixed header on short viewports */
+  .brand-block{
+    position: static;
+    transform: none;
+    margin: 12px auto 8px;
+  }
+  .auth-wrap{ align-items: flex-start; }
+
+  .center-wrap{
+    padding-top: clamp(3.5rem, 8vh, 6rem);
+    padding-bottom: 1.5rem;
+  }
+
+  /* Headings a touch smaller */
+  .brand-title{    font-size: clamp(1.45rem, 3.8vw, 2.8rem); }
+  .brand-subtitle{ font-size: clamp(0.9rem, 2vw, 1.25rem); }
+
+  /* Card slightly narrower/tighter */
+  .auth-card.card{ max-width: 430px; border-radius: 14px; }
+  .auth-card .card-header{ padding: .85rem 1rem .7rem; }
+  .auth-card .card-header h3{ font-size: clamp(1.2rem, 1.6vw, 1.4rem); }
+  .auth-card .card-body{ padding: 1rem 1.25rem 1.2rem; }
+
+  .input-group .form-control{ min-height: 40px; font-size: .95rem; }
+  .input-group-text{ padding: .5rem .65rem; }
+  .btn-xl{ padding: .85rem 1rem; font-size: 1rem; border-radius: .6rem; }
+
+  /* Welcome panel: keep it, just smaller */
+  .welcome-panel{
+    max-width: 26rem; right: 1.4rem;
+  }
+  .welcome-panel h2{ font-size: clamp(1.2rem, 2.2vw, 1.9rem); }
+  .welcome-panel p{  font-size: clamp(.9rem, 1vw, 1rem); }
+}
+
+/* 2) Classic 1366×768 / very short screens:
+      Reflow the welcome panel BELOW the card instead of hiding it. */
+@media (max-width: 1366px), (max-height: 820px){
+  html { font-size: 90%; }                 /* ~10% smaller */
+
+  .auth-card.card{ max-width: 410px; }
+
+  /* Put welcome text under the form and center it */
+  .welcome-panel{
+    position: static;
+    transform: none;
+    max-width: 720px;
+    margin: 14px auto 8px;
+    text-align: center;
+    padding: 0 16px;
+  }
+  .welcome-panel h2{
+    margin-bottom: .35rem;
+    font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  }
+  .welcome-panel p{
+    font-size: clamp(.95rem, 1.05vw, 1rem);
+    margin: 0 auto;
+  }
+}
+
+/* Keep existing mobile rules intact */
+@media (max-width: 575.98px){
+  .auth-card .card-header h3{ font-size: 1.15rem; }
+  .input-group .form-control{ min-height: 38px; }
+  .auth-card.card{ max-width: 94vw; }
+}
+
+    
   </style>
 </head>
 <body class="bg-default">

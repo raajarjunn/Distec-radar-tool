@@ -559,7 +559,7 @@ def mindmap_view(request):
         children.append(macro_node)
 
     mindmap_data = {
-        "nodeData": {"id": "root", "topic": "Technologies", "children": children},
+        "nodeData": {"id": "root", "topic": "Disruptive technologies", "children": children},
         "direction": 0, "arrows": [], "summaries": [],
         "theme": {
             "name": "Latte", "type": "light",
@@ -854,7 +854,6 @@ def evaluate(request, pk):
         })
 
     return render(request, "Evaluation/evaluation_form.html", context)
-
 
 
 

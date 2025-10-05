@@ -328,7 +328,7 @@
           {% endif %} 
         </div>
 
-  <div class="content-box" style="height:43mm">
+  <div class="content-box" style="height:44mm">
           <div class="content-header">Enabling Technologies</div>
           <div class="content-body">{{ technology.Fields.enabling_tech|safe }}</div>
         </div>
@@ -383,17 +383,24 @@
     </div>
 
     <div class="footer">
-      <div class="footer-item" style="font-weight: bold; margin-left: 4mm; font-size: 16px;">
-       {% if technology.confidentiality == "C1" %}
-          <span style="color: rgb(112, 173, 71);">{{ technology.confidentiality }}-PUBLIC</span>
-       {% elif technology.confidentiality == "C2" %}
-          <span style="color: rgb(255, 140, 0);">{{ technology.confidentiality }}-CONFIDENTIAL</span>
-       {% elif technology.confidentiality == "C3" %}
-          <span style="color: rgb(255, 0, 0);">{{ technology.confidentiality }}-STRATEGIC</span>
-       {% else %}
-          <span>{{ technology.confidentiality }}</span>
-       {% endif %}
-     </div>
+       <div class="footer-item" style="font-weight: bold; margin-left: 4mm; font-size: 16px;">
+    {% with v=technology.confidentiality %}
+      {% if v == "C1" %}
+        <span style="color: rgb(112, 173, 71);">C1 - PUBLIC</span>
+      {% elif v == "C2" %}
+        <span style="color: rgb(255, 140, 0);">C2 - CONFIDENTIAL</span>
+      {% elif v == "C3C" %}
+        <span style="color: rgb(255, 0, 0);">C3 - STRATEGIC (CIVIL)</span>
+      {% elif v == "C3M" %}
+        <span style="color: rgb(255, 0, 0);">C3 - STRATEGIC (MILITARY)</span>
+      {% elif v == "C3" or v|slice:":2" == "C3" %}
+        {# fallback for any legacy rows still storing plain "C3" #}
+        <span style="color: rgb(255, 0, 0);">C3 - STRATEGIC</span>
+      {% else %}
+        <span>{{ technology.get_confidentiality_display|default:technology.confidentiality }}</span>
+      {% endif %}
+    {% endwith %}
+  </div>
    
 
       <div class="footer-item" >

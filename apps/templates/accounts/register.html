@@ -116,6 +116,107 @@
       text-shadow: 0 3px 14px rgba(0,0,0,.45);
       margin: 0;
     }
+    /* =========================
+   REGISTER • Laptop / Short-screen tuning
+   Keep welcome panel visible
+   ========================= */
+
+/* (A) Undo the old rule that hides the welcome panel on <1200px */
+@media (max-width: 1199.98px){
+  .welcome-panel{ display: block; }
+}
+
+/* (B) Laptop-ish widths or short heights: slightly scale down + tighten */
+@media ( (min-width: 992px) and (max-width: 1650px) ), (max-height: 900px) {
+  html { font-size: 93%; }  /* ~7% smaller look at 100% zoom */
+
+  /* Avoid overlap from fixed header */
+  .brand-block{
+    position: static;
+    transform: none;
+    margin: 12px auto 8px;
+  }
+  .auth-wrap{ align-items: flex-start; }
+
+  /* Room under headings */
+  .center-wrap{
+    padding-top: clamp(3.5rem, 8vh, 6rem);
+    padding-bottom: 1.5rem;
+  }
+
+  /* Headings a touch smaller */
+  .brand-title{    font-size: clamp(1.45rem, 3.8vw, 2.8rem); }
+  .brand-subtitle{ font-size: clamp(0.9rem, 2vw, 1.25rem); }
+
+  /* Register card a bit narrower/tighter (more fields than login) */
+  .auth-card.card{ max-width: 470px; border-radius: 14px; }
+  .auth-card .card-header{ padding: .85rem 1rem .7rem; }
+  .auth-card .card-header h3{ font-size: clamp(1.2rem, 1.6vw, 1.4rem); }
+  .auth-card .card-body{ padding: 1rem 1.25rem 1.2rem; }
+
+  .input-group .form-control{ min-height: 40px; font-size: .95rem; }
+  .input-group-text{ padding: .5rem .65rem; }
+  .btn-xl{ padding: .85rem 1rem; font-size: 1rem; border-radius: .6rem; }
+
+  /* Keep welcome panel visible but smaller on the right */
+  .welcome-panel{
+    position: fixed;
+    right: 1.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    max-width: 26rem;
+    text-align: right;
+    z-index: 5;
+  }
+  .welcome-panel h2{ font-size: clamp(1.2rem, 2.2vw, 1.9rem); }
+  .welcome-panel p{  font-size: clamp(.9rem, 1vw, 1rem); }
+}
+
+/* (C) Classic 1366×768 and very short screens:
+      scale down a bit more and reflow welcome panel BELOW the form */
+@media (max-width: 1366px), (max-height: 820px){
+  html { font-size: 90%; }                 /* ~10% smaller */
+
+  .auth-card.card{ max-width: 450px; }
+
+  .welcome-panel{
+    position: static;       /* no longer fixed on the right */
+    transform: none;
+    max-width: 760px;
+    margin: 14px auto 10px; /* place it under the card, centered */
+    text-align: center;
+    padding: 0 16px;
+    z-index: 1;
+  }
+  .welcome-panel h2{
+    margin-bottom: .35rem;
+    font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  }
+  .welcome-panel p{
+    font-size: clamp(.95rem, 1.05vw, 1rem);
+    margin: 0 auto;
+  }
+}
+
+/* (D) Tablet / phone: keep panel visible under the card, centered */
+@media (max-width: 991.98px){
+  .welcome-panel{
+    position: static;
+    transform: none;
+    max-width: 92vw;
+    margin: 12px auto 8px;
+    text-align: center;
+    padding: 0 8px;
+  }
+}
+
+/* (E) Very small phones: keep the form comfy */
+@media (max-width: 575.98px){
+  .auth-card .card-header h3{ font-size: 1.15rem; }
+  .input-group .form-control{ min-height: 38px; }
+  .auth-card.card{ max-width: 94vw; }
+}
+
     @media (max-width: 1199.98px){
       .welcome-panel{ display:none; }
     }

@@ -28,7 +28,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      overflow: hidden;
+      overflow: hidden !important;
     }
 
     .header-section {
@@ -146,27 +146,27 @@
     }
    
   .image-slot {
-  border: 1px solid #045823;
-  border-radius: 0;
-  height: 60mm;              /* or 55mm for the right column instance */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8fafc;
-  color: #6b7280;
-  font-size: 14px;
-  text-align: center;
-  overflow: hidden;           /* prevents bleed */
-}
+      border: 1px solid #045823;
+      border-radius: 0;
+      height: 60mm;              /* or 55mm for the right column instance */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8fafc;
+      color: #6b7280;
+      font-size: 14px;
+      text-align: center;
+      overflow: hidden;           /* prevents bleed */
+    }
 
 .image-slot img {
-  max-height: 100%;
-  max-width: 100%;
-  width: auto;                /* keep aspect ratio */
-  height: auto;
-  object-fit: contain;        /* never overflow the slot */
-  display: block;
-}
+      max-height: 100%;
+      max-width: 100%;
+      width: auto;                /* keep aspect ratio */
+      height: auto;
+      object-fit: contain;        /* never overflow the slot */
+      display: block;
+    }
 
 
 
@@ -207,6 +207,45 @@
     .footer-item:last-child {
       margin-right: 0;
     }
+
+    .actions {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .action-btn {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .pdf-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .jpg-btn {
+      background: linear-gradient(135deg, #059669, #047857);
+    }
+
+    .action-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
   @media print {
       @page {
         size: A4 landscape;
@@ -226,6 +265,7 @@
        
         margin: 0 auto;
         border: none;
+        overflow: hidden !important;
       }
 
       .content-box,
@@ -238,6 +278,15 @@
         font-size: 26px;
       }
     }
+
+    @media (max-width: 640px) {
+          .actions {        /* stack on small screens */
+            flex-direction: column;
+            right: 16px;
+          }
+          .actions button { width: 160px; }
+}
+@media print { .actions { display: none !important; } }
     
   </style>
 </head>
@@ -279,7 +328,7 @@
           {% endif %} 
         </div>
 
-  <div class="content-box" style="height:43mm">
+  <div class="content-box" style="height:44mm">
           <div class="content-header">Enabling Technologies</div>
           <div class="content-body">{{ technology.Fields.enabling_tech|safe }}</div>
         </div>
@@ -334,17 +383,24 @@
     </div>
 
     <div class="footer">
-      <div class="footer-item" style="font-weight: bold; margin-left: 4mm; font-size: 16px;">
-       {% if technology.confidentiality == "C1" %}
-          <span style="color: rgb(112, 173, 71);">{{ technology.confidentiality }}-PUBLIC</span>
-       {% elif technology.confidentiality == "C2" %}
-          <span style="color: rgb(255, 140, 0);">{{ technology.confidentiality }}-CONFIDENTIAL</span>
-       {% elif technology.confidentiality == "C3" %}
-          <span style="color: rgb(255, 0, 0);">{{ technology.confidentiality }}-STRATEGIC</span>
-       {% else %}
-          <span>{{ technology.confidentiality }}</span>
-       {% endif %}
-     </div>
+       <div class="footer-item" style="font-weight: bold; margin-left: 4mm; font-size: 16px;">
+    {% with v=technology.confidentiality %}
+      {% if v == "C1" %}
+        <span style="color: rgb(112, 173, 71);">C1 - PUBLIC</span>
+      {% elif v == "C2" %}
+        <span style="color: rgb(255, 140, 0);">C2 - CONFIDENTIAL</span>
+      {% elif v == "C3C" %}
+        <span style="color: rgb(255, 0, 0);">C3 - STRATEGIC (CIVIL)</span>
+      {% elif v == "C3M" %}
+        <span style="color: rgb(255, 0, 0);">C3 - STRATEGIC (MILITARY)</span>
+      {% elif v == "C3" or v|slice:":2" == "C3" %}
+        {# fallback for any legacy rows still storing plain "C3" #}
+        <span style="color: rgb(255, 0, 0);">C3 - STRATEGIC</span>
+      {% else %}
+        <span>{{ technology.get_confidentiality_display|default:technology.confidentiality }}</span>
+      {% endif %}
+    {% endwith %}
+  </div>
    
 
       <div class="footer-item" >
@@ -359,37 +415,99 @@
     </div>
   </div>
 
-  <button onclick="downloadPDF()" style="
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    padding: 8px 12px;
-    background-color: #1d4ed8;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    z-index: 1000;
-  ">
-    Download PDF
-  </button>
+  {% if not compendium_mode %}
+  <div class="actions">
+    <button class="action-btn pdf-btn" onclick="downloadPDF()">⬇ PDF</button>
+    <button class="action-btn jpg-btn" onclick="downloadPNG()">⬇ PNG</button>
+  </div>
+{% endif %}
+
+
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  
   <script>
-    function downloadPDF() {
-      const element = document.querySelector('.scorecard-container');
+  function downloadPDF() {
+  const element = document.querySelector('.scorecard-container');
 
-      const opt = {
-        margin: 0,
-        filename: 'safran_scorecard.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 1.5, useCORS: true,  backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-      };
+  const opt = {
+    margin: 0,
+    filename: '{{ technology.Name|slugify }}_scorecard.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+  };
 
-      html2pdf().set(opt).from(element).save();
-    }
+  html2pdf()
+    .set(opt)
+    .from(element)
+    .toPdf()
+    .get('pdf')
+    .then((pdf) => {
+      // to remove extra pages
+      if (pdf.internal.getNumberOfPages() > 1) {
+        pdf.deletePage(2); // delete second page (and more if needed)
+      }
+    })
+    .save();
+}
+
+async function downloadPNG() {
+  const element = document.querySelector('.scorecard-container');
+
+  // A4 landscape target size (pixels) for a crisp image. 
+  // 2480x3508 is A4 @ 300dpi portrait; landscape swaps sides.
+  const targetWidth  = 3508; // px
+  const targetHeight = 2480; // px
+
+  // Compute scale so html2canvas renders at the target pixel width.
+  // This keeps your mm-based layout accurate.
+  const rect = element.getBoundingClientRect();
+  const scale = Math.min(targetWidth / rect.width, targetHeight / rect.height);
+
+  // html2canvas is bundled inside html2pdf, so it's available as window.html2canvas
+  // html2canvas is bundled inside html2pdf, so it's available as window.html2canvas
+const canvas = await html2canvas(element, {
+  scale,               // render at high resolution
+  useCORS: true,       // allow external images (static files & base64)
+  backgroundColor: '#ffffff',
+  windowWidth: Math.ceil(rect.width),
+  windowHeight: Math.ceil(rect.height),
+  scrollX: 0,
+  scrollY: 0,
+});
+
+  // If the rendered canvas slightly exceeds target dims, fit it into a clean A4-landscape canvas
+  const out = document.createElement('canvas');
+  out.width = targetWidth;
+  out.height = targetHeight;
+  const ctx = out.getContext('2d');
+
+  // Center the rendered result within the A4 canvas without cropping
+  const scaleToFit = Math.min(targetWidth / canvas.width, targetHeight / canvas.height);
+  const drawW = Math.floor(canvas.width * scaleToFit);
+  const drawH = Math.floor(canvas.height * scaleToFit);
+  const dx = Math.floor((targetWidth - drawW) / 2);
+  const dy = Math.floor((targetHeight - drawH) / 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
+  ctx.drawImage(canvas, dx, dy, drawW, drawH);
+
+  const dataURL = out.toDataURL('image/png', 0.95);
+
+  // Trigger download
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = '{{ technology.Name|slugify }}_scorecard.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
+
   </script>
 </body>
 </html>

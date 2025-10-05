@@ -1,5 +1,7 @@
+# apps/technology/forms.py
 from django import forms
 from .models import Technology
+import unicodedata
 
 
 class TechnologyForm(forms.ModelForm):
@@ -48,6 +50,30 @@ class TechnologyForm(forms.ModelForm):
             "confidentiality": forms.Select(attrs={"class": "form-control"}),
             "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
+
+    # ---------- ADD THIS ----------
+    def clean_name(self):
+        """
+        Enforce case-insensitive uniqueness on Technology.name.
+        - Trims whitespace
+        - Normalizes Unicode so visually identical names compare equal
+        - Ignores the current instance when editing
+        """
+        raw = self.cleaned_data.get("name") or ""
+        # Normalize & trim to avoid sneaky duplicates like “Tech ” vs “Tech”
+        name = unicodedata.normalize("NFC", raw).strip()
+
+        # Case-insensitive duplicate check
+        qs = Technology.objects.filter(name__iexact=name)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise forms.ValidationError(
+                "A technology with this name (case-insensitive) already exists."
+            )
+        return name
+    # ---------- /ADD THIS ----------
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

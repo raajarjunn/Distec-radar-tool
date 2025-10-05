@@ -562,190 +562,41 @@
     const $counter = $(`[data-counter-for="${editorId}"]`);
     if($counter.length){ $counter.text(`${n} / ${max} characters`).css('color', n>max ? 'red' : '#6c757d'); }
   }
-  
-
   tinymce.init({
-  selector: 'textarea.tinymce-bullets, textarea.tinymce-extra',
-  menubar: false,
-  branding: false,
-
-  plugins: 'lists advlist textpattern charmap',
-  toolbar: 'bold italic subscript superscript charmap |  outdent indent',
-
-  // Strict whitelist: lists + inline only
-  valid_elements: 'ul,ol,li,strong,em,sup,sub,span,br',
-  invalid_elements: 'p,h1,h2,h3,h4,h5,h6,img,table,div',
-
-  // Never create paragraphs
-  forced_root_block: false,
-  paste_as_text: true,
-
-  // Proper nesting with Tab / Shift+Tab
-  lists_indent_on_tab: true,
-
-  // Markdown-style starters
-  textpattern_patterns: [
-    { start: '* ', cmd: 'InsertUnorderedList' },
-    { start: '- ', cmd: 'InsertUnorderedList' },
-    { start: '/ ', cmd: 'InsertUnorderedList' },  // custom slash starter
-    { start: '1. ', cmd: 'InsertOrderedList' }
-  ],
-
-  setup: function (ed) {
-    const $ = window.jQuery;
-
-    // ---- helpers ----
-    function ensureListContainer() {
-      const body = ed.getBody();
-      if (!body) return;
-
-      // Remove any stray text nodes at body level
-      Array.from(body.childNodes).forEach(n => {
-        if (n.nodeType === 3 && n.nodeValue.trim() !== '') {
-          // Wrap stray text back into a list item
-          const ul = ed.getDoc().createElement('ul');
-          const li = ed.getDoc().createElement('li');
-          li.appendChild(ed.getDoc().createTextNode(n.nodeValue));
-          ul.appendChild(li);
-          body.replaceChild(ul, n);
+    selector: 'textarea.tinymce-bullets, textarea.tinymce-extra',
+    menubar: false, branding: false,
+    plugins: 'lists charmap',
+    toolbar: 'bold italic subscript superscript charmap',
+    forced_root_block: 'p', paste_as_text: true,
+    valid_elements: 'ul,li,strong,em,sup,sub,span',
+    invalid_elements: 'p,h1,h2,h3,h4,h5,h6,img,table,div',
+    setup: function (ed) {
+      function ensureBullets(){
+        const body = ed.getBody();
+        const ul = body && body.querySelector && body.querySelector('ul');
+        if (!ul){ ed.setContent('<ul><li></li></ul>'); const li = ed.getBody().querySelector('li'); if (li) ed.selection.setCursorLocation(li, 0); }
+      }
+      $('form').on('submit', function(){ tinymce.triggerSave(); });
+      ed.on('init', function(){
+        ensureBullets();
+        const id = ed.getElement().id, lim = LIMITS[id];
+        if(lim){ updateCount(id, lim); }
+      });
+      ed.on('input change paste keyup', function(){
+        const id = ed.getElement().id, lim = LIMITS[id];
+        if(lim){ updateCount(id, lim); }
+      });
+      ed.on('keydown', function(e){
+        const node = ed.selection.getNode();
+        if (e.key === 'Enter' && node && node.nodeName === 'LI' && node.innerText.trim() === ''){ e.preventDefault(); }
+        if (e.key === 'Backspace'){
+          const lis = ed.getBody().querySelectorAll('li');
+          if (lis.length === 1 && lis[0].innerText.trim() === ''){ e.preventDefault(); }
         }
       });
-
-      // If there is no list at all, create one
-      if (!body.querySelector('ul,ol')) {
-        ed.setContent('<ul><li></li></ul>');
-        const li = body.querySelector('li');
-        if (li) ed.selection.setCursorLocation(li, 0);
-      }
+      ed.on('input change paste', function(){ setTimeout(ensureBullets, 10); });
     }
-
-    function currentLI() {
-      const n = ed.selection.getNode();
-      return n ? ed.dom.getParent(n, 'li') : null;
-    }
-
-    function atStartOf(node) {
-      const rng = ed.selection.getRng();
-      if (!rng) return false;
-      // If node has children, compare against its first text node
-      const startNode = rng.startContainer;
-      return (startNode === node || startNode === node.firstChild) && rng.startOffset === 0;
-    }
-
-    function isOnlyEmptyLI(li) {
-      if (!li) return false;
-      const list = li.parentElement;
-      if (!list) return false;
-      const items = Array.from(list.children).filter(el => el.nodeName === 'LI');
-      return items.length === 1 && items[0].textContent.trim() === '';
-    }
-
-    function insertSiblingLI(afterLi) {
-      const list = afterLi.parentNode;
-      const newLi = ed.getDoc().createElement('li');
-      newLi.appendChild(ed.getDoc().createTextNode(''));
-      if (afterLi.nextSibling) list.insertBefore(newLi, afterLi.nextSibling);
-      else list.appendChild(newLi);
-      ed.selection.setCursorLocation(newLi, 0);
-    }
-
-    // ---- save on form submit (Django) ----
-    if ($) $('form').on('submit', function(){ if (window.tinymce?.triggerSave) tinymce.triggerSave(); });
-
-    // ---- lifecycle ----
-    ed.on('init', function(){
-      ensureListContainer();
-      const id = ed.getElement().id;
-      if (window.updateCount && window.LIMITS && window.LIMITS[id]) {
-        updateCount(id, LIMITS[id]);
-      }
-    });
-
-    ed.on('input change paste keyup SetContent', function(){
-      // keep list-only structure
-      ensureListContainer();
-      const id = ed.getElement().id;
-      if (window.updateCount && window.LIMITS && window.LIMITS[id]) {
-        updateCount(id, LIMITS[id]);
-      }
-    });
-
-    // ---- BLOCK commands that escape lists ----
-    ed.on('BeforeExecCommand', function(e){
-      // Prevent "Remove list" entirely
-      if (e.command === 'RemoveList') {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        return false;
-      }
-
-      // Prevent outdent at top level (which would un-list)
-      if (e.command === 'Outdent') {
-        const li = currentLI();
-        if (!li) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-        const parentList = li.parentElement;
-        const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
-        if (isTopLevel) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          return false;
-        }
-      }
-    });
-
-    // ---- HARD key handling: Enter/Backspace containment ----
-    ed.on('keydown', function(e){
-      const li = currentLI();
-
-      // If user somehow moved out of any LI, rebuild and swallow key
-      if (!li) {
-        if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace') {
-          e.preventDefault();
-          ensureListContainer();
-        }
-        return;
-      }
-
-      // ENTER behavior
-      if (e.key === 'Enter') {
-        // Shift+Enter -> keep in same li
-        if (e.shiftKey) { e.preventDefault(); return; }
-
-        // Empty LI: don't exit list, just create another LI
-        if (li.textContent.trim() === '') {
-          e.preventDefault();
-          insertSiblingLI(li);
-          return;
-        }
-        // Otherwise, let TinyMCE create a new LI (default)
-        return;
-      }
-
-      // BACKSPACE behavior
-      if (e.key === 'Backspace') {
-        // At start of LI at top level? prevent un-listing
-        const parentList = li.parentElement;
-        const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
-
-        if (atStartOf(li) || atStartOf(li.firstChild || li)) {
-          // Only empty LI in whole editor? lock it
-          if (isOnlyEmptyLI(li)) {
-            e.preventDefault();
-            ed.selection.setCursorLocation(li, 0);
-            return;
-          }
-          if (isTopLevel) {
-            // Prevent popping out of the list
-            e.preventDefault();
-            return;
-          }
-        }
-      }
-    });
-  }
-});
-
-  
+  });
 
   // Show/Hide gallery
   $("#toggle-gallery").on("click", function(){

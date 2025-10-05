@@ -7,9 +7,10 @@ from django.utils import timezone
 import json
 
 CONF_CHOICES = (
-    ("C1", "C1 – Public"),
-    ("C2", "C2 – Internal"),
-    ("C3", "C3 – Confidential"),
+    ("C1",  "C1 Public"),
+    ("C2",  "C2 Confidential"),
+    ("C3C", "C3 Strategic (Civil)"),
+    ("C3M", "C3 Strategic (Military)"),
 )
 CONFIDENTIALITY_CHOICES = CONF_CHOICES
 
@@ -47,7 +48,7 @@ class Technology(models.Model):
     # Meta
     initial_date = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(default=timezone.now)
-    confidentiality = models.CharField(max_length=2, choices=CONF_CHOICES, default="C2")
+    confidentiality = models.CharField(max_length=4, choices=CONF_CHOICES, default="C1")
 
     # JSON as text (safe for Djongo)
     # extra_fields: [{ "name": str, "content": html }]

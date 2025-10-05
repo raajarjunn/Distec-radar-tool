@@ -546,9 +546,9 @@
                     if (stakeConfCanvas) {
                         const ctx = stakeConfCanvas.getContext('2d');
                         const grad = ctx.createLinearGradient(0, stakeConfCanvas.height, 0, 0);
-                        grad.addColorStop(0, '#27ae60');
+                        grad.addColorStop(0, '#e74c3c');
                         grad.addColorStop(0.5, '#f6e58d');
-                        grad.addColorStop(1, '#e74c3c');
+                        grad.addColorStop(1, '#27ae60');
                         new Chart(ctx, {
                             type: 'bar',
                             data: {
@@ -627,9 +627,9 @@
                     if (feasConfCanvas) {
                         const ctx = feasConfCanvas.getContext('2d');
                         const grad = ctx.createLinearGradient(0, feasConfCanvas.height, 0, 0);
-                        grad.addColorStop(0, '#27ae60');
+                        grad.addColorStop(0, '#e74c3c');
                         grad.addColorStop(0.5, '#f6e58d');
-                        grad.addColorStop(1, '#e74c3c');
+                        grad.addColorStop(1, '#27ae60');
                         new Chart(ctx, {
                             type: 'bar',
                             data: {
@@ -1174,11 +1174,6 @@ let formDirty = false;
         </div>
         {% endif %}
     </div>
-
-
-<!-------------------------------------------------Warning box-------------------------------------------------------------->
-
-
 
 </body>
 </html>
