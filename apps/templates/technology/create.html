@@ -509,6 +509,81 @@
       }
     };
 
+    /* ======= Taxonomy (Macro / Meso1 / Meso2) ======= */
+    (function () {
+      const $ = window.jQuery;
+      if (!$) return; // needs jQuery
+      const $macro = $("#macro-select");
+      if (!$macro.length) return; // not on edit page
+
+      const URL_MACROS = "/technology/api/macros/";
+      const URL_MESO1  = (macro) => `/technology/api/meso1/${encodeURIComponent(macro)}/`;
+      const URL_MESO2  = (m1)    => `/technology/api/meso2/${encodeURIComponent(m1)}/`;
+
+      const $meso1 = $("#meso1-select"), $meso2 = $("#meso2-select");
+      const initMacro = $macro.data('initial') || "";
+      const initM1    = $meso1.data('initial') || "";
+      const initM2    = $meso2.data('initial') || "";
+
+      const $newMac = $("#new-macro-wrap"), $newM1 = $("#new-meso1-wrap"), $newM2 = $("#new-meso2-wrap");
+
+      function opt(t,v){ return $('<option>').text(t).val(v); }
+      function ensureSelected($s, v){
+        if (!v){ $s.val(""); return; }
+        const exists = $s.find('option').filter(function(){ return $(this).val() === v; }).length > 0;
+        if (!exists) $s.prepend(opt(v, v));
+        $s.val(v);
+      }
+      function toggleNewInputs(){
+        const m=$macro.val(), m1=$meso1.val(), m2=$meso2.val();
+        $newMac.toggle(m==="__new__");
+        $newM1.toggle(m==="__new__"||m1==="__new__");
+        $newM2.toggle(m==="__new__"||m1==="__new__"||m2==="__new__");
+      }
+
+      function handleMeso1Change(isInit){
+        const v = $meso1.val();
+        $meso2.empty().append(opt(v==="__new__"?"+ Add new":"Select Meso2",""));
+        if (v && v!=="__new__"){
+          $.getJSON(URL_MESO2(v))
+            .done(list => { (list||[]).forEach(it=> $meso2.append(opt(it.name,it.name))); $meso2.append(opt("+ Add new","__new__")); })
+            .always(() => { if (isInit) ensureSelected($meso2, initM2); toggleNewInputs(); });
+        } else {
+          $meso2.append(opt("+ Add new","__new__")); toggleNewInputs();
+        }
+      }
+
+      function handleMacroChange(isInit){
+        const v = $macro.val();
+        $meso1.empty().append(opt(v==="__new__"?"+ Add new":"Select Meso1",""));
+        $meso2.empty().append(opt("Select Meso2",""));
+        if (v && v!=="__new__"){
+          $.getJSON(URL_MESO1(v))
+            .done(list => { (list||[]).forEach(it=> $meso1.append(opt(it.name,it.name))); $meso1.append(opt("+ Add new","__new__")); })
+            .always(() => { if (isInit) ensureSelected($meso1, initM1); toggleNewInputs(); handleMeso1Change(true); });
+        } else {
+          $meso1.append(opt("+ Add new","__new__")); $meso2.append(opt("+ Add new","__new__")); toggleNewInputs();
+        }
+      }
+
+      function loadMacros(){
+        $macro.empty().append(opt("Loading…",""));
+        $.getJSON(URL_MACROS)
+          .done(list => {
+            $macro.empty().append(opt("Select Macro",""));
+            (list||[]).forEach(it => $macro.append(opt(it.name,it.name)));
+            $macro.append(opt("+ Add new","__new__"));
+          })
+          .always(() => { ensureSelected($macro, initMacro); toggleNewInputs(); handleMacroChange(true); });
+      }
+
+      $macro.on("change", ()=> handleMacroChange(false));
+      $meso1.on("change", ()=> handleMeso1Change(false));
+      $meso2.on("change", ()=> toggleNewInputs());
+
+      loadMacros();
+    })();
+
     // ------------------- TinyMCE -------------------
     tinymce.init({
       selector: 'textarea.tinymce-bullets, textarea.tinymce-extra',
