@@ -152,8 +152,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #f8fafc;
-      color: #6b7280;
+      background-color: #ffffff;
+      color: #959caa;
       font-size: 14px;
       text-align: center;
       overflow: hidden;           /* prevents bleed */
@@ -189,6 +189,25 @@
       flex: 1;
     }
 
+    .chart-slot {
+      height: 55mm;            /* your target height */
+      flex: 0 0 55mm;          /* stop it from stretching */
+      overflow: hidden;        /* clip any overflow */
+      display: flex;           /* keep centering */
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chart-slot img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;             /* preserve aspect */
+      height: auto;
+      object-fit: contain;     /* never bleed */
+      display: block;
+    }
+    
+    .column { min-height: 0; }
     .footer {
       display: flex;
       justify-content: space-between;
@@ -323,8 +342,8 @@
         <div class="image-slot" style="height: 60mm;">
           {% if sc1 and sc1.b64 %} 
           <img src="{{ sc1.b64 }}" alt="SC1"> 
-          {% else %} 
-          <span>No image available</span>
+          {% else %}  
+          <img src="{% static 'assets/img/brand/no image.png' %}" alt="Placeholder logo">
           {% endif %} 
         </div>
 
@@ -347,11 +366,11 @@
           <div class="content-header">Strategic Value & Evaluation</div>
           <div class="content-body" >{{ technology.Fields.strategic_value|safe }}</div>
         </div>
-        <div class="chart-placeholder" style="height: 55mm; display:flex; align-items:center; justify-content:center;">
+        <div class="chart-placeholder " style="height: 55mm; display:flex; align-items:center; justify-content:center;">
           {% if evaluation_img and evaluation_img.b64 %}
           <img src="{{ evaluation_img.b64 }}" alt="Evaluation Chart" style="height:100%; width:100%; display:block;"> 
           {% else %}
-          <span style="color:#888;">No evaluation chart image found.</span> 
+          <img src="{% static 'assets/img/brand/No evaluation.png' %}" alt="Evaluation Chart Placeholder" style="height:100%; width:100%; display:block;">
           {% endif %}
         </div>
 
@@ -370,8 +389,8 @@
         <div class="image-slot" style="height: 55mm;">
           {% if sc2 and sc2.b64 %}
           <img src="{{ sc2.b64 }}" alt="SC2">
-          {% else %}
-          <span>No image available</span>
+          {% else %} 
+          <img src="{% static 'assets/img/brand/no image.png' %}" alt="Placeholder logo">
           {% endif %}
         </div>
 
