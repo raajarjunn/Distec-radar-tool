@@ -91,7 +91,7 @@ class SignUpForm(UserCreationForm):
         if not getattr(user, "role_id", None):
             RoleModel = apps.get_model("authentication", "Role")
             try:
-                user.role = RoleModel.objects.get(name="superadmin")
+                user.role = RoleModel.objects.get(name="user2")
             except RoleModel.DoesNotExist:
                 pass
 

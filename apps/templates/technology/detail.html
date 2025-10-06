@@ -1,6 +1,7 @@
 {# apps/templates/technology/detail.html #}
 {% extends "layouts/base.html" %}
 {% load perm_tags %}
+{% load static %}
 
 {% block title %}Technology · {{ object.name }}{% endblock title %}
 
@@ -45,6 +46,12 @@
     border-radius:.65rem;
     padding:.75rem 1rem;
   }
+
+  .section-icon {
+  width: 50px; height: 50px;
+  
+}
+
 
   /* Gallery */
   .gallery-grid{ display:grid; grid-template-columns:repeat(12,1fr); grid-gap:.75rem; }
@@ -282,7 +289,7 @@
 
       <div class="card section-card mb-3">
         <div class="card-header py-2">
-          <h4 class="section-title mb-0"><i class="ni ni-planet text-primary"></i> Descriptions &amp; Applications</h4>
+          <h4 class="section-title mb-0 d-flex align-items-center"><img src="{% static 'assets/img/icons/des.png' %}" alt="" class="section-icon mr-2">Descriptions &amp; Applications</h4>
         </div>
         <div class="card-body">
           {% if object.desc_and_applications and object.desc_and_applications|striptags|length > 0 %}
@@ -301,7 +308,7 @@
 
       <div class="card section-card mb-3">
         <div class="card-header py-2">
-          <h4 class="section-title mb-0"><i class="ni ni-books text-orange"></i> Publications &amp; Projects</h4>
+          <h4 class="section-title mb-0 d-flex align-items-center"><img src="{% static 'assets/img/icons/pub.png' %}" alt="" class="section-icon mr-2"> Publications &amp; Projects</h4>
         </div>
         <div class="card-body">
           {% if object.publications_and_projects and object.publications_and_projects|striptags|length > 0 %}
@@ -320,7 +327,7 @@
 
       <div class="card section-card mb-3">
         <div class="card-header py-2">
-          <h4 class="section-title mb-0"><i class="ni ni-chart-bar-32 text-success"></i> Attributes &amp; Performance</h4>
+          <h4 class="section-title mb-0 d-flex align-items-center"><img src="{% static 'assets/img/icons/att.png' %}" alt="" class="section-icon mr-2"> Attributes &amp; Performance</h4>
         </div>
         <div class="card-body">
           {% if object.attributes_and_performance and object.attributes_and_performance|striptags|length > 0 %}
@@ -339,7 +346,7 @@
 
       <div class="card section-card mb-3">
         <div class="card-header py-2">
-          <h4 class="section-title mb-0"><i class="ni ni-favourite-28 text-danger"></i> Strategic Value &amp; Evaluation</h4>
+          <h4 class="section-title mb-0 d-flex align-items-center"><img src="{% static 'assets/img/icons/str.png' %}" alt="" class="section-icon mr-2"> Strategic Value &amp; Evaluation</h4>
         </div>
         <div class="card-body">
           {% if object.strategic_value_and_evaluation and object.strategic_value_and_evaluation|striptags|length > 0 %}
@@ -358,7 +365,7 @@
 
       <div class="card section-card mb-3">
         <div class="card-header py-2">
-          <h4 class="section-title mb-0"><i class="ni ni-laptop text-info"></i> Enabling Technologies</h4>
+          <h4 class="section-title mb-0 d-flex align-items-center"><img src="{% static 'assets/img/icons/ena.png' %}" alt="" class="section-icon mr-2"> Enabling Technologies</h4>
         </div>
         <div class="card-body">
           {% if object.enabling_technologies and object.enabling_technologies|striptags|length > 0 %}
@@ -377,7 +384,7 @@
 
       <div class="card section-card mb-3">
         <div class="card-header py-2">
-          <h4 class="section-title mb-0"><i class="ni ni-settings text-warning"></i> Challenges &amp; Current Status</h4>
+          <h4 class="section-title mb-0 d-flex align-items-center"><img src="{% static 'assets/img/icons/cha.png' %}" alt="" class="section-icon mr-2">Challenges &amp; Current Status</h4>
         </div>
         <div class="card-body">
           {% if object.challenges_and_current_status and object.challenges_and_current_status|striptags|length > 0 %}
