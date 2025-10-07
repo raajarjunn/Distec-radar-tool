@@ -505,5 +505,28 @@
     if (tries <= 0) return; setTimeout(function(){ waitForBootstrap(tries-1); }, 150);
   })();
 })();
+
+/* ========= Delete Modal close compatibility (BS4/BS5) ========= */
+(function(){
+  var el = document.getElementById('deleteTechModal');
+
+  function hideDelModal(){
+    if (window.bootstrap && bootstrap.Modal) {
+      bootstrap.Modal.getOrCreateInstance(el).hide();
+    } else if (window.jQuery && $(el).modal) {
+      $(el).modal('hide');
+    }
+  }
+
+  // Close on any element with data-dismiss or data-bs-dismiss inside the modal
+  el.addEventListener('click', function(e){
+    if (e.target.closest('[data-dismiss="modal"], [data-bs-dismiss="modal"]')) {
+      e.preventDefault();
+      hideDelModal();
+    }
+  });
+})();
+
+
 </script>
 {% endblock javascripts %}

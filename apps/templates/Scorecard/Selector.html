@@ -13,11 +13,11 @@
   }
 
   /* Backdrop + dialog */
-  .sc-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:3000}
-  .sc-dialog{width:min(1100px,96vw);max-height:92vh;background:var(--sc-bg);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,.2)}
-  .sc-header{background:linear-gradient(87deg,var(--sc-primary),var(--sc-primary-2));color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px}
+  .sc-backdrop{position:fixed;inset:0;background:rgba(34, 33, 33, 0.87);display:none;align-items:center;justify-content:center;z-index:3000;overflow: auto;}
+  .sc-dialog{width:min(1100px,96vw);max-height:92vh;background:var(--sc-bg);border-radius:12px;display:flex;flex-direction:column;overflow:auto;box-shadow:0 10px 25px rgba(0,0,0,.2)}
+  .sc-header{background:linear-gradient(87deg,var(--sc-text),var(--sc-muted));color:#fff !important;padding:14px 18px;display:flex;align-items:center;gap:10px}
   .sc-header h2{margin:0;font-size:18px;font-weight:600;flex:1}
-  .sc-body{display:flex;gap:14px;padding:12px 14px;overflow:hidden}
+  .sc-body{display:flex;gap:14px;padding:12px 14px;flex:1;min-height:0;overflow:auto}
   .sc-footer{padding:12px 16px;border-top:1px solid var(--sc-border);display:flex;gap:8px;justify-content:flex-end;background:#fafbff}
 
   /* Buttons */
@@ -25,7 +25,26 @@
   .sc-btn-muted{background:#eef2f7;color:#1f2937}
   .sc-btn-muted.active{background:#dbeafe;color:#1e3a8a}
   .sc-btn-primary{background:var(--sc-primary);color:#fff}
-  .sc-btn-danger{background:var(--sc-danger);color:#fff}
+  .sc-btn-danger{background:var(--sc-danger);color:#fff} 
+
+ /* Force white text for everything inside the header */
+.sc-header,
+.sc-header * {
+  color: #fff !important;
+}
+
+/* Make the header button look right on a dark header */
+.sc-header .sc-btn,
+.sc-header .sc-btn-muted {
+  background: transparent;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.4);
+}
+.sc-header .sc-btn:hover,
+.sc-header .sc-btn-muted:hover {
+  background: rgba(255,255,255,0.12);
+}
+
 
   /* Left column = flex column with scroll area + sticky actions at bottom */
   .sc-filters{
