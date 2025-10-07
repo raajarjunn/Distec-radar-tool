@@ -14,13 +14,14 @@
     .scorecard-container { 
       width: 297mm;                 /* lock to A4 landscape width */
       margin: 0 auto;               /* consistent centering */
-      page-break-after: always; 
-      break-after: page;
+      page-break-inside: avoid; 
+      break-inside: avoid;
     }
-    .scorecard-container:last-child {
-      page-break-after: auto;
-      break-after: auto;
+    .scorecard-container + .scorecard-container{
+      page-break-before: always;
+      break-before: page;
     }
+    /* .scorecard-container{ min-height: 210mm; box-sizing: border-box; } */
 
     body { margin:0; background:#fff; }
 
@@ -44,6 +45,9 @@
    .pdf-row input[type="number"]{width:110px}
    .pdf-row .name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
    .pdf-row .hint{color:#6b7280;font-size:12px}
+    /* Turn off reserved gutters during export so the capture fills the page */
+    html.exporting, body.exporting { scrollbar-gutter: auto !important; }
+
 
 
   </style>
@@ -68,160 +72,205 @@
     {{ combined_html|safe }}
   </div>
 
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+
+
 <script>
-  const filename = '{{ filename }}';
+/* ============================================================================
+   CONFIG
+============================================================================ */
+const FILENAME = '{{ filename }}';
 
-  // --- UI: manage the per-file "after page #" list ---
-  const pdfInput  = document.getElementById('pdfFiles');
-  const pdfQueue  = document.getElementById('pdfQueue');
-  let queued = []; // [{id, file, afterPage: number|null}]
+/* ============================================================================
+   DOM
+============================================================================ */
+const btnDownload  = document.getElementById('download');
+const compendiumEl = document.getElementById('compendium');
+const pdfInput     = document.getElementById('pdfFiles');   // <input multiple>
+const pdfQueue     = document.getElementById('pdfQueue');   // list container
 
-  pdfInput.addEventListener('change', () => {
-    const startIndex = queued.length;
-    const files = Array.from(pdfInput.files || []);
-    files.forEach((file, i) => {
-      const id = `f_${startIndex + i}`;
-      queued.push({ id, file, afterPage: null }); // null = end
-    });
+/* Selected PDFs with positions: [{ id, file, afterPage|null }] */
+let queued = [];
+
+/* ============================================================================
+   UTILS
+============================================================================ */
+async function waitForImages(root){
+  const imgs = Array.from(root.querySelectorAll('img'));
+  const pending = imgs.filter(i => !i.complete).map(i => new Promise(res=>{
+    i.addEventListener('load', res, {once:true});
+    i.addEventListener('error', res, {once:true}); // don't block export
+  }));
+  if (pending.length) await Promise.all(pending);
+}
+function readFileAsArrayBuffer(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = reject;
+    r.readAsArrayBuffer(file);
+  });
+}
+function downloadPdfBytes(bytes, name = FILENAME){
+  const blob = new Blob([bytes], {type:'application/pdf'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ============================================================================
+   OPTIONAL UI: per-file "After page #" editor
+============================================================================ */
+if (pdfInput && pdfQueue){
+  pdfInput.addEventListener('change', ()=>{
+    const start = queued.length;
+    for (const [i, file] of Array.from(pdfInput.files || []).entries()){
+      queued.push({ id:`f_${start+i}`, file, afterPage:null }); // null=end
+    }
     renderQueue();
-    // Clear the <input> so user can add more later without replacing
-    pdfInput.value = '';
+    pdfInput.value = ''; // allow adding more later without replacing
   });
 
   function renderQueue(){
     pdfQueue.innerHTML = '';
-    if (!queued.length) {
-      pdfQueue.innerHTML = '<div class="hint" style="padding:6px 8px;">No extra PDFs selected.</div>';
+    if (!queued.length){
+      pdfQueue.innerHTML = '<div style="color:#6b7280;padding:6px 8px;">No extra PDFs selected.</div>';
       return;
     }
-    queued.forEach((item, idx) => {
+    queued.forEach((item, idx)=>{
       const row = document.createElement('div');
       row.className = 'pdf-row';
       row.innerHTML = `
         <span class="name" title="${item.file.name}">${idx+1}. ${item.file.name}</span>
-        <label>After page #
-          <input type="number" min="0" step="1" placeholder="end" data-id="${item.id}">
-        </label>
+        <label>After page # <input type="number" min="0" step="1" placeholder="end" data-id="${item.id}" style="width:110px"></label>
         <button type="button" data-remove="${item.id}">Remove</button>
-        <span class="hint">0 = before first; 1 = after page 1; blank = end</span>
+        <span class="hint">0=before first · 1=after page 1 · blank=end</span>
       `;
       pdfQueue.appendChild(row);
     });
 
-    // Bind inputs
     pdfQueue.querySelectorAll('input[type="number"]').forEach(inp=>{
-      inp.addEventListener('input', e => {
+      inp.addEventListener('input', e=>{
         const id = e.target.getAttribute('data-id');
-        const it = queued.find(q => q.id === id);
-        const v = e.target.value.trim();
-        if (v === '') it.afterPage = null;           // end
-        else {
-          const n = parseInt(v, 10);
-          it.afterPage = isNaN(n) ? null : Math.max(0, n); // clamp min 0
-        }
+        const it = queued.find(q=>q.id===id);
+        const v  = e.target.value.trim();
+        it.afterPage = (v==='') ? null : Math.max(0, parseInt(v,10) || 0);
       });
     });
-
-    // Bind remove
     pdfQueue.querySelectorAll('button[data-remove]').forEach(btn=>{
-      btn.addEventListener('click', e => {
+      btn.addEventListener('click', e=>{
         const id = e.target.getAttribute('data-remove');
-        queued = queued.filter(q => q.id !== id);
+        queued = queued.filter(q=>q.id!==id);
         renderQueue();
       });
     });
   }
   renderQueue();
+}
 
-  // Utility: read File → ArrayBuffer
-  function readFileAsArrayBuffer(file) {
-    return new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result);
-      r.onerror = reject;
-      r.readAsArrayBuffer(file);
-    });
+/* ============================================================================
+   CORE: render scorecards → jsPDF, then trim known duplication cases
+============================================================================ */
+async function renderCompendiumToJsPDF(){
+  // Stabilize layout so capture doesn't shift
+  window.scrollTo(0, 0);
+  try { await document.fonts?.ready; } catch {}
+  await waitForImages(compendiumEl);
+
+  const opt = {
+    margin: 0,
+    filename: FILENAME,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 1.5,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: 0,
+      // Use clientWidth to avoid capturing the reserved scrollbar gutter
+      windowWidth: compendiumEl.clientWidth,
+      windowHeight: compendiumEl.scrollHeight
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+    pagebreak: { mode: ['css','avoid-all'] }   // no 'legacy'
+  };
+
+  const jsPdf = await html2pdf().set(opt).from(compendiumEl).toPdf().get('pdf');
+
+  // Expected: one page per .scorecard-container
+  const expectedCards = document.querySelectorAll('.scorecard-container').length || 0;
+  const totalPages    = jsPdf.internal.getNumberOfPages();
+
+  // Case A: html2pdf doubled pages (classic bug) → remove even pages
+  if (expectedCards && totalPages === expectedCards * 2){
+    for (let i = totalPages; i >= 2; i--) if (i % 2 === 0) jsPdf.deletePage(i);
+  } else
+  // Case B: one extra trailing blank page → drop the last page
+  if (expectedCards && totalPages === expectedCards + 1){
+    jsPdf.deletePage(totalPages);
   }
 
-  // --- Build + merge ---
-  document.getElementById('download').onclick = async function () {
-    const element = document.getElementById('compendium');
-    document.body.classList.add('exporting');
+  return jsPdf;
+}
 
-    const opt = {
-      margin: 0,
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
+/* ============================================================================
+   MERGE: insert user PDFs at flexible positions (after trimming)
+============================================================================ */
+async function mergeQueuedPdfs(jsPdf){
+  if (!queued.length || !window.PDFLib){
+    jsPdf.save(FILENAME);
+    return;
+  }
 
-    try {
-      // 1) Render compendium → jsPDF
-      const jsPdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+  const baseBytes = jsPdf.output('arraybuffer');
+  const mainDoc   = await PDFLib.PDFDocument.load(baseBytes);
 
-      // 2) Your current behavior: delete every even page (optional)
-      for (let i = jsPdf.internal.getNumberOfPages(); i >= 2; i--) {
-        if (i % 2 === 0) jsPdf.deletePage(i);
-      }
+  // Build sorted plan; blank position (null) means append (Infinity)
+  const plan = queued.map((q, idx)=>({
+    idx,
+    file: q.file,
+    pos: (q.afterPage===null ? Infinity : q.afterPage) // 0..∞
+  })).sort((a,b)=>(a.pos - b.pos) || (a.idx - b.idx));
 
-      // 3) Convert to bytes and load with pdf-lib
-      const mainBytes = jsPdf.output('arraybuffer');
-      const mainDoc = await PDFLib.PDFDocument.load(mainBytes);
+  for (const step of plan){
+    const extraBuf = await readFileAsArrayBuffer(step.file);
+    const extraDoc = await PDFLib.PDFDocument.load(extraBuf);
+    const pages    = await mainDoc.copyPages(extraDoc, extraDoc.getPageIndices());
 
-      // 4) Build an insertion plan:
-      //    - afterPage is 1-based semantic: "after page N" → insert at index N
-      //    - 0 means before first → index 0
-      //    - null means "end" → we’ll treat as Infinity to sort to the end
-      const plan = queued.map((q, idx) => ({
-        idx,                       // stable tie-breaker
-        file: q.file,
-        pos: (q.afterPage === null ? Infinity : q.afterPage) // 0..∞
-      }))
-      // sort by position ascending; equal positions keep original order
-      .sort((a,b) => (a.pos - b.pos) || (a.idx - b.idx));
+    const count  = mainDoc.getPageCount();
+    const index0 = (step.pos===Infinity) ? count : Math.min(Math.max(0, step.pos), count);
+    pages.forEach((p,i)=> mainDoc.insertPage(index0 + i, p));
+  }
 
-      // 5) Execute the plan
-      //    We insert in sorted order and compute the 0-based insert index
-      //    against the *current* page count each time.
-      for (const step of plan) {
-        const buf = await readFileAsArrayBuffer(step.file);
-        const extraDoc = await PDFLib.PDFDocument.load(buf);
-        const pages = await mainDoc.copyPages(extraDoc, extraDoc.getPageIndices());
+  const merged = await mainDoc.save();
+  downloadPdfBytes(merged, FILENAME);
+}
 
-        // Current page count *before* inserting this file
-        const currentCount = mainDoc.getPageCount();
+/* ============================================================================
+   ORCHESTRATION: one click path that renders → trims → merges → downloads
+============================================================================ */
+btnDownload?.addEventListener('click', async ()=>{
+  // Disable reserved gutters & sticky UI during export (matches your CSS)
+  document.documentElement.classList.add('exporting');
+  document.body.classList.add('exporting');
 
-        // Determine insert index:
-        // pos = Infinity → append at end
-        // pos = 0 → before first page (index 0)
-        // pos = N → after page N → index = clamp(N, 0..currentCount)
-        const index0 = (step.pos === Infinity)
-          ? currentCount
-          : Math.min(Math.max(0, step.pos), currentCount);
-
-        pages.forEach((p, i) => mainDoc.insertPage(index0 + i, p));
-        // page count automatically grows; next iteration sees updated count
-      }
-
-      // 6) Save merged and download
-      const mergedBytes = await mainDoc.save();
-      const blob = new Blob([mergedBytes], { type: 'application/pdf' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to build PDF. See console for details.');
-    } finally {
-      document.body.classList.remove('exporting');
-    }
-  };
+  try {
+    const jsPdf = await renderCompendiumToJsPDF();
+    await mergeQueuedPdfs(jsPdf);
+  } catch (err){
+    console.error(err);
+    alert('Failed to build PDF. See console for details.');
+  } finally {
+    document.body.classList.remove('exporting');
+    document.documentElement.classList.remove('exporting');
+  }
+});
 </script>
 
 
