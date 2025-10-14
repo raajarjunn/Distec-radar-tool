@@ -2,6 +2,8 @@
 {% load static %}
 
 {% block title %}Mind Map{% endblock title %}
+{% block sidebar %}{% endblock sidebar %}
+
 
 {% block stylesheets %}
   {# MindElixir CSS #}
@@ -45,7 +47,41 @@
     }
 
     /* Make capture button compact and on-theme */
-    .btn-dark, .btn-outline-dark{ border-width:1px; }
+  .btn-dark, .btn-outline-dark{ border-width:1px; }
+
+  #sidenav-main, .sidenav, .navbar-vertical { display:none !important; }
+
+  /* Remove the left offset the layout gives to content when a sidenav exists */
+  .main-content { margin-left:0 !important; }
+
+  /* If your header/content has extra padding left when sidenav is present: */
+  .header, .container-fluid { padding-left: 1rem !important; } /* tweak as needed */
+
+  /* root-only alignment */
+.me-node.root-centered .me-title{
+  /* pick ONE of these text-align options */
+  text-align: center;        /* <-- center horizontally */
+  /* text-align: justify;    /* <-- or justify if you prefer */
+  /* text-justify: inter-word;  /* (optional) better justification */
+
+  white-space: normal;       /* allow wrapping */
+  overflow-wrap: anywhere;   /* break long words if needed */
+
+  /* perfect centering inside the pill */
+  display: flex;
+  align-items: center;       /* vertical centering */
+  justify-content: center;   /* horizontal centering */
+
+  max-width: 220px;          /* nudge until it looks right */
+}
+
+/* (Only if you chose justify and want the last line justified too) */
+.me-node.root-centered .me-title::after{
+  content:"";
+  display:inline-block;
+  width:100%;
+}
+
   </style>
 {% endblock stylesheets %}
 
@@ -147,7 +183,7 @@
 
       mind = new MindElixir({
         el: '#mindMapContainer',
-        direction: MindElixir.RIGHT,
+        direction: MindElixir.LEFT,
         draggable: true,
         contextMenu: true,
         toolBar: true,

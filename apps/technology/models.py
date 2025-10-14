@@ -7,10 +7,10 @@ from django.utils import timezone
 import json
 
 CONF_CHOICES = (
-    ("C1",  "C1 Public"),
-    ("C2",  "C2 Confidential"),
-    ("C3C", "C3 Strategic (Civil)"),
-    ("C3M", "C3 Strategic (Military)"),
+    ("C1",  "C1-PUBLIC"),
+    ("C2",  "C2-CONFIDENTIAL"),
+    ("C3C", "C3-STRATEGIC (CIVIL)"),
+    ("C3M", "C3-STRATEGIC (MILITARY)"),
 )
 CONFIDENTIALITY_CHOICES = CONF_CHOICES
 

@@ -559,7 +559,7 @@ def mindmap_view(request):
         children.append(macro_node)
 
     mindmap_data = {
-        "nodeData": {"id": "root", "topic": "Disruptive technologies", "children": children},
+        "nodeData": {"id": "root", "topic": "Disruptive\nTechnologies", "children": children},
         "direction": 0, "arrows": [], "summaries": [],
         "theme": {
             "name": "Latte", "type": "light",

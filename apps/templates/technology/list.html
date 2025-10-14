@@ -181,7 +181,7 @@
                         <a href="#"
                            class="btn btn-sm btn-outline-danger js-open-delete"
                            data-url="{% url 'technology_delete' t.pk %}"
-                           data-name="{{ t.name|escapejs }}">
+                           data-name="{{ t.name|escape }}">
                           Delete
                         </a>
                       {% endif %}
@@ -470,8 +470,54 @@
 
 {% block javascripts %}
 {{ block.super }}
+
 <script>
 (function () {
+  // ===== Helpers for special characters / Unicode normalization =====
+  // ===== Helpers for special characters / Unicode normalization =====
+function decodeJsEscapes(str) {
+  var s = String(str || "");
+  // handle double-escaped sequences first: \\uXXXX -> \uXXXX
+  s = s.replace(/\\\\u/g, '\\u').replace(/\\\\x/g, '\\x');
+
+  // \u{1F600} (code point)
+  s = s.replace(/\\u\{([0-9a-fA-F]+)\}/g, function(_, hex){
+    try { return String.fromCodePoint(parseInt(hex, 16)); } catch { return _; }
+  });
+  // \u00XX (BMP)
+  s = s.replace(/\\u([0-9a-fA-F]{4})/g, function(_, hex){
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+  // \xNN
+  s = s.replace(/\\x([0-9a-fA-F]{2})/g, function(_, hex){
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+  return s;
+}
+
+function decodeEntities(str) {
+  if (!str) return "";
+  var el = document.createElement('textarea');
+  el.innerHTML = str;
+  return el.value;
+}
+
+function normalizeText(str) {
+  var s = String(str || "");
+  // 1) HTML entities (&amp;, &#x2013;, &nbsp;)
+  s = decodeEntities(s);
+  // 2) JS/JSON unicode escapes (\u002D, \x2D, \u{2D})
+  s = decodeJsEscapes(s);
+  // 3) Whitespace + invisibles
+  s = s.replace(/\u00A0/g, ' ')
+       .replace(/[\u200B-\u200D\uFEFF]/g, '')
+       .replace(/\s+/g, ' ')
+       .trim();
+  // 4) Unicode normalization so composed/decomposed forms match
+  if (typeof s.normalize === 'function') s = s.normalize('NFC');
+  return s;
+}
+
   // Delete modal wiring
   function bindDeleteModal($) {
     var targetName = "", actionUrl = "";
@@ -480,11 +526,17 @@
 
     $(document).on('click', '.js-open-delete', function (e) {
       e.preventDefault();
-      targetName = $(this).data('name') || "";
-      actionUrl  = $(this).data('url')  || "";
+
+      // Read raw from data-* (prefer attr in case jQuery caching misses updates)
+      var rawName = $(this).attr('data-name');
+      targetName  = normalizeText(rawName || $(this).data('name') || "");
+      actionUrl   = $(this).data('url') || "";
+
       $form.attr('action', actionUrl);
-      $chip.text(targetName);
-      $input.val('').attr('placeholder', targetName).removeClass('is-valid is-invalid');
+      $chip.text(targetName); // safe for special chars
+      $input.val('')
+            .attr('placeholder', targetName) // placeholder handles special chars fine
+            .removeClass('is-valid is-invalid');
       $btn.prop('disabled', true);
       $modal.modal('show');
     });
@@ -492,20 +544,26 @@
     $modal.on('shown.bs.modal', function () { $input.trigger('focus'); });
 
     $input.on('input', function () {
-      var val = $.trim($(this).val() || "");
-      var match = (val === targetName);
+      var val = $(this).val() || "";
+      var normVal = normalizeText(val);
+      var match = (normVal === targetName);
+
       $btn.prop('disabled', !match);
-      $input.toggleClass('is-valid', match).toggleClass('is-invalid', !match && val.length > 0);
+      $input.toggleClass('is-valid', match)
+            .toggleClass('is-invalid', !match && normVal.length > 0);
     });
   }
 
   (function waitForBootstrap(tries) {
     tries = tries || 40;
     if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) { bindDeleteModal(window.jQuery); return; }
-    if (tries <= 0) return; setTimeout(function(){ waitForBootstrap(tries-1); }, 150);
+    if (tries <= 0) return;
+    setTimeout(function(){ waitForBootstrap(tries-1); }, 150);
   })();
 })();
+</script>
 
+<script>
 /* ========= Delete Modal close compatibility (BS4/BS5) ========= */
 (function(){
   var el = document.getElementById('deleteTechModal');
@@ -513,20 +571,20 @@
   function hideDelModal(){
     if (window.bootstrap && bootstrap.Modal) {
       bootstrap.Modal.getOrCreateInstance(el).hide();
-    } else if (window.jQuery && $(el).modal) {
-      $(el).modal('hide');
+    } else if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
+      window.jQuery(el).modal('hide');
     }
   }
 
-  // Close on any element with data-dismiss or data-bs-dismiss inside the modal
-  el.addEventListener('click', function(e){
-    if (e.target.closest('[data-dismiss="modal"], [data-bs-dismiss="modal"]')) {
-      e.preventDefault();
-      hideDelModal();
-    }
-  });
+  if (el) {
+    el.addEventListener('click', function(e){
+      if (e.target.closest('[data-dismiss="modal"], [data-bs-dismiss="modal"]')) {
+        e.preventDefault();
+        hideDelModal();
+      }
+    });
+  }
 })();
-
-
 </script>
+
 {% endblock javascripts %}
