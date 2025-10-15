@@ -18,6 +18,7 @@ urlpatterns = [
     path("role-admin/<str:pk>/", UserRoleUpdateView.as_view(), name="role_admin_edit"),
 
     path("role-admin/users/<str:pk>/delete/", UserRoleDeleteView.as_view(), name="admin_user_delete"),
+  
 
 
 

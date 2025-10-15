@@ -124,56 +124,48 @@
                   <th class="text-end">Actions</th>
                 </tr>
               </thead>
+             
               <tbody>
   {% for u in users %}
-    <tr id="row-{{ u.pk }}">
-      <td class="fw-semibold">{{ u.username }}</td>
-      <td class="text-muted">{{ u.email }}</td>
-      <td>
-        {% if u.role_id == 1 %}
-          <span class="badge-role">Super Admin</span>
-        {% elif u.role_id == 2 %}
-          <span class="badge-role">Admin</span>
-        {% elif u.role_id == 4 %}
-          <span class="badge-role">Read Only User</span>
-        {% elif u.role_id == 3 %}
-          <span class="badge-role">Basic User</span>
-        {% else %}
-          <span class="badge-role">Unknown</span>
-        {% endif %}
-      </td>
-      <td>{% if u.is_super_admin %}✅{% else %}—{% endif %}</td>
+    {% if u.is_active and not u.is_deleted %}
+      <tr id="row-{{ u.pk }}">
+        <td class="fw-semibold">{{ u.username }}</td>
+        <td class="text-muted">{{ u.email }}</td>
+        <td>
+          {% if u.role_id == 1 %}
+            <span class="badge-role">Super Admin</span>
+          {% elif u.role_id == 2 %}
+            <span class="badge-role">Admin</span>
+          {% elif u.role_id == 4 %}
+            <span class="badge-role">Read Only User</span>
+          {% elif u.role_id == 3 %}
+            <span class="badge-role">Basic User</span>
+          {% else %}
+            <span class="badge-role">Unknown</span>
+          {% endif %}
+        </td>
+        <td>{% if u.is_super_admin %}✅{% else %}—{% endif %}</td>
+        <td class="text-end">
+          {% if user|can:"manage_roles" %}
+            <a href="#"
+               class="btn-action"
+               hx-get="{% url 'role_admin_edit' u.pk %}"
+               hx-target="#editRoleBody"
+               hx-swap="innerHTML">Edit</a>
 
-      <td class="text-end">
-        {% if user|can:"manage_roles" %}
-
-          <!-- EDIT (Django pk) -->
-          <a href="#"
-             class="btn-action"
-             hx-get="{% url 'role_admin_edit' u.pk %}"
-             hx-target="#editRoleBody"
-             hx-swap="innerHTML">
-            Edit
-          </a>
-
-    <button class="btn-action text-danger"
-        hx-post="{% url 'admin_user_delete' u.pk %}"
-        hx-confirm="Are you sure you want to delete this user?"
-        hx-target="#row-{{ u.pk }}"
-        hx-swap="outerHTML">
-  Delete
-</button>
-
-        {% endif %}
-      </td>
-    </tr>
+            <button class="btn-action text-danger"
+                    hx-post="{% url 'admin_user_delete' u.pk %}"
+                    hx-confirm="Are you sure you want to delete this user?"
+                    hx-target="#row-{{ u.pk }}"
+                    hx-swap="outerHTML">Delete</button>
+          {% endif %}
+        </td>
+      </tr>
+    {% endif %}
   {% empty %}
     <tr><td colspan="5" class="text-muted">No users found.</td></tr>
   {% endfor %}
 </tbody>
-
-          
-
 
 
             </table>

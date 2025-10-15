@@ -26,6 +26,7 @@ from pymongo import MongoClient
 from django.views.decorators.csrf import csrf_exempt
 from bson.errors import InvalidId
 
+from django.db import DatabaseError
 
 
 
@@ -131,13 +132,6 @@ class UserRoleListView(LoginRequiredMixin, ActionPermissionMixin, ListView):
     context_object_name = "users"
     paginate_by = 20
 
-    def get_queryset(self):
-        q = (self.request.GET.get("q") or "").strip()
-        qs = User.objects.all().select_related("role").order_by("username")
-        if q:
-            qs = qs.filter(Q(username__icontains=q) | Q(email__icontains=q))
-        return qs
-
 
 
 class UserRoleUpdateView(LoginRequiredMixin, ActionPermissionMixin, UpdateView):
@@ -188,45 +182,44 @@ class UserRoleUpdateView(LoginRequiredMixin, ActionPermissionMixin, UpdateView):
 # apps/authentication/views.py
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.http import Http404, HttpResponse, JsonResponse, HttpResponseNotAllowed
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import Http404, HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
 from bson import ObjectId
-# from apps.core.mixins import ActionPermissionMixin  # same mixin you used
+# from apps.core.mixins import ActionPermissionMixin  # same as your edit view
 
 User = get_user_model()
 
 class UserRoleDeleteView(LoginRequiredMixin, ActionPermissionMixin, View):
     required_action = "manage_roles"
 
-    def get_object(self):
+    def _get_object(self):
         pk = self.kwargs.get("pk")
         qs = User.objects.all()
 
-        # Try Django pk straight
+        # Try Django pk directly
         try:
             return qs.get(pk=pk)
         except User.DoesNotExist:
             pass
 
-        # Try interpreting pk as ObjectId (when a hex leaks into the URL)
+        # Try ObjectId (if a hex sneaks in)
         try:
             return qs.get(pk=ObjectId(pk))
         except Exception:
             pass
 
-        # Last-resort lookups (match your UpdateView’s pattern)
+        # Fallbacks, same spirit as your UpdateView
         obj = (qs.filter(id=pk).first()
                or qs.filter(id=ObjectId(pk)).first())
         if obj:
             return obj
-
         raise Http404("User not found")
 
     def post(self, request, *args, **kwargs):
-        user = self.get_object()
+        user = self._get_object()
 
         # prevent self-delete
         if str(request.user.pk) == str(user.pk):
@@ -235,17 +228,18 @@ class UserRoleDeleteView(LoginRequiredMixin, ActionPermissionMixin, View):
             messages.error(request, "Cannot delete yourself.")
             return redirect(reverse("role_admin_list"))
 
-        # Soft delete (adjust to your policy)
+        # Soft delete
         user.is_active = False
         user.save(update_fields=["is_active"])
 
-        # HTMX: return empty 204 so hx-swap="outerHTML" removes the row
+        # HTMX: return 200 with empty body so hx-swap='outerHTML' removes the row
         if request.headers.get("HX-Request"):
-            return HttpResponse(status=204)
+            return HttpResponse("")  # 200 + empty -> target replaced with ""
 
         messages.success(request, "User deleted.")
         return redirect(reverse("role_admin_list"))
 
-    # Block GET deletes
+    # Disallow GET for deletion
     def get(self, request, *args, **kwargs):
         return HttpResponseNotAllowed(["POST"])
+
