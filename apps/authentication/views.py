@@ -18,6 +18,17 @@ from apps.authentication.perm import ActionPermissionMixin, require_action
 from bson import ObjectId 
 from django.http import Http404, HttpResponse
 
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
+from django.utils import timezone
+
+from pymongo import MongoClient
+from django.views.decorators.csrf import csrf_exempt
+from bson.errors import InvalidId
+
+
+
+
 logger = logging.getLogger(__name__)  # e.g. "apps.authentication.views"
 User = get_user_model()
 
@@ -37,7 +48,6 @@ def login_view(request):
         if request.method == "POST":
             if form.is_valid():
                 username = form.cleaned_data.get("username")
-                # DO NOT log the password
                 logger.info("login_attempt user=%s ip=%s path=%s", username, _client_ip(request), request.path)
 
                 user = authenticate(request, username=username, password=form.cleaned_data.get("password"))
@@ -51,6 +61,7 @@ def login_view(request):
                         logger.debug("login_fallback_hit user=%s pk=%s", username, getattr(user, "pk", None))
 
                 if user is not None and getattr(user, "pk", None):
+
                     login(request, user)
                     logger.info("login_success user=%s pk=%s dur_ms=%.1f", username, user.pk, (perf_counter() - t0) * 1000)
                     return redirect("/")
@@ -69,9 +80,9 @@ def login_view(request):
 
     except Exception:
         logger.exception("login_view_exception ip=%s", _client_ip(request))
-        # Keep the same UX on error
         msg = "Unexpected error, please try again."
         return render(request, "accounts/login.html", {"form": form, "msg": msg})
+
 
 
 def register_user(request):
@@ -113,8 +124,6 @@ def register_user(request):
         form = SignUpForm()
         return render(request, "accounts/register.html", {"form": form, "msg": msg, "success": False})
     
-
-
 class UserRoleListView(LoginRequiredMixin, ActionPermissionMixin, ListView):
     required_action = "manage_roles"
     model = User
@@ -128,6 +137,8 @@ class UserRoleListView(LoginRequiredMixin, ActionPermissionMixin, ListView):
         if q:
             qs = qs.filter(Q(username__icontains=q) | Q(email__icontains=q))
         return qs
+
+
 
 class UserRoleUpdateView(LoginRequiredMixin, ActionPermissionMixin, UpdateView):
     required_action = "manage_roles"
@@ -171,3 +182,70 @@ class UserRoleUpdateView(LoginRequiredMixin, ActionPermissionMixin, UpdateView):
 
         # Normal POST: follow success_url redirect
         return response
+
+
+
+# apps/authentication/views.py
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.http import Http404, HttpResponse, JsonResponse, HttpResponseNotAllowed
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from bson import ObjectId
+# from apps.core.mixins import ActionPermissionMixin  # same mixin you used
+
+User = get_user_model()
+
+class UserRoleDeleteView(LoginRequiredMixin, ActionPermissionMixin, View):
+    required_action = "manage_roles"
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+        qs = User.objects.all()
+
+        # Try Django pk straight
+        try:
+            return qs.get(pk=pk)
+        except User.DoesNotExist:
+            pass
+
+        # Try interpreting pk as ObjectId (when a hex leaks into the URL)
+        try:
+            return qs.get(pk=ObjectId(pk))
+        except Exception:
+            pass
+
+        # Last-resort lookups (match your UpdateView’s pattern)
+        obj = (qs.filter(id=pk).first()
+               or qs.filter(id=ObjectId(pk)).first())
+        if obj:
+            return obj
+
+        raise Http404("User not found")
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        # prevent self-delete
+        if str(request.user.pk) == str(user.pk):
+            if request.headers.get("HX-Request"):
+                return JsonResponse({"success": False, "error": "Cannot delete yourself."}, status=403)
+            messages.error(request, "Cannot delete yourself.")
+            return redirect(reverse("role_admin_list"))
+
+        # Soft delete (adjust to your policy)
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+
+        # HTMX: return empty 204 so hx-swap="outerHTML" removes the row
+        if request.headers.get("HX-Request"):
+            return HttpResponse(status=204)
+
+        messages.success(request, "User deleted.")
+        return redirect(reverse("role_admin_list"))
+
+    # Block GET deletes
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])

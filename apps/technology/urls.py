@@ -21,9 +21,11 @@ urlpatterns = [
     path("<int:pk>/delete/",     TechnologyDeleteView.as_view(), name="technology_delete"),
 
   
-    path("api/macros/",                  api_macros, name="tech_api_macros"),
-    path("api/meso1/<str:macro>/",       api_meso1,  name="tech_api_meso1"),
-    path("api/meso2/<str:meso1>/",       api_meso2,  name="tech_api_meso2"),
+
+    path("api/macros/",                 api_macros, name="tech_api_macros"),
+    path("api/meso1/<path:macro>/",     api_meso1,  name="tech_api_meso1"),  # was <str:macro>
+    path("api/meso2/<path:meso1>/",     api_meso2,  name="tech_api_meso2"),  # was <str:meso1>
+
 
     path("<int:pk>/field/add/",                add_extra_field,   name="technology_add_field"),
     path("<int:pk>/field/<int:index>/edit/",   edit_extra_field,  name="technology_edit_field"),

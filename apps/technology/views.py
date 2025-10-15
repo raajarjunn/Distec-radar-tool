@@ -127,8 +127,41 @@ def _normalized_category_list():
     cleaned = {(s or "").strip() for s in raw_vals if (s or "").strip()}
     return sorted(cleaned, key=str.lower)
 
+
+def _stable_key_created_desc(obj):
+    # secondary key for consistent ordering
+    dt = getattr(obj, "created_at", None) or datetime.min
+    # Python sorts ascending, so use negative timestamp-like tuple
+    return (-int(dt.timestamp()) if hasattr(dt, "timestamp") else 0)
+
+def _python_sort_active(iterable, desc=True):
+    """
+    Return a list with actives first (desc=True) or inactives first (desc=False).
+    Treat None as inactive (put it with inactives).
+    Within each group, sort by created_at desc, then name asc for stability.
+    """
+    items = list(iterable)  # force load once
+    actives, inactives = [], []
+    for x in items:
+        val = getattr(x, "is_active", False)
+        (actives if val is True else inactives).append(x)
+
+    def group_sort(lst):
+        return sorted(
+            lst,
+            key=lambda o: (
+                _stable_key_created_desc(o),            # created_at desc
+                (getattr(o, "name", "") or "").lower()  # name asc as tiebreaker
+            )
+        )
+
+    a_sorted = group_sort(actives)
+    i_sorted = group_sort(inactives)
+
+    return (a_sorted + i_sorted) if desc else (i_sorted + a_sorted)
+
 def apply_filters_and_sort(request, qs):
-    # Search
+    # -------- Search
     q = (request.GET.get("q") or "").strip()
     if q:
         qs = qs.filter(
@@ -139,7 +172,7 @@ def apply_filters_and_sort(request, qs):
             Q(description__icontains=q)
         )
 
-    # Category filter (matches any of macro/meso1/meso2)
+    # -------- Category filter
     selected_categories = [c.strip() for c in request.GET.getlist("categories") if c.strip()]
     if selected_categories:
         qcat = Q()
@@ -147,34 +180,33 @@ def apply_filters_and_sort(request, qs):
             qcat |= Q(macro__iexact=c) | Q(meso1__iexact=c) | Q(meso2__iexact=c)
         qs = qs.filter(qcat)
 
-    # Active filter — Djongo-safe style
+    # -------- Active filter (don’t sort yet)
     active_filter, _ = _parse_active(request)
     if active_filter is True:
         qs = qs.filter(is_active__in=[True])
     elif active_filter is False:
         qs = qs.filter(is_active__in=[False])
+    # If None: include all; we’ll only *sort* by active if asked
 
-    # Sort
+    # -------- Sort
     sort = (request.GET.get("sort") or "created_desc").strip()
-    if sort in ("active_asc", "active_desc"):
-        try:
-            qs = qs.annotate(_active_i=Case(
-                When(is_active=True, then=1),
-                default=0,
-                output_field=IntegerField(),
-            )).order_by("-_active_i" if sort == "active_desc" else "_active_i", "-created_at")
-        except DatabaseError:
-            qs = qs.order_by("-created_at")
-    else:
-        ordering_map = {
-            "name_asc": "name",
-            "name_desc": "-name",
-            "created_asc": "created_at",
-            "created_desc": "-created_at",
-        }
-        qs = qs.order_by(ordering_map.get(sort, "-created_at"))
 
-    return qs
+    # Pure-Python for the two tricky sorts — avoids Djongo entirely
+    if sort == "active_desc":   # Active first
+        return _python_sort_active(qs, desc=True)
+    if sort == "active_asc":    # Inactive first
+        return _python_sort_active(qs, desc=False)
+
+    # DB-side sort for the safe cases
+    ordering_map = {
+        "name_asc": "name",
+        "name_desc": "-name",
+        "created_asc": "created_at",
+        "created_desc": "-created_at",
+    }
+    return qs.order_by(ordering_map.get(sort, "-created_at"))
+
+
 
 
 # -------------------------- list / details --------------------------
@@ -559,7 +591,7 @@ def mindmap_view(request):
         children.append(macro_node)
 
     mindmap_data = {
-        "nodeData": {"id": "root", "topic": "Disruptive\nTechnologies", "children": children},
+        "nodeData": {"id": "root", "topic": "  Disruptive\nTechnologies", "children": children},
         "direction": 0, "arrows": [], "summaries": [],
         "theme": {
             "name": "Latte", "type": "light",

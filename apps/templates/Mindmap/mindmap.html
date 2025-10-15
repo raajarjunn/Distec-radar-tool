@@ -57,30 +57,37 @@
   /* If your header/content has extra padding left when sidenav is present: */
   .header, .container-fluid { padding-left: 1rem !important; } /* tweak as needed */
 
-  /* root-only alignment */
-.me-node.root-centered .me-title{
-  /* pick ONE of these text-align options */
-  text-align: center;        /* <-- center horizontally */
-  /* text-align: justify;    /* <-- or justify if you prefer */
-  /* text-justify: inter-word;  /* (optional) better justification */
+  /* Force the root title to wrap and center */
+  /* Limit + wrap + center ONLY the root's title */
+  /* Center + wrap the ROOT node title only */
+.me-root .me-title{
+  display:block !important;
+  text-align:center !important;
+  text-indent:0 !important;
 
-  white-space: normal;       /* allow wrapping */
-  overflow-wrap: anywhere;   /* break long words if needed */
-
-  /* perfect centering inside the pill */
-  display: flex;
-  align-items: center;       /* vertical centering */
-  justify-content: center;   /* horizontal centering */
-
-  max-width: 220px;          /* nudge until it looks right */
+  /* allow multi-line wrapping */
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  word-break:break-word !important;
+  line-height:1.25;
+  padding:.25rem .5rem;
+  max-width:420px;         /* tweak width as you like */
+  margin:0 auto;           /* center the block itself */
 }
 
-/* (Only if you chose justify and want the last line justified too) */
-.me-node.root-centered .me-title::after{
-  content:"";
-  display:inline-block;
-  width:100%;
+/* Some themes add justification glyphs via pseudo elements — kill them */
+.me-root .me-title::before,
+.me-root .me-title::after{
+  content:none !important;
+  display:none !important;
 }
+
+/* (Optional) constrain the root node box a bit */
+.me-root{
+  max-width:420px !important;   /* keep the bubble from stretching */
+}
+
+  
 
   </style>
 {% endblock stylesheets %}
@@ -193,18 +200,35 @@
 
       assignIdsAndTypes(mindmapData.nodeData);
       mind.init(mindmapData);
-
-      mind.bus.addListener('operation', op => {
-        if (op.name === 'addChild' || op.name === 'addSibling') {
-          const node = op.obj;
-          if (!node.id) node.id = generateUUID();
-          if (!node.data) node.data = {};
-          const depth = getNodeDepth(mind.getData().nodeData, node.id);
-          node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
+      const rootTitle = document.querySelector(`.me-node[data-nodeid="${mind.getData().nodeData.id}"] .me-title`);
+        if (rootTitle) {
+          rootTitle.style.setProperty('text-align', 'center', 'important');
+          rootTitle.style.removeProperty('text-justify');
         }
+
+      // after mind.init(mindmapData);
+      requestAnimationFrame(() => {
+        const el = document.querySelector('.me-root .me-title');
+        if (el) el.style.textAlign = 'center'; // CSS already does it; this just nudges.
       });
 
-      document.getElementById('captureBtn').addEventListener('click', captureMindMap);
-    });
-  </script>
+
+
+          mind.bus.addListener('operation', op => {
+            if (op.name === 'addChild' || op.name === 'addSibling') {
+              const node = op.obj;
+              if (!node.id) node.id = generateUUID();
+              if (!node.data) node.data = {};
+              const depth = getNodeDepth(mind.getData().nodeData, node.id);
+              node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
+            }
+          });
+
+          document.getElementById('captureBtn').addEventListener('click', captureMindMap);
+        });
+
+    // Tag the root node in the rendered DOM so CSS only hits that one
+    
+
+      </script>
 {% endblock javascripts %}

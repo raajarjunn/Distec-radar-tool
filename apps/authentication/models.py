@@ -1,3 +1,4 @@
+#apps\authentication\models.py
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -64,8 +65,11 @@ class User(AbstractUser):
     avatar_mime = models.CharField(max_length=100, blank=True, default="")
     avatar_sha1 = models.CharField(max_length=40, blank=True, default="", editable=False)
 
+
+
     class Meta:
         db_table = "user"
+        
 
     # Override AbstractUser M2M table names
     groups = models.ManyToManyField(

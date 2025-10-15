@@ -422,597 +422,585 @@
 {% block javascripts %}
 {{ block.super }}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-{# Bootstrap bundle (Popper included). Adjust path if needed or remove if already in base.html #}
-
-{# Local TinyMCE #}
 <script src="{% static 'tinymce/tinymce.min.js' %}"></script>
-
 <script>
+/* ======= Helpers: small feedback + confirm modals ======= */
+(function(){
+  window.showFeedback = function(message, kind='info', opts={}) {
+    const iconWrap = document.getElementById('feedbackIcon');
+    const text = document.getElementById('feedbackText');
+    if (!iconWrap || !text) return;
 
-    /* ======= Helpers: small feedback + confirm modals ======= */
-    (function(){
-      window.showFeedback = function(message, kind='info', opts={}) {
-        const iconWrap = document.getElementById('feedbackIcon');
-        const text = document.getElementById('feedbackText');
-        if (!iconWrap || !text) return;
-
-        const icons = {
-          success: '<span class="badge bg-success">Success</span>',
-          danger:  '<span class="badge bg-danger">Error</span>',
-          warning: '<span class="badge bg-warning text-dark">Warning</span>',
-          info:    '<span class="badge bg-info text-dark">Info</span>',
-        };
-        iconWrap.innerHTML = icons[kind] || icons.info;
-        text.textContent = message || '';
-
-        const el = document.getElementById('feedbackModal');
-        if (!el) return;
-        let modal;
-        if (window.bootstrap?.Modal) {
-          modal = bootstrap.Modal.getOrCreateInstance(el, { backdrop: 'static', keyboard: false });
-          modal.show();
-          setTimeout(()=> modal.hide(), opts.autoHideMs || 1100);
-        } else {
-          el.classList.add('show'); el.style.display = 'block'; // light fallback
-          setTimeout(()=> { el.classList.remove('show'); el.style.display = 'none'; }, opts.autoHideMs || 1100);
-        }
-        if (opts.onHide) {
-          el.addEventListener('hidden.bs.modal', function handler(){ el.removeEventListener('hidden.bs.modal', handler); opts.onHide(); });
-          // fallback: call anyway after timeout
-          setTimeout(()=> { try { opts.onHide(); } catch(e){} }, (opts.autoHideMs || 1100)+50);
-        }
-      };
-
-      window.confirmModal = function(message='Are you sure?') {
-        return new Promise(resolve => {
-          const text = document.getElementById('confirmText');
-          const ok   = document.getElementById('confirmOkBtn');
-          const el   = document.getElementById('confirmModal');
-          if (text) text.textContent = message;
-
-          let decided = false;
-          function cleanup(){
-            ok.removeEventListener('click', onOk);
-            el.removeEventListener('hidden.bs.modal', onHide);
-          }
-          function onOk(){
-            decided = true; cleanup(); if (window.bootstrap?.Modal) bootstrap.Modal.getInstance(el)?.hide();
-            resolve(true);
-          }
-          function onHide(){
-            cleanup(); if (!decided) resolve(false);
-          }
-          ok.addEventListener('click', onOk);
-          el.addEventListener('hidden.bs.modal', onHide);
-
-          if (window.bootstrap?.Modal) bootstrap.Modal.getOrCreateInstance(el).show();
-          else { el.classList.add('show'); el.style.display = 'block'; } // very light fallback
-        });
-      };
-    })();
-
-    // --- define limits + counter BEFORE tinymce.init and expose on window ---
-    window.LIMITS = {
-      "editor-desc": 960,
-      "editor-pub": 700,
-      "editor-attr": 700,
-      "editor-strat": 700,
-      "editor-enab": 680,
-      "editor-chal": 960
+    const icons = {
+      success: '<span class="badge bg-success">Success</span>',
+      danger:  '<span class="badge bg-danger">Error</span>',
+      warning: '<span class="badge bg-warning text-dark">Warning</span>',
+      info:    '<span class="badge bg-info text-dark">Info</span>',
     };
+    iconWrap.innerHTML = icons[kind] || icons.info;
+    text.textContent = message || '';
 
-    window.updateCount = function(editorId, max){
-      const ed = window.tinymce && tinymce.get(editorId);
-      if(!ed) return;
-      const n = (ed.getContent({format:'text'}) || '').length;
-      const $counter = window.jQuery && window.jQuery(`[data-counter-for="${editorId}"]`);
-      if ($counter && $counter.length){
-        $counter.text(`${n} / ${max} characters`)
-                .css('color', n>max ? 'red' : '#6c757d');
+    const el = document.getElementById('feedbackModal');
+    if (!el) return;
+    let modal;
+    if (window.bootstrap?.Modal) {
+      modal = bootstrap.Modal.getOrCreateInstance(el, { backdrop: 'static', keyboard: false });
+      modal.show();
+      setTimeout(()=> modal.hide(), opts.autoHideMs || 1100);
+    } else {
+      el.classList.add('show'); el.style.display = 'block';
+      setTimeout(()=> { el.classList.remove('show'); el.style.display = 'none'; }, opts.autoHideMs || 1100);
+    }
+    if (opts.onHide) {
+      el.addEventListener('hidden.bs.modal', function handler(){ el.removeEventListener('hidden.bs.modal', handler); opts.onHide(); });
+      setTimeout(()=> { try { opts.onHide(); } catch(e){} }, (opts.autoHideMs || 1100)+50);
+    }
+  };
+
+  window.confirmModal = function(message='Are you sure?') {
+    return new Promise(resolve => {
+      const text = document.getElementById('confirmText');
+      const ok   = document.getElementById('confirmOkBtn');
+      const el   = document.getElementById('confirmModal');
+      if (text) text.textContent = message;
+
+      let decided = false;
+      function cleanup(){
+        ok.removeEventListener('click', onOk);
+        el.removeEventListener('hidden.bs.modal', onHide);
       }
-    };
-
-    /* ======= Taxonomy (Macro / Meso1 / Meso2) ======= */
-    (function () {
-      const $ = window.jQuery;
-      if (!$) return; // needs jQuery
-      const $macro = $("#macro-select");
-      if (!$macro.length) return; // not on edit page
-
-      const URL_MACROS = "/technology/api/macros/";
-      const URL_MESO1  = (macro) => `/technology/api/meso1/${encodeURIComponent(macro)}/`;
-      const URL_MESO2  = (m1)    => `/technology/api/meso2/${encodeURIComponent(m1)}/`;
-
-      const $meso1 = $("#meso1-select"), $meso2 = $("#meso2-select");
-      const initMacro = $macro.data('initial') || "";
-      const initM1    = $meso1.data('initial') || "";
-      const initM2    = $meso2.data('initial') || "";
-
-      const $newMac = $("#new-macro-wrap"), $newM1 = $("#new-meso1-wrap"), $newM2 = $("#new-meso2-wrap");
-
-      function opt(t,v){ return $('<option>').text(t).val(v); }
-      function ensureSelected($s, v){
-        if (!v){ $s.val(""); return; }
-        const exists = $s.find('option').filter(function(){ return $(this).val() === v; }).length > 0;
-        if (!exists) $s.prepend(opt(v, v));
-        $s.val(v);
+      function onOk(){
+        decided = true; cleanup(); if (window.bootstrap?.Modal) bootstrap.Modal.getInstance(el)?.hide();
+        resolve(true);
       }
-      function toggleNewInputs(){
-        const m=$macro.val(), m1=$meso1.val(), m2=$meso2.val();
-        $newMac.toggle(m==="__new__");
-        $newM1.toggle(m==="__new__"||m1==="__new__");
-        $newM2.toggle(m==="__new__"||m1==="__new__"||m2==="__new__");
+      function onHide(){
+        cleanup(); if (!decided) resolve(false);
       }
+      ok.addEventListener('click', onOk);
+      el.addEventListener('hidden.bs.modal', onHide);
 
-      function handleMeso1Change(isInit){
-        const v = $meso1.val();
-        $meso2.empty().append(opt(v==="__new__"?"+ Add new":"Select Meso2",""));
-        if (v && v!=="__new__"){
-          $.getJSON(URL_MESO2(v))
-            .done(list => { (list||[]).forEach(it=> $meso2.append(opt(it.name,it.name))); $meso2.append(opt("+ Add new","__new__")); })
-            .always(() => { if (isInit) ensureSelected($meso2, initM2); toggleNewInputs(); });
+      if (window.bootstrap?.Modal) bootstrap.Modal.getOrCreateInstance(el).show();
+      else { el.classList.add('show'); el.style.display = 'block'; }
+    });
+  };
+})();
+
+/* ======= Character limits ======= */
+window.LIMITS = {
+  "editor-desc": 960,
+  "editor-pub": 700,
+  "editor-attr": 700,
+  "editor-strat": 700,
+  "editor-enab": 680,
+  "editor-chal": 960
+};
+
+window.updateCount = function(editorId, max){
+  const ed = window.tinymce && tinymce.get(editorId);
+  if(!ed) return;
+  const n = (ed.getContent({format:'text'}) || '').length;
+  const $counter = window.jQuery && window.jQuery(`[data-counter-for="${editorId}"]`);
+  if ($counter && $counter.length){
+    $counter.text(`${n} / ${max} characters`)
+            .css('color', n>max ? 'red' : '#6c757d');
+  }
+};
+
+/* ======= Taxonomy (Macro / Meso1 / Meso2) – ID-based, path-safe ======= */
+/* ======= Taxonomy (Macro / Meso1 / Meso2) — NAME-based, path-safe ======= */
+(function () {
+  const $ = window.jQuery;
+  if (!$) return;
+
+  const $macro = $("#macro-select");
+  if (!$macro.length) return;
+
+  // Endpoints that match your current views (names in the path)
+  const URL_MACROS = "/technology/api/macros/";                                  // -> [{name}]
+  const URL_MESO1  = (macroName) => `/technology/api/meso1/${encodeURIComponent(macroName)}/`; // -> [{name}]
+  const URL_MESO2  = (meso1Name) => `/technology/api/meso2/${encodeURIComponent(meso1Name)}/`; // -> [{name}]
+
+  const $meso1 = $("#meso1-select"), $meso2 = $("#meso2-select");
+
+  // data-initials are names in your template already
+  const initMacro = ($macro.data('initial') || "").toString();
+  const initM1    = ($meso1.data('initial') || "").toString();
+  const initM2    = ($meso2.data('initial') || "").toString();
+
+  const $newMac = $("#new-macro-wrap"), $newM1 = $("#new-meso1-wrap"), $newM2 = $("#new-meso2-wrap");
+
+  const opt = (t,v) => $('<option>').text(t).val(v);
+  const isPlaceholder = v => !v || v === "__new__";
+  const ensureSelected = ($s, v) => { if (v) $s.val(v); };
+
+  function toggleNewInputs(){
+    const m=$macro.val(), m1=$meso1.val(), m2=$meso2.val();
+    $newMac.toggle(m==="__new__");
+    $newM1.toggle(m==="__new__"||m1==="__new__");
+    $newM2.toggle(m==="__new__"||m1==="__new__"||m2==="__new__");
+  }
+
+  function setMeso2Options(list, isInit=false){
+    $meso2.empty().append(opt("Select Meso2",""));
+    (list || []).forEach(it => $meso2.append(opt(it.name, it.name)));
+    $meso2.append(opt("+ Add new","__new__"));
+    if (isInit) ensureSelected($meso2, initM2);
+    toggleNewInputs();
+  }
+
+  function setMeso1Options(list, isInit=false){
+    $meso1.empty().append(opt("Select Meso1",""));
+    (list || []).forEach(it => $meso1.append(opt(it.name, it.name)));
+    $meso1.append(opt("+ Add new","__new__"));
+    if (isInit) ensureSelected($meso1, initM1);
+    toggleNewInputs();
+  }
+
+  function handleMeso1Change(isInit){
+    const m1 = $meso1.val();
+    $meso2.empty().append(opt(isPlaceholder(m1)?"+ Add new":"Select Meso2",""));
+    if (isPlaceholder(m1)) { $meso2.append(opt("+ Add new","__new__")); toggleNewInputs(); return; }
+
+    $.getJSON(URL_MESO2(m1))
+      .done(list => setMeso2Options(list, isInit))
+      .always(() => toggleNewInputs());
+  }
+
+  function handleMacroChange(isInit){
+    const macro = $macro.val();
+
+    $meso1.empty().append(opt(isPlaceholder(macro)?"+ Add new":"Select Meso1",""));
+    $meso2.empty().append(opt("Select Meso2",""));
+
+    if (isPlaceholder(macro)) {
+      $meso1.append(opt("+ Add new","__new__"));
+      $meso2.append(opt("+ Add new","__new__"));
+      toggleNewInputs();
+      return;
+    }
+
+    $.getJSON(URL_MESO1(macro))
+      .done(list => {
+        setMeso1Options(list, isInit);
+        handleMeso1Change(true);
+      });
+  }
+
+  function loadMacros(){
+    $macro.empty().append(opt("Loading…",""));
+    $.getJSON(URL_MACROS)
+      .done(list => {
+        $macro.empty().append(opt("Select Macro",""));
+        (list || []).forEach(it => $macro.append(opt(it.name, it.name)));
+        $macro.append(opt("+ Add new","__new__"));
+      })
+      .always(() => {
+        ensureSelected($macro, initMacro);
+        handleMacroChange(true);
+      });
+  }
+
+  $macro.on("change", ()=> handleMacroChange(false));
+  $meso1.on("change", ()=> handleMeso1Change(false));
+  $meso2.on("change", ()=> toggleNewInputs());
+
+  loadMacros();
+})();
+
+
+/* ======= TinyMCE (lists-only + limits + paste handling) ======= */
+tinymce.init({
+  selector: 'textarea.tinymce-bullets, textarea.tinymce-extra',
+  menubar: false,
+  branding: false,
+  plugins: 'lists advlist textpattern charmap paste',
+  toolbar: 'bold italic subscript superscript charmap | outdent indent',
+  valid_elements: 'ul,ol,li,strong,em,sup,sub,span,br',
+  invalid_elements: 'p,h1,h2,h3,h4,h5,h6,img,table,div',
+
+  // paste
+  paste_as_text: true,
+  paste_data_images: false,
+  paste_webkit_styles: 'none',
+  paste_convert_middot_lists: true,
+  paste_tab_spaces: 2,
+
+  forced_root_block: false,
+  lists_indent_on_tab: true,
+
+  textpattern_patterns: [
+    { start: '* ', cmd: 'InsertUnorderedList' },
+    { start: '- ', cmd: 'InsertUnorderedList' },
+    { start: '/ ', cmd: 'InsertUnorderedList' },
+    { start: '1. ', cmd: 'InsertOrderedList' }
+  ],
+
+  setup: function (ed) {
+    const $ = window.jQuery;
+
+    function ensureListContainer() {
+      const body = ed.getBody(); if (!body) return;
+      Array.from(body.childNodes).forEach(n => {
+        if (n.nodeType === 3 && n.nodeValue.trim() !== '') {
+          const ul = ed.getDoc().createElement('ul');
+          const li = ed.getDoc().createElement('li');
+          li.appendChild(ed.getDoc().createTextNode(n.nodeValue));
+          ul.appendChild(li);
+          body.replaceChild(ul, n);
+        }
+      });
+      if (!body.querySelector('ul,ol')) {
+        ed.setContent('<ul><li></li></ul>');
+        const li = body.querySelector('li');
+        if (li) ed.selection.setCursorLocation(li, 0);
+      }
+    }
+    function currentLI() {
+      const n = ed.selection.getNode();
+      return n ? ed.dom.getParent(n, 'li') : null;
+    }
+    function atStartOf(node) {
+      const rng = ed.selection.getRng(); if (!rng) return false;
+      const startNode = rng.startContainer;
+      return (startNode === node || startNode === node.firstChild) && rng.startOffset === 0;
+    }
+    function isOnlyEmptyLI(li) {
+      if (!li) return false;
+      const list = li.parentElement; if (!list) return false;
+      const items = Array.from(list.children).filter(el => el.nodeName === 'LI');
+      return items.length === 1 && items[0].textContent.trim() === '';
+    }
+    function insertSiblingLI(afterLi) {
+      const list = afterLi.parentNode;
+      const newLi = ed.getDoc().createElement('li');
+      newLi.appendChild(ed.getDoc().createTextNode(''));
+      if (afterLi.nextSibling) list.insertBefore(newLi, afterLi.nextSibling);
+      else list.appendChild(newLi);
+      ed.selection.setCursorLocation(newLi, 0);
+    }
+
+    // character limit helpers
+    const WARN_TEXT = "CHARECTER EXCEEDS THE LIMIT.";
+    const warnState = {};
+
+    function getMax() {
+      const id = ed.getElement().id;
+      return (window.LIMITS && window.LIMITS[id]) || null;
+    }
+    function getPlainLen() {
+      return (ed.getContent({ format: 'text' }) || '').length;
+    }
+    function isTextProducingKey(e){
+      if (e.ctrlKey || e.metaKey || e.altKey) return false;
+      const k = e.key;
+      const nonText = ['Backspace','Delete','Tab','Escape','Enter','Insert','Home','End','PageUp','PageDown','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
+      if (nonText.includes(k)) return false;
+      return k.length === 1 || k === ' ' || k === 'Dead';
+    }
+    function notifyOnce(){
+      const id = ed.getElement().id;
+      if (!warnState[id]?.warned){
+        warnState[id] = { warned: true };
+        if (window.showFeedback){
+          showFeedback(WARN_TEXT, 'warning', { autoHideMs: 1400 });
         } else {
-          $meso2.append(opt("+ Add new","__new__")); toggleNewInputs();
+          console.warn(WARN_TEXT);
         }
       }
+    }
+    function resetWarnIfUnder(){
+      const id = ed.getElement().id;
+      const max = getMax(); if (!max) return;
+      const n = getPlainLen();
+      if (n <= max && warnState[id]?.warned) warnState[id].warned = false;
+    }
 
-      function handleMacroChange(isInit){
-        const v = $macro.val();
-        $meso1.empty().append(opt(v==="__new__"?"+ Add new":"Select Meso1",""));
-        $meso2.empty().append(opt("Select Meso2",""));
-        if (v && v!=="__new__"){
-          $.getJSON(URL_MESO1(v))
-            .done(list => { (list||[]).forEach(it=> $meso1.append(opt(it.name,it.name))); $meso1.append(opt("+ Add new","__new__")); })
-            .always(() => { if (isInit) ensureSelected($meso1, initM1); toggleNewInputs(); handleMeso1Change(true); });
-        } else {
-          $meso1.append(opt("+ Add new","__new__")); $meso2.append(opt("+ Add new","__new__")); toggleNewInputs();
+    if ($) $('form').on('submit', function(){ if (window.tinymce?.triggerSave) tinymce.triggerSave(); });
+
+    ed.on('PastePreProcess', function (e) {
+      const html = (e.content || '').trim();
+      if (html.match(/<\/?(ul|ol|li)\b/i)) return;
+
+      const text = (e.content || e.text || '').replace(/\r\n?/g, '\n');
+      if (!text || text.indexOf('\n') === -1) return;
+
+      const li = currentLI();
+      if (!li) return;
+
+      const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+      if (!lines.length) return;
+
+      const cleaned = lines.map(l => l.replace(/^(\d+\.)|^[\*\-\u2022]\s+/, '').trim());
+      const items = cleaned.map(line => `<li>${ed.dom.encode(line)}</li>`).join('');
+      e.content = items;
+    });
+
+    ed.on('PastePostProcess', function () {
+      const body = ed.getBody();
+      if (!body.querySelector('ul,ol')) {
+        const loneLis = Array.from(body.childNodes).filter(n => n.nodeName === 'LI');
+        if (loneLis.length) {
+          const ul = ed.getDoc().createElement('ul');
+          loneLis.forEach(li => ul.appendChild(li));
+          body.appendChild(ul);
         }
-      }
-
-      function loadMacros(){
-        $macro.empty().append(opt("Loading…",""));
-        $.getJSON(URL_MACROS)
-          .done(list => {
-            $macro.empty().append(opt("Select Macro",""));
-            (list||[]).forEach(it => $macro.append(opt(it.name,it.name)));
-            $macro.append(opt("+ Add new","__new__"));
-          })
-          .always(() => { ensureSelected($macro, initMacro); toggleNewInputs(); handleMacroChange(true); });
-      }
-
-      $macro.on("change", ()=> handleMacroChange(false));
-      $meso1.on("change", ()=> handleMeso1Change(false));
-      $meso2.on("change", ()=> toggleNewInputs());
-
-      loadMacros();
-    })();
-
-    // ------------------- TinyMCE -------------------
-    tinymce.init({
-      selector: 'textarea.tinymce-bullets, textarea.tinymce-extra',
-      menubar: false,
-      branding: false,
-      plugins: 'lists advlist textpattern charmap paste',
-      toolbar: 'bold italic subscript superscript charmap | outdent indent',
-
-      // lists-only
-      valid_elements: 'ul,ol,li,strong,em,sup,sub,span,br',
-      invalid_elements: 'p,h1,h2,h3,h4,h5,h6,img,table,div',
-
-      //pasting crieterias 
-      paste_as_text: false,                                  // ⬅ allow rich paste (preserves lists from Word/web)
-      paste_data_images: false,
-      paste_webkit_styles: 'none',
-      paste_convert_middot_lists: true,
-      paste_tab_spaces: 2,
-
-      forced_root_block: false,
-      paste_as_text: true,
-      lists_indent_on_tab: true,
-
-      textpattern_patterns: [
-        { start: '* ', cmd: 'InsertUnorderedList' },
-        { start: '- ', cmd: 'InsertUnorderedList' },
-        { start: '/ ', cmd: 'InsertUnorderedList' },
-        { start: '1. ', cmd: 'InsertOrderedList' }
-      ],
-
-      setup: function (ed) {
-        const $ = window.jQuery;
-
-        // helpers
-        function ensureListContainer() {
-          const body = ed.getBody(); if (!body) return;
-          Array.from(body.childNodes).forEach(n => {
-            if (n.nodeType === 3 && n.nodeValue.trim() !== '') {
-              const ul = ed.getDoc().createElement('ul');
-              const li = ed.getDoc().createElement('li');
-              li.appendChild(ed.getDoc().createTextNode(n.nodeValue));
-              ul.appendChild(li);
-              body.replaceChild(ul, n);
-            }
-          });
-          if (!body.querySelector('ul,ol')) {
-            ed.setContent('<ul><li></li></ul>');
-            const li = body.querySelector('li');
-            if (li) ed.selection.setCursorLocation(li, 0);
-          }
-        }
-        function currentLI() {
-          const n = ed.selection.getNode();
-          return n ? ed.dom.getParent(n, 'li') : null;
-        }
-        function atStartOf(node) {
-          const rng = ed.selection.getRng(); if (!rng) return false;
-          const startNode = rng.startContainer;
-          return (startNode === node || startNode === node.firstChild) && rng.startOffset === 0;
-        }
-        function isOnlyEmptyLI(li) {
-          if (!li) return false;
-          const list = li.parentElement; if (!list) return false;
-          const items = Array.from(list.children).filter(el => el.nodeName === 'LI');
-          return items.length === 1 && items[0].textContent.trim() === '';
-        }
-        function insertSiblingLI(afterLi) {
-          const list = afterLi.parentNode;
-          const newLi = ed.getDoc().createElement('li');
-          newLi.appendChild(ed.getDoc().createTextNode(''));
-          if (afterLi.nextSibling) list.insertBefore(newLi, afterLi.nextSibling);
-          else list.appendChild(newLi);
-          ed.selection.setCursorLocation(newLi, 0);
-        }
-
-        // character limit helpers
-        const WARN_TEXT = "CHARECTER EXCEEDS THE LIMIT.";
-        const warnState = {}; // { id: { warned: boolean } }
-
-        function getMax() {
-          const id = ed.getElement().id;
-          return (window.LIMITS && window.LIMITS[id]) || null;
-        }
-        function getPlainLen() {
-          return (ed.getContent({ format: 'text' }) || '').length;
-        }
-        function isTextProducingKey(e){
-          if (e.ctrlKey || e.metaKey || e.altKey) return false;
-          const k = e.key;
-          const nonText = ['Backspace','Delete','Tab','Escape','Enter','Insert','Home','End','PageUp','PageDown','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
-          if (nonText.includes(k)) return false;
-          return k.length === 1 || k === ' ' || k === 'Dead';
-        }
-        function notifyOnce(){
-          const id = ed.getElement().id;
-          if (!warnState[id]?.warned){
-            warnState[id] = { warned: true };
-            if (window.showFeedback){
-              showFeedback(WARN_TEXT, 'warning', { autoHideMs: 1400 });
-            } else {
-              console.warn(WARN_TEXT);
-            }
-          }
-        }
-        function resetWarnIfUnder(){
-          const id = ed.getElement().id;
-          const max = getMax(); if (!max) return;
-          const n = getPlainLen();
-          if (n <= max && warnState[id]?.warned) warnState[id].warned = false;
-        }
-
-        // submit sync
-        if ($) $('form').on('submit', function(){ if (window.tinymce?.triggerSave) tinymce.triggerSave(); });
-
-        ed.on('PastePreProcess', function (e) {
-          // If the paste already contains <ul>/<ol><li>, let TinyMCE handle it
-          const html = (e.content || '').trim();
-          if (html.match(/<\/?(ul|ol|li)\b/i)) return;
-
-          // For plain text (from clipboard or apps), split lines into items
-          const text = (e.content || e.text || '').replace(/\r\n?/g, '\n');
-          if (!text || text.indexOf('\n') === -1) return; // single line: let default handling occur
-
-          // Only intervene if cursor is inside a list item
-          const li = currentLI();
-          if (!li) return;
-
-          // Turn each non-empty line into its own <li>
-          const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
-          if (!lines.length) return;
-
-          // Strip leading bullet markers if present: -, *, •, 1. etc.
-          const cleaned = lines.map(l => l.replace(/^(\d+\.)|^[\*\-\u2022]\s+/, '').trim());
-
-          // Build HTML fragment of <li> siblings
-          const items = cleaned.map(line => `<li>${ed.dom.encode(line)}</li>`).join('');
-
-          // Replace paste payload with LI siblings; TinyMCE inserts them correctly
-          e.content = items;
-
-          // Optional: prevent TinyMCE from wrapping with <p> by ensuring lists-only schema (you already have)
-        });
-
-      // OPTIONAL: when pasting multi-line into an empty editor (no list yet), create a <ul> for them
-        ed.on('PastePostProcess', function (e) {
-          const body = ed.getBody();
-          if (!body.querySelector('ul,ol')) {
-            // If we just inserted bare <li> nodes, wrap them
-            const loneLis = Array.from(body.childNodes).filter(n => n.nodeName === 'LI');
-            if (loneLis.length) {
-              const ul = ed.getDoc().createElement('ul');
-              loneLis.forEach(li => ul.appendChild(li));
-              body.appendChild(ul);
-            }
-          }
-        });
-
-        // init
-        ed.on('init', function () {
-          ensureListContainer();
-          const id = ed.getElement().id;
-          const max = getMax();
-          if (max && window.updateCount) window.updateCount(id, max);
-        });
-
-        // keep structure + update counter
-        ed.on('input change keyup SetContent', function(){
-          ensureListContainer();
-          const id = ed.getElement().id;
-          const max = getMax();
-          if (max && window.updateCount) window.updateCount(id, max);
-          if (max) resetWarnIfUnder();
-        });
-
-        // block commands that escape lists
-        ed.on('BeforeExecCommand', function(e){
-          if (e.command === 'RemoveList') {
-            e.preventDefault(); e.stopImmediatePropagation(); return false;
-          }
-          if (e.command === 'Outdent') {
-            const li = currentLI();
-            if (!li) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-            const parentList = li.parentElement;
-            const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
-            if (isTopLevel) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-          }
-        });
-
-        // list containment: Enter/Backspace
-        ed.on('keydown', function(e){
-          const li = currentLI();
-          if (!li) {
-            if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace') {
-              e.preventDefault(); ensureListContainer();
-            }
-            return;
-          }
-          if (e.key === 'Enter') {
-            if (e.shiftKey) { e.preventDefault(); return; }
-            if (li.textContent.trim() === '') { e.preventDefault(); insertSiblingLI(li); return; }
-            return; // default: new LI
-          }
-          if (e.key === 'Backspace') {
-            const parentList = li.parentElement;
-            const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
-            if (atStartOf(li) || atStartOf(li.firstChild || li)) {
-              if (isOnlyEmptyLI(li)) { e.preventDefault(); ed.selection.setCursorLocation(li, 0); return; }
-              if (isTopLevel) { e.preventDefault(); return; }
-            }
-          }
-        });
-
-        // character limit: block typing
-        ed.on('keydown', function(e){
-          const max = getMax(); if (!max) return;
-          const n = getPlainLen(); resetWarnIfUnder();
-          if (n >= max && isTextProducingKey(e)) { e.preventDefault(); notifyOnce(); }
-        });
-
-        // character limit: truncate paste
-        ed.on('paste', function(e){
-          const max = getMax(); if (!max) return;
-          const n = getPlainLen();
-          const remaining = Math.max(0, max - n);
-          const txt = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
-
-          if (remaining <= 0){
-            e.preventDefault(); notifyOnce(); return;
-          }
-          if (txt && txt.length > remaining){
-            e.preventDefault();
-            ed.insertContent(ed.dom.encode(txt.slice(0, remaining)));
-            notifyOnce();
-          }
-          // else, allow normal paste (paste_as_text keeps it plain)
-        });
       }
     });
 
+    ed.on('init', function () {
+      ensureListContainer();
+      const id = ed.getElement().id;
+      const max = getMax();
+      if (max && window.updateCount) window.updateCount(id, max);
+    });
 
-      /* ======= AJAX for extra fields + gallery (scoped per-card) ======= */
-      (function () {
-        function csrfValue() {
-          const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
-          return el ? el.value : '';
+    ed.on('input change keyup SetContent', function(){
+      ensureListContainer();
+      const id = ed.getElement().id;
+      const max = getMax();
+      if (max && window.updateCount) window.updateCount(id, max);
+      if (max) resetWarnIfUnder();
+    });
+
+    ed.on('BeforeExecCommand', function(e){
+      if (e.command === 'RemoveList') {
+        e.preventDefault(); e.stopImmediatePropagation(); return false;
+      }
+      if (e.command === 'Outdent') {
+        const li = currentLI();
+        if (!li) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+        const parentList = li.parentElement;
+        const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
+        if (isTopLevel) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+      }
+    });
+
+    ed.on('keydown', function(e){
+      const li = currentLI();
+      if (!li) {
+        if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace') {
+          e.preventDefault(); ensureListContainer();
         }
-        function saveEditors() {
-          if (window.tinymce && tinymce.triggerSave) tinymce.triggerSave();
+        return;
+      }
+      if (e.key === 'Enter') {
+        if (e.shiftKey) { e.preventDefault(); return; }
+        if (li.textContent.trim() === '') { e.preventDefault(); insertSiblingLI(li); return; }
+        return;
+      }
+      if (e.key === 'Backspace') {
+        const parentList = li.parentElement;
+        const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
+        if (atStartOf(li) || atStartOf(li.firstChild || li)) {
+          if (isOnlyEmptyLI(li)) { e.preventDefault(); ed.selection.setCursorLocation(li, 0); return; }
+          if (isTopLevel) { e.preventDefault(); return; }
         }
-        function postFD(url, fd) {
-          return fetch(url, {
-            method: 'POST',
-            body: fd,
-            credentials: 'same-origin',
-            headers: { 'X-CSRFToken': csrfValue() }
-          }).then(r => { if (!r.ok) throw new Error('Request failed'); return r.text(); });
-        }
-        function setBusy(el, on){ if (!el) return; el.classList.toggle('busy', !!on); }
+      }
+    });
 
-        /* ---- Extra fields ---- */
-        $('#toggle-add-field').on('click', ()=> $('#add-field-form').toggle());
-        $('#btn-add-field').on('click', function () {
-          saveEditors();
-          const wrap = document.getElementById('add-field-form');
-          if (!wrap) return;
-          const url = wrap.dataset.addUrl;
-          const name = (wrap.querySelector('input[name="field_name"]').value || '').trim();
-          const content = wrap.querySelector('textarea[name="field_content"]').value || '';
-          if (!name) {
-            showFeedback('Please enter a field name.', 'warning');
-            wrap.querySelector('input[name="field_name"]').focus();
-            return;
-          }
+    ed.on('keydown', function(e){
+      const max = getMax(); if (!max) return;
+      const n = getPlainLen(); resetWarnIfUnder();
+      if (n >= max && isTextProducingKey(e)) { e.preventDefault(); notifyOnce(); }
+    });
 
-          const fd = new FormData();
-          fd.append('field_name', name);
-          fd.append('field_content', content);
-          fd.append('csrfmiddlewaretoken', csrfValue());
+    ed.on('paste', function(e){
+      const max = getMax(); if (!max) return;
+      const n = getPlainLen();
+      const remaining = Math.max(0, max - n);
+      const txt = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
+      if (remaining <= 0){ e.preventDefault(); notifyOnce(); return; }
+      if (txt && txt.length > remaining){
+        e.preventDefault(); ed.insertContent(ed.dom.encode(txt.slice(0, remaining))); notifyOnce();
+      }
+    });
+  }
+});
 
-          postFD(url, fd)
-            .then(() => showFeedback('Field added.', 'success', { onHide: ()=> location.reload() }))
-            .catch(() => showFeedback('Could not add field.', 'danger'));
-        });
-        $(document).on('click', '.js-save-field', function () {
-          saveEditors();
-          const url = this.dataset.url;
-          const ta = $(this).closest('details').find('textarea[name="field_content"]')[0];
-          const content = ta ? ta.value : '';
-          const fd = new FormData();
-          fd.append('field_content', content);
-          fd.append('csrfmiddlewaretoken', csrfValue());
-          postFD(url, fd)
-            .then(() => showFeedback('Field saved.', 'success', { onHide: ()=> location.reload() }))
-            .catch(() => showFeedback('Could not save field.', 'danger'));
-        });
-        $(document).on('click', '.js-delete-field', async function () {
-          const url = this.dataset.url;
-          const yes = await confirmModal('Delete this field?');
-          if (!yes) return;
-          const fd = new FormData();
-          fd.append('csrfmiddlewaretoken', csrfValue());
-          postFD(url, fd)
-            .then(() => showFeedback('Field deleted.', 'success', { onHide: ()=> location.reload() }))
-            .catch(() => showFeedback('Could not delete field.', 'danger'));
-        });
+/* ======= AJAX for extra fields + gallery ======= */
+(function () {
+  const $ = window.jQuery;
+  if (!$) return;
 
-        /* ---- Gallery upload (drag & drop + button) ---- */
-        const dz = document.getElementById('upload-bar');
-        if (dz) {
-          const fileInput = document.getElementById('gallery-upload-file');
-          const tagSelect = document.getElementById('gallery-upload-tag');
+  function csrfValue() {
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return el ? el.value : '';
+  }
+  function saveEditors() {
+    if (window.tinymce && tinymce.triggerSave) tinymce.triggerSave();
+  }
+  function postFD(url, fd) {
+    return fetch(url, {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin',
+      headers: { 'X-CSRFToken': csrfValue() }
+    }).then(r => { if (!r.ok) throw new Error('Request failed'); return r.text(); });
+  }
+  function setBusy(el, on){ if (!el) return; el.classList.toggle('busy', !!on); }
 
-          function doUpload(file) {
-            const url = dz.getAttribute('data-upload-url');
-            const fd = new FormData();
-            fd.append('image', file);
-            fd.append('tag', tagSelect.value || '');
-            fd.append('csrfmiddlewaretoken', csrfValue());
-            setBusy(dz, true);
-            postFD(url, fd)
-              .then(() => showFeedback('Image uploaded.', 'success', { onHide: ()=> location.reload() }))
-              .catch(() => showFeedback('Upload failed.', 'danger'))
-              .finally(() => setBusy(dz, false));
-          }
+  // Extra fields
+  $('#toggle-add-field').on('click', ()=> $('#add-field-form').toggle());
+  $('#btn-add-field').on('click', function () {
+    saveEditors();
+    const wrap = document.getElementById('add-field-form');
+    if (!wrap) return;
+    const url = wrap.dataset.addUrl;
+    const name = (wrap.querySelector('input[name="field_name"]').value || '').trim();
+    const content = wrap.querySelector('textarea[name="field_content"]').value || '';
+    if (!name) {
+      showFeedback('Please enter a field name.', 'warning');
+      wrap.querySelector('input[name="field_name"]').focus();
+      return;
+    }
+    const fd = new FormData();
+    fd.append('field_name', name);
+    fd.append('field_content', content);
+    fd.append('csrfmiddlewaretoken', csrfValue());
 
-          $('#btn-gallery-upload').on('click', function(){
-            const f = fileInput.files[0];
-            if (!f) { showFeedback('Choose an image first.', 'warning'); return; }
-            doUpload(f);
-          });
-          ;['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); }));
-          ;['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); }));
-          dz.addEventListener('drop', e => {
-            const f = e.dataTransfer.files && e.dataTransfer.files[0];
-            if (f) doUpload(f);
-          });
-        }
+    postFD(url, fd)
+      .then(() => showFeedback('Field added.', 'success', { onHide: ()=> location.reload() }))
+      .catch(() => showFeedback('Could not add field.', 'danger'));
+  });
 
-        /* ---- Gallery quick tag + delete (PER-CARD scope) ---- */
-        // Tag via dropdown menu (in-place update, no full page reload)
-        $(document).on('click', '.js-quick-tag', function () {
-          const card = this.closest('.gallery-card');
-          if (!card) return;
-          const name = card.dataset.image;
-          const url  = card.dataset.urlUpdate;
-          const newTag  = this.dataset.tag || '';
+  $(document).on('click', '.js-save-field', function () {
+    saveEditors();
+    const url = this.dataset.url;
+    const ta = $(this).closest('details').find('textarea[name="field_content"]')[0];
+    const content = ta ? ta.value : '';
+    const fd = new FormData();
+    fd.append('field_content', content);
+    fd.append('csrfmiddlewaretoken', csrfValue());
+    postFD(url, fd)
+      .then(() => showFeedback('Field saved.', 'success', { onHide: ()=> location.reload() }))
+      .catch(() => showFeedback('Could not save field.', 'danger'));
+  });
 
-          const fd = new FormData();
-          fd.append('image_name', name);
-          fd.append('tag', newTag);
-          fd.append('csrfmiddlewaretoken', csrfValue());
+  $(document).on('click', '.js-delete-field', async function () {
+    const url = this.dataset.url;
+    const yes = await confirmModal('Delete this field?');
+    if (!yes) return;
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', csrfValue());
+    postFD(url, fd)
+      .then(() => showFeedback('Field deleted.', 'success', { onHide: ()=> location.reload() }))
+      .catch(() => showFeedback('Could not delete field.', 'danger'));
+  });
 
-          setBusy(card, true);
-          postFD(url, fd)
-            .then(() => {
-              // enforce uniqueness visually: if tagging SC1/SC2, clear same badge on other cards
-              if (newTag === 'SC1' || newTag === 'SC2') {
-                document.querySelectorAll('.gallery-card .tag-badge').forEach(b => {
-                  if (b.closest('.gallery-card') !== card && b.dataset.tag === newTag) b.remove();
-                });
-              }
-              // update current card badge
-              let badge = card.querySelector('.tag-badge');
-              if (newTag) {
-                if (!badge) {
-                  badge = document.createElement('span');
-                  badge.className = 'tag-badge';
-                  card.appendChild(badge);
-                }
-                badge.dataset.tag = newTag;
-                badge.textContent = newTag;
-              } else if (badge) {
-                badge.remove();
-              }
+  // Gallery upload
+  const dz = document.getElementById('upload-bar');
+  if (dz) {
+    const fileInput = document.getElementById('gallery-upload-file');
+    const tagSelect = document.getElementById('gallery-upload-tag');
 
-              // close dropdown
-              const toggleBtn = card.querySelector('[data-bs-toggle="dropdown"]');
-              if (window.bootstrap?.Dropdown && toggleBtn) {
-                bootstrap.Dropdown.getOrCreateInstance(toggleBtn).hide();
-              } else {
-                const menu = this.closest('.dropdown-menu'); if (menu) menu.classList.remove('show');
-              }
-              showFeedback('Tag updated.', 'success');
-            })
-            .catch(() => showFeedback('Could not update tag.', 'danger'))
-            .finally(() => setBusy(card, false));
-        });
+    function doUpload(file) {
+      const url = dz.getAttribute('data-upload-url');
+      const fd = new FormData();
+      fd.append('image', file);
+      fd.append('tag', tagSelect.value || '');
+      fd.append('csrfmiddlewaretoken', csrfValue());
+      setBusy(dz, true);
+      postFD(url, fd)
+        .then(() => showFeedback('Image uploaded.', 'success', { onHide: ()=> location.reload() }))
+        .catch(() => showFeedback('Upload failed.', 'danger'))
+        .finally(() => setBusy(dz, false));
+    }
 
-        // Delete per-card with confirm modal (no full reload)
-        $(document).on('click', '.js-del-image', async function () {
-          const card = this.closest('.gallery-card');
-          if (!card) return;
-          const yes = await confirmModal('Delete this image?');
-          if (!yes) return;
-
-          const name = card.dataset.image;
-          const url  = card.dataset.urlDelete;
-
-          const fd = new FormData();
-          fd.append('image_name', name);
-          fd.append('csrfmiddlewaretoken', csrfValue());
-
-          setBusy(card, true);
-          postFD(url, fd)
-            .then(() => { card.remove(); showFeedback('Image deleted.', 'success'); })
-            .catch(() => { setBusy(card, false); showFeedback('Could not delete image.', 'danger'); });
-        });
-
-        /* ---- Dropdown fallback if Bootstrap JS absent ---- */
-        if (!window.bootstrap) {
-          document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(btn => {
-            btn.addEventListener('click', function(e){
-              e.preventDefault(); e.stopPropagation();
-              const menu = this.nextElementSibling;
-              if (!menu || !menu.classList.contains('dropdown-menu')) return;
-              const actions = this.closest('.actions');
-              if (actions) actions.querySelectorAll('.dropdown-menu.show').forEach(m => { if (m !== menu) m.classList.remove('show'); });
-              menu.classList.toggle('show');
-            });
-          });
-          document.addEventListener('click', function(){
-            document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
-          });
-  
+    $('#btn-gallery-upload').on('click', function(){
+      const f = fileInput.files[0];
+      if (!f) { showFeedback('Choose an image first.', 'warning'); return; }
+      doUpload(f);
+    });
+    ;['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); }));
+    ;['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); }));
+    dz.addEventListener('drop', e => {
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) doUpload(f);
+    });
   }
 
+  // Gallery per-card actions
+  $(document).on('click', '.js-quick-tag', function () {
+    const card = this.closest('.gallery-card');
+    if (!card) return;
+    const name = card.dataset.image;
+    const url  = card.dataset.urlUpdate;
+    const newTag  = this.dataset.tag || '';
+
+    const fd = new FormData();
+    fd.append('image_name', name);
+    fd.append('tag', newTag);
+    fd.append('csrfmiddlewaretoken', csrfValue());
+
+    setBusy(card, true);
+    postFD(url, fd)
+      .then(() => {
+        if (newTag === 'SC1' || newTag === 'SC2') {
+          document.querySelectorAll('.gallery-card .tag-badge').forEach(b => {
+            if (b.closest('.gallery-card') !== card && b.dataset.tag === newTag) b.remove();
+          });
+        }
+        let badge = card.querySelector('.tag-badge');
+        if (newTag) {
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'tag-badge';
+            card.appendChild(badge);
+          }
+          badge.dataset.tag = newTag;
+          badge.textContent = newTag;
+        } else if (badge) {
+          badge.remove();
+        }
+
+        const toggleBtn = card.querySelector('[data-bs-toggle="dropdown"]');
+        if (window.bootstrap?.Dropdown && toggleBtn) {
+          bootstrap.Dropdown.getOrCreateInstance(toggleBtn).hide();
+        } else {
+          const menu = this.closest('.dropdown-menu'); if (menu) menu.classList.remove('show');
+        }
+        showFeedback('Tag updated.', 'success');
+      })
+      .catch(() => showFeedback('Could not update tag.', 'danger'))
+      .finally(() => setBusy(card, false));
+  });
+
+  $(document).on('click', '.js-del-image', async function () {
+    const card = this.closest('.gallery-card');
+    if (!card) return;
+    const yes = await confirmModal('Delete this image?');
+    if (!yes) return;
+
+    const name = card.dataset.image;
+    const url  = card.dataset.urlDelete;
+
+    const fd = new FormData();
+    fd.append('image_name', name);
+    fd.append('csrfmiddlewaretoken', csrfValue());
+
+    setBusy(card, true);
+    postFD(url, fd)
+      .then(() => { card.remove(); showFeedback('Image deleted.', 'success'); })
+      .catch(() => { setBusy(card, false); showFeedback('Could not delete image.', 'danger'); });
+  });
+
+  // Dropdown fallback
+  if (!window.bootstrap) {
+    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(btn => {
+      btn.addEventListener('click', function(e){
+        e.preventDefault(); e.stopPropagation();
+        const menu = this.nextElementSibling;
+        if (!menu || !menu.classList.contains('dropdown-menu')) return;
+        const actions = this.closest('.actions');
+        if (actions) actions.querySelectorAll('.dropdown-menu.show').forEach(m => { if (m !== menu) m.classList.remove('show'); });
+        menu.classList.toggle('show');
+      });
+    });
+    document.addEventListener('click', function(){
+      document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+    });
+  }
 })();
 </script>
+
 {% endblock %}
