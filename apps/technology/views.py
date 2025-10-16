@@ -370,9 +370,16 @@ def api_macros(request):
             .distinct().order_by("macro"))
     return JsonResponse([{"name": m} for m in rows], safe=False)
 
-@require_GET
+@require_POST
 @require_action("view_technology")
-def api_meso1(request, macro):
+def api_meso1(request):
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON")
+    macro = (data.get("macro") or "").replace("\u00A0", " ").strip()
+    if not macro:
+        return HttpResponseBadRequest("Missing macro")
     rows = (Technology.objects
             .filter(macro=macro)
             .exclude(meso1="")
@@ -380,9 +387,16 @@ def api_meso1(request, macro):
             .distinct().order_by("meso1"))
     return JsonResponse([{"name": m} for m in rows], safe=False)
 
-@require_GET
+@require_POST
 @require_action("view_technology")
-def api_meso2(request, meso1):
+def api_meso2(request):
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON")
+    meso1 = (data.get("meso1") or "").replace("\u00A0", " ").strip()
+    if not meso1:
+        return HttpResponseBadRequest("Missing meso1")
     rows = (Technology.objects
             .filter(meso1=meso1)
             .exclude(meso2="")

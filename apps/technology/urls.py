@@ -22,9 +22,11 @@ urlpatterns = [
 
   
 
-    path("api/macros/",                 api_macros, name="tech_api_macros"),
-    path("api/meso1/<path:macro>/",     api_meso1,  name="tech_api_meso1"),  # was <str:macro>
-    path("api/meso2/<path:meso1>/",     api_meso2,  name="tech_api_meso2"),  # was <str:meso1>
+    path("api/macros/", api_macros, name="tech_api_macros"),
+
+    # Body-based variants (no name in the URL)
+    path("api/meso1/", api_meso1, name="tech_api_meso1_body"),
+    path("api/meso2/", api_meso2, name="tech_api_meso2_body"),
 
 
     path("<int:pk>/field/add/",                add_extra_field,   name="technology_add_field"),

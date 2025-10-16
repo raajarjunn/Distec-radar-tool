@@ -508,6 +508,7 @@ window.updateCount = function(editorId, max){
 
 /* ======= Taxonomy (Macro / Meso1 / Meso2) – ID-based, path-safe ======= */
 /* ======= Taxonomy (Macro / Meso1 / Meso2) — NAME-based, path-safe ======= */
+/* ======= Taxonomy (Macro / Meso1 / Meso2) — POST body (no encoding in URL) ======= */
 (function () {
   const $ = window.jQuery;
   if (!$) return;
@@ -515,14 +516,13 @@ window.updateCount = function(editorId, max){
   const $macro = $("#macro-select");
   if (!$macro.length) return;
 
-  // Endpoints that match your current views (names in the path)
-  const URL_MACROS = "/technology/api/macros/";                                  // -> [{name}]
-  const URL_MESO1  = (macroName) => `/technology/api/meso1/${encodeURIComponent(macroName)}/`; // -> [{name}]
-  const URL_MESO2  = (meso1Name) => `/technology/api/meso2/${encodeURIComponent(meso1Name)}/`; // -> [{name}]
+  // Endpoints: no names in URL
+  const URL_MACROS = "/technology/api/macros/";           // GET -> [{name}]
+  const URL_MESO1  = "/technology/api/meso1/";            // POST JSON {macro}
+  const URL_MESO2  = "/technology/api/meso2/";            // POST JSON {meso1}
 
   const $meso1 = $("#meso1-select"), $meso2 = $("#meso2-select");
 
-  // data-initials are names in your template already
   const initMacro = ($macro.data('initial') || "").toString();
   const initM1    = ($meso1.data('initial') || "").toString();
   const initM2    = ($meso2.data('initial') || "").toString();
@@ -533,6 +533,19 @@ window.updateCount = function(editorId, max){
   const isPlaceholder = v => !v || v === "__new__";
   const ensureSelected = ($s, v) => { if (v) $s.val(v); };
 
+  // CSRF helper (for Django)
+  function csrfValue() {
+    return document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+  }
+  function postJSON(url, payload) {
+    return $.ajax({
+      url, type: 'POST',
+      data: JSON.stringify(payload || {}),
+      contentType: 'application/json',
+      headers: { 'X-CSRFToken': csrfValue() }
+    });
+  }
+
   function toggleNewInputs(){
     const m=$macro.val(), m1=$meso1.val(), m2=$meso2.val();
     $newMac.toggle(m==="__new__");
@@ -542,7 +555,7 @@ window.updateCount = function(editorId, max){
 
   function setMeso2Options(list, isInit=false){
     $meso2.empty().append(opt("Select Meso2",""));
-    (list || []).forEach(it => $meso2.append(opt(it.name, it.name)));
+    (list || []).forEach(it => $meso2.append(opt(it.name, it.name))); // values are names, as-is
     $meso2.append(opt("+ Add new","__new__"));
     if (isInit) ensureSelected($meso2, initM2);
     toggleNewInputs();
@@ -561,7 +574,7 @@ window.updateCount = function(editorId, max){
     $meso2.empty().append(opt(isPlaceholder(m1)?"+ Add new":"Select Meso2",""));
     if (isPlaceholder(m1)) { $meso2.append(opt("+ Add new","__new__")); toggleNewInputs(); return; }
 
-    $.getJSON(URL_MESO2(m1))
+    postJSON(URL_MESO2, { meso1: m1 })
       .done(list => setMeso2Options(list, isInit))
       .always(() => toggleNewInputs());
   }
@@ -575,15 +588,11 @@ window.updateCount = function(editorId, max){
     if (isPlaceholder(macro)) {
       $meso1.append(opt("+ Add new","__new__"));
       $meso2.append(opt("+ Add new","__new__"));
-      toggleNewInputs();
-      return;
+      toggleNewInputs(); return;
     }
 
-    $.getJSON(URL_MESO1(macro))
-      .done(list => {
-        setMeso1Options(list, isInit);
-        handleMeso1Change(true);
-      });
+    postJSON(URL_MESO1, { macro })
+      .done(list => { setMeso1Options(list, isInit); handleMeso1Change(true); });
   }
 
   function loadMacros(){
@@ -591,13 +600,10 @@ window.updateCount = function(editorId, max){
     $.getJSON(URL_MACROS)
       .done(list => {
         $macro.empty().append(opt("Select Macro",""));
-        (list || []).forEach(it => $macro.append(opt(it.name, it.name)));
+        (list || []).forEach(it => $macro.append(opt(it.name, it.name))); // show & store literal names
         $macro.append(opt("+ Add new","__new__"));
       })
-      .always(() => {
-        ensureSelected($macro, initMacro);
-        handleMacroChange(true);
-      });
+      .always(() => { ensureSelected($macro, initMacro); handleMacroChange(true); });
   }
 
   $macro.on("change", ()=> handleMacroChange(false));
