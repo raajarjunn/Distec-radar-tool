@@ -220,6 +220,8 @@ class TechnologyListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return apply_filters_and_sort(self.request, super().get_queryset())
+    
+    
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -231,7 +233,17 @@ class TechnologyListView(LoginRequiredMixin, ListView):
         _, active_selected = _parse_active(self.request)
         ctx["active_selected"] = active_selected
         ctx["sort"] = (self.request.GET.get("sort") or "created_desc").strip()
+        SORT_LABELS = {
+            "created_desc": "Newest",
+            "created_asc": "Oldest",
+            "name_asc": "Name A→Z",
+            "name_desc": "Name Z→A",
+            "active_desc": "Active first",
+            "active_asc": "Inactive first",
+        }
+        ctx["sort_label"] = SORT_LABELS.get(ctx["sort"], "Newest")
         return ctx
+    
 
 
 class TechnologyDetailView(LoginRequiredMixin, DetailView):
