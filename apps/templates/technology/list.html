@@ -1,8 +1,12 @@
 {% extends "layouts/base.html" %}
 {% load humanize %}
 {% load perm_tags %}
+{% load static %}
+
+
 
 {% block content %}
+{% static 'assets/img/brand/nono image.png' as NO_IMAGE %}
 
 <!-----------------------------------------------------Header-------------------------->
 
@@ -208,18 +212,16 @@
               {% if t.category %}<span class="badge badge-pill badge-primary">{{ t.category }}</span>{% endif %}
             </div>
             <div class="card-body p-0">
-              {% if t.card_image_b64 %}
-                <div class="tech-thumb">
-                  <img src="{{ t.card_image_b64 }}" alt="{{ t.name }} image" loading="lazy" class="img-fluid w-100 h-100">
-                  <div class="thumb-gradient"></div>
-                </div>
-              {% else %}
-                <div class="p-3">
-                  <p class="card-text text-muted tech-desc" title="{{ t.description|default:'' }}">
-                    {{ t.description|default:""|truncatechars:200 }}
-                  </p>
-                </div>
-              {% endif %}
+              <div class="tech-thumb">
+                <img
+                  src="{{ t.card_image_b64|default:NO_IMAGE }}"
+                  alt="{{ t.name }} image"
+                  loading="lazy"
+                  class="img-fluid w-100 h-100"
+                  onerror="this.onerror=null;this.src='{{ NO_IMAGE }}';"
+                >
+                <div class="thumb-gradient"></div>
+              </div>
             </div>
             <div class="card-footer d-flex justify-content-between align-items-center tech-card-footer">
               <small class="text-muted">Created {{ t.created_at|date:"Y-m-d" }}</small>
