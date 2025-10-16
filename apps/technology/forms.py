@@ -31,7 +31,7 @@ class TechnologyForm(forms.ModelForm):
             "confidentiality", "is_active",
         ]
         widgets = {
-            "name":  forms.TextInput(attrs={"class": "form-control"}),
+            "name":  forms.TextInput(attrs={"class": "form-control", "style": "text-transform:uppercase;"}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
 
             # We render our own cascading <select>s in the template
@@ -63,16 +63,18 @@ class TechnologyForm(forms.ModelForm):
         # Normalize & trim to avoid sneaky duplicates like “Tech ” vs “Tech”
         name = unicodedata.normalize("NFC", raw).strip()
 
+        norm = unicodedata.normalize("NFC", raw).strip()
+        upper = norm.upper()  
+
         # Case-insensitive duplicate check
-        qs = Technology.objects.filter(name__iexact=name)
+        qs = Technology.objects.filter(name__iexact=upper)
         if self.instance and self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
-
         if qs.exists():
-            raise forms.ValidationError(
-                "A technology with this name (case-insensitive) already exists."
-            )
-        return name
+            raise forms.ValidationError("A technology with this name already exists.")
+
+        return upper
+    
     # ---------- /ADD THIS ----------
 
     def __init__(self, *args, **kwargs):
