@@ -247,13 +247,16 @@
             <div class="meta-list">
               <div class="meta-item">
                 <strong>Status:</strong>
-                {% if object.is_active %}
+                {% if object.status == 'active' %}
                   <span class="badge badge-success">Active</span>
+                {% elif object.status == 'inactive' %}
+                  <span class="badge badge-warning">Inactive</span>
+                {% elif object.status == 'dormant' %}
+                  <span class="badge badge-secondary">Dormant</span>
                 {% else %}
-                  <span class="badge badge-danger">Inactive</span>
+                  <span class="badge badge-light">—</span>
                 {% endif %}
               </div>
-
               <div class="meta-item">
                 <strong>Confidentiality:</strong>
                 {% with c=object.confidentiality %}

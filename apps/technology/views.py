@@ -75,6 +75,9 @@ from datetime import datetime
 from django.template.loader import render_to_string
 from django.utils.timezone import make_aware, localtime
 
+from zoneinfo import ZoneInfo
+BERLIN = ZoneInfo("Europe/Berlin")
+
 
 
 #-------------Pymongo defined--------------------------
@@ -85,8 +88,10 @@ technologies = db["technology_technology"]
 qualifications = db["qualifications"]
 
 
+
 # -------------------------- small helpers --------------------------
 
+# Back-compat helpers (keep if you still receive ?active=1/0)
 _TRUTHY = {"1", "true", "t", "yes", "y", "on", "active"}
 _FALSY  = {"0", "false", "f", "no", "n", "off", "inactive"}
 
@@ -103,18 +108,22 @@ def _redirect_back_to_edit(request, pk):
     # Prefer returning to the edit page; fall back to detail if referer missing.
     return HttpResponseRedirect(request.META.get("HTTP_REFERER", f"/technology/{pk}/edit/"))
 
-def _parse_active(request):
-    raw = {(v or "").strip().lower() for v in request.GET.getlist("active")}
-    has_true = bool(raw & _TRUTHY)
-    has_false = bool(raw & _FALSY)
-    if has_true and not has_false:
-        return True, {"1"}
-    if has_false and not has_true:
-        return False, {"0"}
-    sel = set()
-    if has_true: sel.add("1")
-    if has_false: sel.add("0")
-    return None, sel
+# NEW: parse status (multi-select). Falls back to legacy ?active=1/0.
+def _parse_status(request):
+    statuses = [s.strip().lower() for s in request.GET.getlist("status") if s.strip()]
+    if statuses:
+        return True, statuses
+
+    # Back-compat: map old ?active=1/0 to status values
+    active_flags = {(v or "").strip().lower() for v in request.GET.getlist("active")}
+    has_true = bool(active_flags & _TRUTHY)
+    has_false = bool(active_flags & _FALSY)
+    sel = []
+    if has_true:
+        sel.append("active")
+    if has_false:
+        sel.append("inactive")
+    return (bool(sel), sel) if sel else (False, [])
 
 def _normalized_category_list():
     """
@@ -127,38 +136,44 @@ def _normalized_category_list():
     cleaned = {(s or "").strip() for s in raw_vals if (s or "").strip()}
     return sorted(cleaned, key=str.lower)
 
-
 def _stable_key_created_desc(obj):
     # secondary key for consistent ordering
     dt = getattr(obj, "created_at", None) or datetime.min
-    # Python sorts ascending, so use negative timestamp-like tuple
-    return (-int(dt.timestamp()) if hasattr(dt, "timestamp") else 0)
+    # Python sorts ascending, so use negative timestamp-like number
+    return -int(dt.timestamp()) if hasattr(dt, "timestamp") else 0
 
-def _python_sort_active(iterable, desc=True):
+# NEW: Python-side status sorter (Djongo-safe).
+def _python_sort_status(iterable, priority=("active", "dormant", "inactive")):
     """
-    Return a list with actives first (desc=True) or inactives first (desc=False).
-    Treat None as inactive (put it with inactives).
-    Within each group, sort by created_at desc, then name asc for stability.
+    Group by status using priority order, then sort within each group by:
+      - created_at desc
+      - name asc (case-insensitive)
+    Unknown/empty statuses go to the end.
     """
-    items = list(iterable)  # force load once
-    actives, inactives = [], []
+    items = list(iterable)
+    buckets = {key: [] for key in priority}
+    others = []
     for x in items:
-        val = getattr(x, "is_active", False)
-        (actives if val is True else inactives).append(x)
+        s = (getattr(x, "status", "") or "").lower()
+        if s in buckets:
+            buckets[s].append(x)
+        else:
+            others.append(x)  # unknowns last
 
     def group_sort(lst):
         return sorted(
             lst,
             key=lambda o: (
-                _stable_key_created_desc(o),            # created_at desc
-                (getattr(o, "name", "") or "").lower()  # name asc as tiebreaker
+                _stable_key_created_desc(o),           # created_at desc
+                (getattr(o, "name", "") or "").lower() # name asc tiebreaker
             )
         )
 
-    a_sorted = group_sort(actives)
-    i_sorted = group_sort(inactives)
-
-    return (a_sorted + i_sorted) if desc else (i_sorted + a_sorted)
+    out = []
+    for key in priority:
+        out.extend(group_sort(buckets[key]))
+    out.extend(group_sort(others))
+    return out
 
 def apply_filters_and_sort(request, qs):
     # -------- Search
@@ -180,22 +195,21 @@ def apply_filters_and_sort(request, qs):
             qcat |= Q(macro__iexact=c) | Q(meso1__iexact=c) | Q(meso2__iexact=c)
         qs = qs.filter(qcat)
 
-    # -------- Active filter (don’t sort yet)
-    active_filter, _ = _parse_active(request)
-    if active_filter is True:
-        qs = qs.filter(is_active__in=[True])
-    elif active_filter is False:
-        qs = qs.filter(is_active__in=[False])
-    # If None: include all; we’ll only *sort* by active if asked
+    # -------- Status filter (multi-select, with back-compat)
+    has_filter, status_selected = _parse_status(request)
+    if has_filter and status_selected:
+        qs = qs.filter(status__in=status_selected)
 
     # -------- Sort
     sort = (request.GET.get("sort") or "created_desc").strip()
 
-    # Pure-Python for the two tricky sorts — avoids Djongo entirely
-    if sort == "active_desc":   # Active first
-        return _python_sort_active(qs, desc=True)
-    if sort == "active_asc":    # Inactive first
-        return _python_sort_active(qs, desc=False)
+    # Djongo-safe: do Python sorts for status-first options
+    if sort == "status_active_first":
+        return _python_sort_status(qs, priority=("active", "dormant", "inactive"))
+    if sort == "status_inactive_first":
+        return _python_sort_status(qs, priority=("inactive", "dormant", "active"))
+    if sort == "status_dormant_first":
+        return _python_sort_status(qs, priority=("dormant", "active", "inactive"))
 
     # DB-side sort for the safe cases
     ordering_map = {
@@ -205,8 +219,6 @@ def apply_filters_and_sort(request, qs):
         "created_desc": "-created_at",
     }
     return qs.order_by(ordering_map.get(sort, "-created_at"))
-
-
 
 
 # -------------------------- list / details --------------------------
@@ -220,8 +232,6 @@ class TechnologyListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return apply_filters_and_sort(self.request, super().get_queryset())
-    
-    
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -230,20 +240,24 @@ class TechnologyListView(LoginRequiredMixin, ListView):
         ctx["q"] = (self.request.GET.get("q") or "").strip()
         ctx["all_categories"] = _normalized_category_list()
         ctx["selected_categories"] = [c for c in self.request.GET.getlist("categories") if c.strip()]
-        _, active_selected = _parse_active(self.request)
-        ctx["active_selected"] = active_selected
+
+        # NEW: expose selected statuses (used by checkboxes in the template)
+        _, status_selected = _parse_status(self.request)
+        ctx["status_selected"] = status_selected
+
         ctx["sort"] = (self.request.GET.get("sort") or "created_desc").strip()
         SORT_LABELS = {
             "created_desc": "Newest",
             "created_asc": "Oldest",
             "name_asc": "Name A→Z",
             "name_desc": "Name Z→A",
-            "active_desc": "Active first",
-            "active_asc": "Inactive first",
+            "status_active_first": "Active first",
+            "status_inactive_first": "Inactive first",
+            "status_dormant_first": "Dormant first",
         }
         ctx["sort_label"] = SORT_LABELS.get(ctx["sort"], "Newest")
         return ctx
-    
+
 
 
 class TechnologyDetailView(LoginRequiredMixin, DetailView):
@@ -1163,19 +1177,61 @@ def _latest_eval(gallery):
 
 @require_GET
 def api_techs(request):
-    """Return minimal fields for the selector modal."""
+    """
+    Return minimal fields for the selector modal in a normalized, robust shape.
+    Output item keys: id (str), name, macro, meso1, meso2, status
+    """
     include_inactive = request.GET.get("inactive") == "1"
     try:
         client.admin.command("ping")
     except ServerSelectionTimeoutError:
         return JsonResponse({"ok": False, "error": "MongoDB not reachable"}, status=503)
 
-    query = {} if include_inactive else {"is_active": True}
-    proj = {"_id": 0, "id": 1, "name": 1, "macro": 1, "meso1": 1, "meso2": 1, "is_active": 1}
-    docs = list(technologies.find(query, proj))
-    # sort by name client-side for stability
-    docs.sort(key=lambda d: (d.get("name") or "").lower())
-    return JsonResponse({"ok": True, "items": docs})
+    # Pull both 'id' and '_id' so we can normalize either.
+    query = {} if include_inactive else {"$or": [{"status": {"$ne": "inactive"}}, {"is_active": True}]}
+    proj = {
+        "_id": 1, "id": 1, "name": 1,
+        "macro": 1, "meso1": 1, "meso2": 1,
+        "is_active": 1, "status": 1
+    }
+    raw = list(technologies.find(query, proj))
+
+    def _norm_id(d):
+        if "id" in d and d["id"] not in (None, ""):
+            return str(d["id"])
+        _id = d.get("_id")
+        # ObjectId → hex string; else just str()
+        return str(_id) if _id is not None else None
+
+    def _norm_status(d):
+        s = (d.get("status") or "").strip().lower()
+        if s in {"active", "inactive", "dormant"}:
+            return s
+        ia = d.get("is_active", None)
+        if ia is True or (isinstance(ia, str) and ia.lower() in {"1","true","t","yes","y"}):
+            return "active"
+        if ia is False or (isinstance(ia, str) and ia.lower() in {"0","false","f","no","n"}):
+            return "inactive"
+        # default to active if truly missing (matches your earlier behavior)
+        return "active"
+
+    items = []
+    for d in raw:
+        _id = _norm_id(d)
+        name = (d.get("name") or "").strip()
+        if not _id or not name:
+            continue
+        items.append({
+            "id": _id,
+            "name": name,
+            "macro": (d.get("macro") or "").strip(),
+            "meso1": (d.get("meso1") or "").strip(),
+            "meso2": (d.get("meso2") or "").strip(),
+            "status": _norm_status(d),
+        })
+
+    items.sort(key=lambda x: x["name"].lower())
+    return JsonResponse({"ok": True, "items": items})
 
 def _scorecard_context_from_doc(doc: dict) -> dict:
     """Map a Mongo document to the context your Scorecard template expects."""
@@ -1295,33 +1351,60 @@ def scorecard_compendium(request):
 
 
 #-----------------------------Notes--------------------------------------------------
+ 
 
 def _safe_sort_key(n):
     v = n.get("created_at")
     if isinstance(v, datetime):
-        try: return v.timestamp()
-        except Exception: return 0
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        return v.timestamp()
     if isinstance(v, str):
         try:
-            return datetime.fromisoformat(v.replace("T"," ")).timestamp()
+            dt = datetime.fromisoformat(v.replace("T", " "))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.timestamp()
         except Exception:
             return 0
     return 0
+
 
 def _render_notes_fragment(request, pk: int):
     doc = technologies.find_one({"id": pk}, {"notes": 1, "_id": 0}) or {}
     notes = doc.get("notes", [])
 
-    # expose a safe key for templates (no leading underscore)
+    # sort while values may still be datetime/ISO
+    notes.sort(key=_safe_sort_key, reverse=True)
+
     for n in notes:
         if "_id" in n and n["_id"] is not None:
             n["note_id"] = str(n["_id"])
             n.pop("_id", None)
-        if isinstance(n.get("created_at"), datetime):
-            n["created_at"] = n["created_at"].strftime("%Y-%m-%d %H:%M")
 
-    notes.sort(key=_safe_sort_key, reverse=True)
+        dt = n.get("created_at")
+
+        # normalize to aware UTC
+        if isinstance(dt, datetime):
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+        elif isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("T", " "))
+            except Exception:
+                dt = None
+            if isinstance(dt, datetime) and dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+
+        # convert to Europe/Berlin for display
+        if isinstance(dt, datetime):
+            local_dt = dt.astimezone(BERLIN)   # handles CET/CEST automatically
+            n["created_at"] = local_dt.strftime("%Y-%m-%d %H:%M")
+        else:
+            n["created_at"] = n.get("created_at") or ""
+
     return render(request, "technology/_notes.html", {"tech_id": pk, "notes": notes})
+
 
 @login_required
 @require_http_methods(["GET"])
@@ -1340,7 +1423,7 @@ def tech_notes_add(request, pk: int):
         "author_id": request.user.id,
         "author_name": (getattr(request.user, "get_full_name", lambda: "")() or request.user.username),
         "text": text[:300],
-        "created_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
     }
     technologies.update_one({"id": pk}, {"$push": {"notes": note}})
     return _render_notes_fragment(request, pk)   # <-- return!

@@ -150,10 +150,14 @@
                 {{ form.confidentiality }}
               </div>
               <div class="col-md-6">
-                <label class="form-label">Status</label>
-                {{ form.status }}
+                <label class="form-label d-block">Status</label>
+                <div class="form-check form-switch">
+                  {{ form.is_active }}
+                  <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">Active</label>
+                </div>
               </div>
             </div>
+
             {% if object and object.pk %}
               <hr class="my-4">
               <h6 class="text-uppercase text-muted mb-3">Content</h6>
@@ -610,263 +614,214 @@ window.updateCount = function(editorId, max){
 })();
 
 
-/* ======= TinyMCE — split init: bullets for all, numbers for Publications ======= */
+/* ======= TinyMCE (lists-only + limits + paste handling) ======= */
+tinymce.init({
+  selector: 'textarea.tinymce-bullets, textarea.tinymce-extra',
+  menubar: false,
+  branding: false,
+  plugins: 'lists advlist textpattern charmap paste',
+  toolbar: 'bold italic subscript superscript charmap | outdent indent',
+  valid_elements: 'ul,ol,li,strong,em,sup,sub,span,br',
+  invalid_elements: 'p,h1,h2,h3,h4,h5,h6,img,table,div',
 
-(function(){
-  // Generic factory so we can flip OL-only on/off
-  function initListEditor(selector, { olOnly=false } = {}) {
-    tinymce.init({
-      selector,
-      menubar: false,
-      branding: false,
-      plugins: 'lists advlist textpattern charmap paste',
-      toolbar: 'bold italic subscript superscript charmap | outdent indent',
-      valid_elements: 'ul,ol,li,strong,em,sup,sub,span,br',
-      invalid_elements: 'p,h1,h2,h3,h4,h5,h6,img,table,div',
+  // paste
+  paste_as_text: true,
+  paste_data_images: false,
+  paste_webkit_styles: 'none',
+  paste_convert_middot_lists: true,
+  paste_tab_spaces: 2,
 
-      // paste
-      paste_as_text: true,
-      paste_data_images: false,
-      paste_webkit_styles: 'none',
-      paste_convert_middot_lists: true,
-      paste_tab_spaces: 2,
+  forced_root_block: false,
+  lists_indent_on_tab: true,
 
-      forced_root_block: false,
-      lists_indent_on_tab: true,
+  textpattern_patterns: [
+    { start: '* ', cmd: 'InsertUnorderedList' },
+    { start: '- ', cmd: 'InsertUnorderedList' },
+    { start: '/ ', cmd: 'InsertUnorderedList' },
+    { start: '1. ', cmd: 'InsertOrderedList' }
+  ],
 
-      textpattern_patterns: [
-        { start: '* ', cmd: 'InsertUnorderedList' },
-        { start: '- ', cmd: 'InsertUnorderedList' },
-        { start: '/ ', cmd: 'InsertUnorderedList' },
-        { start: '1. ', cmd: 'InsertOrderedList' }
-      ],
+  setup: function (ed) {
+    const $ = window.jQuery;
 
-      setup: function (ed) {
-        const $ = window.jQuery;
-        const OL_ONLY = !!olOnly;
-
-        // ---------- helpers ----------
-        function currentLI() {
-          const n = ed.selection.getNode();
-          return n ? ed.dom.getParent(n, 'li') : null;
+    function ensureListContainer() {
+      const body = ed.getBody(); if (!body) return;
+      Array.from(body.childNodes).forEach(n => {
+        if (n.nodeType === 3 && n.nodeValue.trim() !== '') {
+          const ul = ed.getDoc().createElement('ul');
+          const li = ed.getDoc().createElement('li');
+          li.appendChild(ed.getDoc().createTextNode(n.nodeValue));
+          ul.appendChild(li);
+          body.replaceChild(ul, n);
         }
-        function atStartOf(node) {
-          const rng = ed.selection.getRng(); if (!rng) return false;
-          const startNode = rng.startContainer;
-          return (startNode === node || startNode === node.firstChild) && rng.startOffset === 0;
+      });
+      if (!body.querySelector('ul,ol')) {
+        ed.setContent('<ul><li></li></ul>');
+        const li = body.querySelector('li');
+        if (li) ed.selection.setCursorLocation(li, 0);
+      }
+    }
+    function currentLI() {
+      const n = ed.selection.getNode();
+      return n ? ed.dom.getParent(n, 'li') : null;
+    }
+    function atStartOf(node) {
+      const rng = ed.selection.getRng(); if (!rng) return false;
+      const startNode = rng.startContainer;
+      return (startNode === node || startNode === node.firstChild) && rng.startOffset === 0;
+    }
+    function isOnlyEmptyLI(li) {
+      if (!li) return false;
+      const list = li.parentElement; if (!list) return false;
+      const items = Array.from(list.children).filter(el => el.nodeName === 'LI');
+      return items.length === 1 && items[0].textContent.trim() === '';
+    }
+    function insertSiblingLI(afterLi) {
+      const list = afterLi.parentNode;
+      const newLi = ed.getDoc().createElement('li');
+      newLi.appendChild(ed.getDoc().createTextNode(''));
+      if (afterLi.nextSibling) list.insertBefore(newLi, afterLi.nextSibling);
+      else list.appendChild(newLi);
+      ed.selection.setCursorLocation(newLi, 0);
+    }
+
+    // character limit helpers
+    const WARN_TEXT = "CHARECTER EXCEEDS THE LIMIT.";
+    const warnState = {};
+
+    function getMax() {
+      const id = ed.getElement().id;
+      return (window.LIMITS && window.LIMITS[id]) || null;
+    }
+    function getPlainLen() {
+      return (ed.getContent({ format: 'text' }) || '').length;
+    }
+    function isTextProducingKey(e){
+      if (e.ctrlKey || e.metaKey || e.altKey) return false;
+      const k = e.key;
+      const nonText = ['Backspace','Delete','Tab','Escape','Enter','Insert','Home','End','PageUp','PageDown','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
+      if (nonText.includes(k)) return false;
+      return k.length === 1 || k === ' ' || k === 'Dead';
+    }
+    function notifyOnce(){
+      const id = ed.getElement().id;
+      if (!warnState[id]?.warned){
+        warnState[id] = { warned: true };
+        if (window.showFeedback){
+          showFeedback(WARN_TEXT, 'warning', { autoHideMs: 1400 });
+        } else {
+          console.warn(WARN_TEXT);
         }
-        function isOnlyEmptyLI(li) {
-          if (!li) return false;
-          const list = li.parentElement; if (!list) return false;
-          const items = Array.from(list.children).filter(el => el.nodeName === 'LI');
-          return items.length === 1 && items[0].textContent.trim() === '';
+      }
+    }
+    function resetWarnIfUnder(){
+      const id = ed.getElement().id;
+      const max = getMax(); if (!max) return;
+      const n = getPlainLen();
+      if (n <= max && warnState[id]?.warned) warnState[id].warned = false;
+    }
+
+    if ($) $('form').on('submit', function(){ if (window.tinymce?.triggerSave) tinymce.triggerSave(); });
+
+    ed.on('PastePreProcess', function (e) {
+      const html = (e.content || '').trim();
+      if (html.match(/<\/?(ul|ol|li)\b/i)) return;
+
+      const text = (e.content || e.text || '').replace(/\r\n?/g, '\n');
+      if (!text || text.indexOf('\n') === -1) return;
+
+      const li = currentLI();
+      if (!li) return;
+
+      const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+      if (!lines.length) return;
+
+      const cleaned = lines.map(l => l.replace(/^(\d+\.)|^[\*\-\u2022]\s+/, '').trim());
+      const items = cleaned.map(line => `<li>${ed.dom.encode(line)}</li>`).join('');
+      e.content = items;
+    });
+
+    ed.on('PastePostProcess', function () {
+      const body = ed.getBody();
+      if (!body.querySelector('ul,ol')) {
+        const loneLis = Array.from(body.childNodes).filter(n => n.nodeName === 'LI');
+        if (loneLis.length) {
+          const ul = ed.getDoc().createElement('ul');
+          loneLis.forEach(li => ul.appendChild(li));
+          body.appendChild(ul);
         }
-        function insertSiblingLI(afterLi) {
-          const list = afterLi.parentNode;
-          const newLi = ed.getDoc().createElement('li');
-          newLi.appendChild(ed.getDoc().createTextNode(''));
-          if (afterLi.nextSibling) list.insertBefore(newLi, afterLi.nextSibling);
-          else list.appendChild(newLi);
-          ed.selection.setCursorLocation(newLi, 0);
+      }
+    });
+
+    ed.on('init', function () {
+      ensureListContainer();
+      const id = ed.getElement().id;
+      const max = getMax();
+      if (max && window.updateCount) window.updateCount(id, max);
+    });
+
+    ed.on('input change keyup SetContent', function(){
+      ensureListContainer();
+      const id = ed.getElement().id;
+      const max = getMax();
+      if (max && window.updateCount) window.updateCount(id, max);
+      if (max) resetWarnIfUnder();
+    });
+
+    ed.on('BeforeExecCommand', function(e){
+      if (e.command === 'RemoveList') {
+        e.preventDefault(); e.stopImmediatePropagation(); return false;
+      }
+      if (e.command === 'Outdent') {
+        const li = currentLI();
+        if (!li) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+        const parentList = li.parentElement;
+        const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
+        if (isTopLevel) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+      }
+    });
+
+    ed.on('keydown', function(e){
+      const li = currentLI();
+      if (!li) {
+        if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace') {
+          e.preventDefault(); ensureListContainer();
         }
-
-        // char limit (kept as in your code)
-        const WARN_TEXT = "CHARECTER EXCEEDS THE LIMIT.";
-        const warnState = {};
-        function getMax() {
-          const id = ed.getElement().id;
-          return (window.LIMITS && window.LIMITS[id]) || null;
+        return;
+      }
+      if (e.key === 'Enter') {
+        if (e.shiftKey) { e.preventDefault(); return; }
+        if (li.textContent.trim() === '') { e.preventDefault(); insertSiblingLI(li); return; }
+        return;
+      }
+      if (e.key === 'Backspace') {
+        const parentList = li.parentElement;
+        const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
+        if (atStartOf(li) || atStartOf(li.firstChild || li)) {
+          if (isOnlyEmptyLI(li)) { e.preventDefault(); ed.selection.setCursorLocation(li, 0); return; }
+          if (isTopLevel) { e.preventDefault(); return; }
         }
-        function getPlainLen() {
-          return (ed.getContent({ format: 'text' }) || '').length;
-        }
-        function isTextProducingKey(e){
-          if (e.ctrlKey || e.metaKey || e.altKey) return false;
-          const k = e.key;
-          const nonText = ['Backspace','Delete','Tab','Escape','Enter','Insert','Home','End','PageUp','PageDown','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
-          if (nonText.includes(k)) return false;
-          return k.length === 1 || k === ' ' || k === 'Dead';
-        }
-        function notifyOnce(){
-          const id = ed.getElement().id;
-          if (!warnState[id]?.warned){
-            warnState[id] = { warned: true };
-            if (window.showFeedback){
-              showFeedback(WARN_TEXT, 'warning', { autoHideMs: 1400 });
-            } else {
-              console.warn(WARN_TEXT);
-            }
-          }
-        }
-        function resetWarnIfUnder(){
-          const id = ed.getElement().id;
-          const max = getMax(); if (!max) return;
-          const n = getPlainLen();
-          if (n <= max && warnState[id]?.warned) warnState[id].warned = false;
-        }
+      }
+    });
 
-        if ($) $('form').on('submit', function(){ if (window.tinymce?.triggerSave) tinymce.triggerSave(); });
+    ed.on('keydown', function(e){
+      const max = getMax(); if (!max) return;
+      const n = getPlainLen(); resetWarnIfUnder();
+      if (n >= max && isTextProducingKey(e)) { e.preventDefault(); notifyOnce(); }
+    });
 
-        // Ensure we always have a list container (UL by default, OL if olOnly)
-        function ensureListContainer() {
-          const body = ed.getBody(); if (!body) return;
-
-          // Wrap stray text nodes into the correct list
-          Array.from(body.childNodes).forEach(n => {
-            if (n.nodeType === 3 && n.nodeValue.trim() !== '') {
-              const listTag = OL_ONLY ? 'ol' : 'ul';
-              const list = ed.getDoc().createElement(listTag);
-              const li = ed.getDoc().createElement('li');
-              li.appendChild(ed.getDoc().createTextNode(n.nodeValue));
-              list.appendChild(li);
-              body.replaceChild(list, n);
-            }
-          });
-
-          // If no list exists, create one of the correct type
-          if (!body.querySelector('ul,ol')) {
-            const listTag = OL_ONLY ? 'ol' : 'ul';
-            ed.setContent(`<${listTag}><li></li></${listTag}>`);
-            const li = body.querySelector('li');
-            if (li) ed.selection.setCursorLocation(li, 0);
-          }
-        }
-
-        // Convert any ULs to OLs when olOnly=true
-        function forceOrderedIfNeeded(){
-          if (!OL_ONLY) return;
-          const body = ed.getBody();
-          const uls = body.querySelectorAll('ul');
-          if (uls.length) {
-            uls.forEach(ul => {
-              const ol = ed.getDoc().createElement('ol');
-              while (ul.firstChild) ol.appendChild(ul.firstChild);
-              ul.replaceWith(ol);
-            });
-          }
-        }
-
-        // ----- Paste handling -----
-        ed.on('PastePreProcess', function (e) {
-          const html = (e.content || '').trim();
-          if (html.match(/<\/?(ul|ol|li)\b/i)) return;
-
-          const text = (e.content || e.text || '').replace(/\r\n?/g, '\n');
-          if (!text || text.indexOf('\n') === -1) return;
-
-          const li = currentLI();
-          if (!li) return;
-
-          const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
-          if (!lines.length) return;
-
-          const cleaned = lines.map(l => l.replace(/^(\d+\.)|^[\*\-\u2022]\s+/, '').trim());
-          const items = cleaned.map(line => `<li>${ed.dom.encode(line)}</li>`).join('');
-          e.content = items;
-        });
-
-        ed.on('PastePostProcess', function () {
-          const body = ed.getBody();
-          if (!body.querySelector('ul,ol')) {
-            const loneLis = Array.from(body.childNodes).filter(n => n.nodeName === 'LI');
-            if (loneLis.length) {
-              const listTag = OL_ONLY ? 'ol' : 'ul';
-              const list = ed.getDoc().createElement(listTag);
-              loneLis.forEach(li => list.appendChild(li));
-              body.appendChild(list);
-            }
-          }
-          forceOrderedIfNeeded();
-        });
-
-        // ----- Lifecycle / typing -----
-        ed.on('init', function () {
-          ensureListContainer();
-          forceOrderedIfNeeded(); // keep numbered when olOnly
-          const id = ed.getElement().id;
-          const max = getMax();
-          if (max && window.updateCount) window.updateCount(id, max);
-        });
-
-        ed.on('input change keyup SetContent', function(){
-          ensureListContainer();
-          forceOrderedIfNeeded();
-          const id = ed.getElement().id;
-          const max = getMax();
-          if (max && window.updateCount) window.updateCount(id, max);
-          if (max) resetWarnIfUnder();
-        });
-
-        ed.on('BeforeExecCommand', function(e){
-          // Disallow removing lists globally (keeps list-only editor)
-          if (e.command === 'RemoveList') {
-            e.preventDefault(); e.stopImmediatePropagation(); return false;
-          }
-          // Prevent outdent at top level
-          if (e.command === 'Outdent') {
-            const li = currentLI();
-            if (!li) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-            const parentList = li.parentElement;
-            const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
-            if (isTopLevel) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-          }
-          // Force bullets → numbers when olOnly
-          if (OL_ONLY && e.command === 'InsertUnorderedList') {
-            e.preventDefault(); e.stopImmediatePropagation();
-            try { ed.execCommand('InsertOrderedList'); } catch(_) {}
-            return false;
-          }
-        });
-
-        ed.on('keydown', function(e){
-          const li = currentLI();
-          if (!li) {
-            if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace') {
-              e.preventDefault(); ensureListContainer();
-            }
-            return;
-          }
-          if (e.key === 'Enter') {
-            if (e.shiftKey) { e.preventDefault(); return; }
-            if (li.textContent.trim() === '') { e.preventDefault(); insertSiblingLI(li); return; }
-            return;
-          }
-          if (e.key === 'Backspace') {
-            const parentList = li.parentElement;
-            const isTopLevel = parentList && parentList.parentElement && parentList.parentElement.nodeName !== 'LI';
-            if (atStartOf(li) || atStartOf(li.firstChild || li)) {
-              if (isOnlyEmptyLI(li)) { e.preventDefault(); ed.selection.setCursorLocation(li, 0); return; }
-              if (isTopLevel) { e.preventDefault(); return; }
-            }
-          }
-        });
-
-        // Character limit guard
-        ed.on('keydown', function(e){
-          const max = getMax(); if (!max) return;
-          const n = getPlainLen(); resetWarnIfUnder();
-          if (n >= max && isTextProducingKey(e)) { e.preventDefault(); notifyOnce(); }
-        });
-
-        // Extra safety: convert any <ul> that appears to <ol> in the OL-only editor
-        ed.on('input', function(){
-          forceOrderedIfNeeded();
-        });
+    ed.on('paste', function(e){
+      const max = getMax(); if (!max) return;
+      const n = getPlainLen();
+      const remaining = Math.max(0, max - n);
+      const txt = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
+      if (remaining <= 0){ e.preventDefault(); notifyOnce(); return; }
+      if (txt && txt.length > remaining){
+        e.preventDefault(); ed.insertContent(ed.dom.encode(txt.slice(0, remaining))); notifyOnce();
       }
     });
   }
-
-  // ---- Initialize editors ----
-  // 1) All editors EXCEPT Publications & Projects: bullets (use :not selector to exclude)
-  initListEditor('textarea.tinymce-bullets:not([name="publications_and_projects"]), textarea.tinymce-extra:not([name="publications_and_projects"])', { olOnly: false });
-
-  // 2) Publications & Projects ONLY: numbers
-  //    Use name-based selector so it still works if Django changes ids/prefixes.
-  initListEditor('textarea[name="publications_and_projects"]', { olOnly: true });
-})();
-
-
-
+});
 
 /* ======= AJAX for extra fields + gallery ======= */
 (function () {

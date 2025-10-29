@@ -49,6 +49,12 @@ class Technology(models.Model):
     initial_date = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(default=timezone.now)
     confidentiality = models.CharField(max_length=4, choices=CONF_CHOICES, default="C1")
+    # Status
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('dormant', 'Dormant'),
+    ]
 
     # JSON as text (safe for Djongo)
     # extra_fields: [{ "name": str, "content": html }]
@@ -59,7 +65,8 @@ class Technology(models.Model):
 
     evaluation_history = models.TextField(blank=True, default="[]")
 
-    is_active = models.BooleanField(default=True)
+    #is_active = models.BooleanField(default=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(default=timezone.now)
 
     # slug kept unique

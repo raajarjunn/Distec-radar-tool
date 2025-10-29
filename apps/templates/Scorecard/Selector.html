@@ -1,96 +1,49 @@
-{# templates/Scorecard/Selector.html #}
+{% load static %}
+
+
 
 <style>
   :root{
-    --sc-bg: #ffffff;
-    --sc-border:#e9ecef;
-    --sc-muted:#6b7280;
-    --sc-text:#111827;
-    --sc-primary:#5e72e4;
-    --sc-primary-2:#11cdef;
-    --sc-danger:#f5365c;
-    --sc-soft:#f8fafc;
+    --sc-bg:#ffffff;--sc-border:#e9ecef;--sc-muted:#6b7280;--sc-text:#111827;
+    --sc-primary:#5e72e4;--sc-danger:#f5365c;
   }
-
-  /* Backdrop + dialog */
-  .sc-backdrop{position:fixed;inset:0;background:rgba(34, 33, 33, 0.87);display:none;align-items:center;justify-content:center;z-index:3000;overflow: auto;}
+  .sc-backdrop{position:fixed;inset:0;background:rgba(34,33,33,.87);display:none;align-items:center;justify-content:center;z-index:3000;overflow:auto}
   .sc-dialog{width:min(1100px,96vw);max-height:92vh;background:var(--sc-bg);border-radius:12px;display:flex;flex-direction:column;overflow:auto;box-shadow:0 10px 25px rgba(0,0,0,.2)}
-  .sc-header{background:linear-gradient(87deg,var(--sc-text),var(--sc-muted));color:#fff !important;padding:14px 18px;display:flex;align-items:center;gap:10px}
+  .sc-header{background:linear-gradient(87deg,var(--sc-text),var(--sc-muted));color:#fff!important;padding:14px 18px;display:flex;align-items:center;gap:10px}
   .sc-header h2{margin:0;font-size:18px;font-weight:600;flex:1}
   .sc-body{display:flex;gap:14px;padding:12px 14px;flex:1;min-height:0;overflow:auto}
   .sc-footer{padding:12px 16px;border-top:1px solid var(--sc-border);display:flex;gap:8px;justify-content:flex-end;background:#fafbff}
-
-  /* Buttons */
   .sc-btn{border:0;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600}
   .sc-btn-muted{background:#eef2f7;color:#1f2937}
   .sc-btn-muted.active{background:#dbeafe;color:#1e3a8a}
   .sc-btn-primary{background:var(--sc-primary);color:#fff}
-  .sc-btn-danger{background:var(--sc-danger);color:#fff} 
-
- /* Force white text for everything inside the header */
-.sc-header,
-.sc-header * {
-  color: #fff !important;
-}
-
-/* Make the header button look right on a dark header */
-.sc-header .sc-btn,
-.sc-header .sc-btn-muted {
-  background: transparent;
-  color: #fff !important;
-  border: 1px solid rgba(255,255,255,0.4);
-}
-.sc-header .sc-btn:hover,
-.sc-header .sc-btn-muted:hover {
-  background: rgba(255,255,255,0.12);
-}
-
-
-  /* Left column = flex column with scroll area + sticky actions at bottom */
-  .sc-filters{
-    flex:0 0 300px;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    min-height:0;                   /* enable inner scrolling */
-    border-right:1px solid var(--sc-border);
-    padding-right:10px;
-  }
+  .sc-btn-danger{background:var(--sc-danger);color:#fff}
+  .sc-header,.sc-header *{color:#fff!important}
+  .sc-header .sc-btn{background:transparent;border:1px solid rgba(255,255,255,.4)}
+  .sc-header .sc-btn:hover{background:rgba(255,255,255,.12)}
+  .sc-filters{flex:0 0 300px;display:flex;flex-direction:column;gap:10px;min-height:0;border-right:1px solid var(--sc-border);padding-right:10px}
   .sc-search{display:flex;gap:8px}
   .sc-search input{width:100%;padding:10px 12px;border:1px solid var(--sc-border);border-radius:10px}
-
   .sc-filters-scroll{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:10px}
   .sc-card{border:1px solid var(--sc-border);border-radius:10px;background:#fff;overflow:hidden}
   .sc-card h3{margin:0;padding:9px 12px;border-bottom:1px solid var(--sc-border);font-size:14px}
   .sc-section{padding:8px 10px;max-height:180px;overflow:auto}
   .sc-section label{display:flex;align-items:center;gap:8px;margin:6px 0}
   .sc-actions{display:flex;gap:8px;padding:8px 10px;border-top:1px solid var(--sc-border);flex-wrap:wrap}
-
-  /* Sticky actions pinned to the bottom of the left pane */
-  .sc-card.sc-sticky{
-    position:sticky; bottom:0; z-index:1; background:#fff;
-    border-top:1px solid var(--sc-border);
-    box-shadow:0 -6px 12px rgba(0,0,0,.05);
-  }
-
-  /* Right list */
+  .sc-card.sc-sticky{position:sticky;bottom:0;z-index:1;background:#fff;border-top:1px solid var(--sc-border);box-shadow:0 -6px 12px rgba(0,0,0,.05)}
   .sc-listwrap{flex:1;min-width:0;display:flex;flex-direction:column;max-height:calc(92vh - 110px)}
   .sc-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
   .sc-pill{padding:8px 10px;border:1px solid var(--sc-border);border-radius:999px;background:#fff;cursor:pointer;font-weight:600}
-  .sc-count{margin-left:auto;color:var(--sc-muted);font-size:13px}
+  .sc-count{margin-left:auto;color:#6b7280;font-size:13px}
   .sc-list{list-style:none;margin:0;padding:0;flex:1;overflow:auto;border:1px solid var(--sc-border);border-radius:10px;background:#fff}
   .sc-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid #f1f5f9}
   .sc-item:last-child{border-bottom:none}
   .sc-drag{cursor:grab;user-select:none;padding:4px 8px;border:1px dashed #cbd5e1;border-radius:8px;color:#64748b}
   .sc-name{flex:1}
-  .sc-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;margin-left:6px;background:#edf2ff;color:#3b5bdb}
+  .sc-card.sc-sticky .sc-btn {flex: 1 1 auto;font-size: 13px;padding: 6px 8px;border-radius: 6px;text-align: center;}
+  .sc-card.sc-sticky .sc-actions {display: flex;gap: 6px;flex-wrap: nowrap;}
   .sc-inactive{color:#b91c1c;font-weight:600;margin-left:6px}
-
-  /* Small screens */
-  @media (max-width: 860px){
-    .sc-dialog{width:96vw}
-    .sc-filters{flex-basis:260px}
-  }
+  @media (max-width:860px){.sc-dialog{width:96vw}.sc-filters{flex-basis:260px}}
 </style>
 
 <div class="sc-backdrop" id="scBackdrop" aria-hidden="true">
@@ -99,17 +52,11 @@
       <h2 id="scTitle">Build Scorecard Compendium</h2>
       <button type="button" class="sc-btn sc-btn-muted" id="scClose">Close</button>
     </div>
-
     <form id="scForm" method="post" action="{% url 'technology_scorecard_compendium' %}">
       {% csrf_token %}
       <div class="sc-body">
-        <!-- LEFT: Filters -->
         <aside class="sc-filters">
-          <div class="sc-search">
-            <input id="scSearch" type="search" placeholder="Search by name or macro…">
-          </div>
-
-          <!-- Everything above the actions scrolls -->
+          <div class="sc-search"><input id="scSearch" type="search" placeholder="Search by name or macro…"></div>
           <div class="sc-filters-scroll">
             <div class="sc-card">
               <h3>Macro</h3>
@@ -119,7 +66,6 @@
                 <button type="button" class="sc-btn sc-btn-muted" data-group="f-macro" data-do="none">None</button>
               </div>
             </div>
-
             <div class="sc-card">
               <h3>Meso 1</h3>
               <div class="sc-section" id="meso1Box"></div>
@@ -128,7 +74,6 @@
                 <button type="button" class="sc-btn sc-btn-muted" data-group="f-meso1" data-do="none">None</button>
               </div>
             </div>
-
             <div class="sc-card">
               <h3>Meso 2</h3>
               <div class="sc-section" id="meso2Box"></div>
@@ -138,82 +83,131 @@
               </div>
             </div>
           </div>
-
-          <!-- Always visible: pinned actions -->
           <div class="sc-card sc-sticky">
             <h3>Actions</h3>
             <div class="sc-actions">
-              <button type="button" class="sc-btn sc-btn-muted" id="toggleInactive">Include inactive</button>
+              <button type="button" class="sc-btn sc-btn-muted" id="toggleInactive">Include inactive & dormant</button>
               <button type="button" class="sc-btn sc-btn-primary" id="checkFiltered">Check filtered</button>
               <button type="button" class="sc-btn sc-btn-danger"  id="uncheckFiltered">Uncheck filtered</button>
             </div>
           </div>
         </aside>
 
-        <!-- RIGHT: List -->
         <section class="sc-listwrap">
           <div class="sc-toolbar">
             <span class="sc-pill" id="selectAll">Select all</span>
             <span class="sc-pill" id="clearAll">Clear</span>
             <span class="sc-count"><span id="selCount">0</span> selected</span>
           </div>
-
           <ul id="techList" class="sc-list"></ul>
           <div id="hidden"></div>
         </section>
       </div>
-
       <div class="sc-footer">
         <button type="button" class="sc-btn sc-btn-muted" id="scCancel">Cancel</button>
-        <button type="submit" class="sc-btn sc-btn-primary" formtarget= "blank">Build compendium</button>
+        <button type="submit" class="sc-btn sc-btn-primary" formtarget="blank">Build compendium</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- SortableJS for drag ordering -->
+{# Fallback data from server if API fails #}
+
+
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
 (function(){
-  const openBtn  = document.getElementById('openSelector');     // trigger on the list page
+  const openBtn  = document.getElementById('openSelector');
   const backdrop = document.getElementById('scBackdrop');
   const closeBtns= [document.getElementById('scClose'), document.getElementById('scCancel')];
-
   const techList = document.getElementById('techList');
   const hidden   = document.getElementById('hidden');
   const selCount = document.getElementById('selCount');
-
   const searchBox= document.getElementById('scSearch');
   const macroBox = document.getElementById('macroBox');
   const meso1Box = document.getElementById('meso1Box');
   const meso2Box = document.getElementById('meso2Box');
   const includeInactiveBtn = document.getElementById('toggleInactive');
 
-  let items = [];          // all items from API
-  let showInactive = false;
+  let items = [];
+  let showInactive = true; // default: show inactive & dormant
+  let macroOrder = [];
+  let meso1Order = [];
+  let meso2Order = [];
 
-  function open(){ backdrop.style.display='flex'; backdrop.setAttribute('aria-hidden','false'); }
-  function close(){ backdrop.style.display='none'; backdrop.setAttribute('aria-hidden','true'); }
+  function open(){ if(backdrop){backdrop.style.display='flex'; backdrop.setAttribute('aria-hidden','false');} }
+  function close(){ if(backdrop){backdrop.style.display='none'; backdrop.setAttribute('aria-hidden','true');} }
 
-  if (openBtn) openBtn.addEventListener('click', async (e)=>{
+  // reflect default active state
+  if (includeInactiveBtn) {
+    includeInactiveBtn.classList.toggle('active', showInactive);
+    includeInactiveBtn.textContent = showInactive
+      ? 'Exclude inactive & dormant'
+      : 'Include inactive & dormant';
+  }
+
+  if (openBtn) openBtn.addEventListener('click', onOpen);
+  if (backdrop) backdrop.addEventListener('click', e=>{ if (e.target === backdrop) close(); });
+  closeBtns.forEach(b => { if (b) b.addEventListener('click', close); });
+
+  async function onOpen(e){
     e.preventDefault();
     await loadData();
+    if (!techList) return;
     renderFilters();
     renderList();
     open();
-  });
-  closeBtns.forEach(b => b.addEventListener('click', close));
-  backdrop.addEventListener('click', e=>{ if (e.target === backdrop) close(); });
-
-  async function loadData(){
-    const url = "{% url 'technology_api_techs' %}" + (showInactive ? "?inactive=1" : "");
-    const res = await fetch(url, {headers: {'Accept':'application/json'}});
-    const data = await res.json();
-    if (!data.ok){ alert(data.error || "Failed to load items"); return; }
-    items = data.items || [];
-    items.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
   }
 
+  function fromJsonScript(id){
+    const el = document.getElementById(id);
+    if (!el) return null;
+    try { return JSON.parse(el.textContent || 'null'); } catch { return null; }
+  }
+
+  async function loadData(){
+    items = [];
+    const base = "{% url 'technology_api_techs' %}";
+    const url  = showInactive ? base + "?inactive=1" : base;
+
+    let data = null;
+    try {
+      const res = await fetch(url, {headers:{'Accept':'application/json'}});
+      data = await res.json();
+    } catch(e) { console.warn('Selector API fetch failed:', e); }
+
+    let raw = (data && data.ok && Array.isArray(data.items)) ? data.items : null;
+    if (!raw) raw = fromJsonScript('initial-techs');
+
+    if (!raw || !raw.length) {
+      if (techList) techList.innerHTML = '<li class="sc-item" style="justify-content:center;color:#94a3b8">No technologies found.</li>';
+      return;
+    }
+
+    items = raw.map(x=>{
+      const id = x.id ?? x.pk ?? x._id ?? '';
+      const name = (x.name || x.title || '').trim();
+      let status = (x.status || '').toLowerCase().trim();
+
+      if (!status) {
+        const ia = x.is_active;
+        status = (ia === false || String(ia).toLowerCase()==='false' || ia === 0) ? 'inactive' : 'active';
+      }
+      if (!['active','inactive','dormant'].includes(status)) status = 'active';
+
+      return {
+        id: String(id),
+        name,
+        macro: (x.macro || '').trim(),
+        meso1: (x.meso1 || '').trim(),
+        meso2: (x.meso2 || '').trim(),
+        status
+      };
+    }).filter(it => it.id && it.name)
+      .sort((a,b)=>a.name.localeCompare(b.name));
+  }
+
+  function escapeHtml(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
   function distinct(key){
     const set = new Set(items.map(x => (x[key] || '').trim()).filter(Boolean));
     return Array.from(set).sort((a,b)=>a.localeCompare(b));
@@ -221,120 +215,186 @@
 
   function renderFilters(){
     const put = (box, cls, vals) => {
+      if (!box) return;
       box.innerHTML = vals.length
-        ? vals.map(v => `<label><input type="checkbox" class="${cls}" value="${v}"> ${v}</label>`).join('')
+        ? vals.map(v => `<label><input type="checkbox" class="${cls}" value="${escapeHtml(v)}"> ${escapeHtml(v)}</label>`).join('')
         : `<div style="color:#94a3b8;padding:6px 0;">None</div>`;
     };
+
     put(macroBox, 'f-macro', distinct('macro'));
     put(meso1Box, 'f-meso1', distinct('meso1'));
     put(meso2Box, 'f-meso2', distinct('meso2'));
 
-    // bind filter changes
-    document.querySelectorAll('.f-macro,.f-meso1,.f-meso2')
-      .forEach(el => el.addEventListener('change', applyFilter));
+    // --- Track selection order for Macro / Meso1 / Meso2
+    ['f-macro','f-meso1','f-meso2'].forEach(cls=>{
+      document.querySelectorAll('input.'+cls).forEach(el=>{
+        el.addEventListener('change', (e)=>{
+          const val = (e.target.value || '').toLowerCase();
+          const arr = cls==='f-macro'?macroOrder:cls==='f-meso1'?meso1Order:meso2Order;
+          if (e.target.checked) {
+            if (!arr.includes(val)) arr.push(val);
+          } else {
+            const idx = arr.indexOf(val);
+            if (idx!==-1) arr.splice(idx,1);
+          }
+          applyFilter();
+        });
+      });
+    });
 
-    // group toggles
+    // Bulk buttons (All / None)
     document.querySelectorAll('[data-group][data-do]').forEach(btn=>{
       btn.onclick = () => {
         const cls = btn.getAttribute('data-group');
         const state = btn.getAttribute('data-do') === 'all';
-        document.querySelectorAll('input.'+cls).forEach(i => i.checked = state);
+        const inputs = document.querySelectorAll('input.'+cls);
+        inputs.forEach(i => i.checked = state);
+
+        const arr = cls==='f-macro'?macroOrder:cls==='f-meso1'?meso1Order:meso2Order;
+        if (state)
+          arr.splice(0,arr.length,...Array.from(inputs).map(i=>(i.value||'').toLowerCase()));
+        else arr.length=0;
+
         applyFilter();
       };
     });
 
-    // inactive toggle
-    includeInactiveBtn.onclick = async () => {
-      showInactive = !showInactive;
-      includeInactiveBtn.classList.toggle('active', showInactive);
-      await loadData();
-      renderFilters();
-      renderList();
-      applyFilter();
-    };
+    // Inactive toggle
+    if (includeInactiveBtn) {
+      includeInactiveBtn.onclick = async () => {
+        showInactive = !showInactive;
+        includeInactiveBtn.classList.toggle('active', showInactive);
+        includeInactiveBtn.textContent = showInactive
+          ? 'Exclude inactive & dormant'
+          : 'Include inactive & dormant';
+        await loadData();
+        renderFilters();
+        renderList();
+        applyFilter();
+      };
+    }
 
-    searchBox.addEventListener('input', applyFilter);
+    if (searchBox) searchBox.addEventListener('input', applyFilter);
   }
 
   function renderList(){
+    if (!techList) return;
     techList.innerHTML = items.map(t => `
       <li class="sc-item"
-          data-id="${t.id}"
-          data-name="${(t.name||'').toLowerCase()}"
-          data-macro="${(t.macro||'').toLowerCase()}"
-          data-meso1="${(t.meso1||'').toLowerCase()}"
-          data-meso2="${(t.meso2||'').toLowerCase()}"
-          data-active="${t.is_active !== false}">
+          data-id="${escapeHtml(t.id)}"
+          data-name="${escapeHtml(t.name.toLowerCase())}"
+          data-macro="${escapeHtml((t.macro||'').toLowerCase())}"
+          data-meso1="${escapeHtml((t.meso1||'').toLowerCase())}"
+          data-meso2="${escapeHtml((t.meso2||'').toLowerCase())}"
+          data-status="${escapeHtml(t.status)}">
         <span class="sc-drag" title="Drag to reorder">☰</span>
         <input type="checkbox" class="chk">
-        <span class="sc-name">#${t.id} — ${t.name}
-          ${t.macro ? `<span class="sc-badge">${t.macro}</span>` : ``}
-          ${t.is_active === false ? `<span class="sc-inactive">inactive</span>` : ``}
+        <span class="sc-name">${escapeHtml(t.name)}
+          ${t.macro ? `<span class="sc-badge">${escapeHtml(t.macro)}</span>` : ``}
+          ${t.status !== 'active' ? `<span class="sc-inactive">${escapeHtml(t.status)}</span>` : ``}
         </span>
       </li>
     `).join('');
 
-    new Sortable(techList, { animation: 150, handle: '.sc-drag' });
+    if (typeof Sortable !== 'undefined') new Sortable(techList, { animation: 150, handle: '.sc-drag' });
 
-    // actions
-    document.getElementById('selectAll').onclick = () => { techList.querySelectorAll('.chk').forEach(c=>c.checked=true); updateCount(); };
-    document.getElementById('clearAll').onclick  = () => { techList.querySelectorAll('.chk').forEach(c=>c.checked=false); updateCount(); };
-    document.getElementById('checkFiltered').onclick = () => {
-      Array.from(techList.querySelectorAll('li.sc-item')).forEach(li => {
-        if (li.style.display !== 'none') li.querySelector('.chk').checked = true;
-      });
-      updateCount();
-    };
-    document.getElementById('uncheckFiltered').onclick = () => {
-      Array.from(techList.querySelectorAll('li.sc-item')).forEach(li => {
-        if (li.style.display !== 'none') li.querySelector('.chk').checked = false;
-      });
-      updateCount();
-    };
+    const selAll = document.getElementById('selectAll');
+    const clrAll = document.getElementById('clearAll');
+    const chkF   = document.getElementById('checkFiltered');
+    const unF    = document.getElementById('uncheckFiltered');
 
-    techList.addEventListener('change', e => { if(e.target.classList.contains('chk')) updateCount(); });
+    if (selAll) selAll.onclick = () => { techList.querySelectorAll('.chk').forEach(c=>c.checked=true); updateCount(); };
+    if (clrAll) clrAll.onclick = () => { techList.querySelectorAll('.chk').forEach(c=>c.checked=false); updateCount(); };
+    if (chkF)   chkF.onclick   = () => { techList.querySelectorAll('li.sc-item').forEach(li=>{ if(li.style.display!=='none') li.querySelector('.chk').checked=true;}); updateCount(); };
+    if (unF)    unF.onclick    = () => { techList.querySelectorAll('li.sc-item').forEach(li=>{ if(li.style.display!=='none') li.querySelector('.chk').checked=false;}); updateCount(); };
+
+    techList.addEventListener('change', e => { if (e.target.classList.contains('chk')) updateCount(); });
 
     applyFilter();
     updateCount();
   }
 
-  function getCheckedValues(cls){
-    return Array.from(document.querySelectorAll('input.'+cls+':checked')).map(i => i.value.toLowerCase());
+  function getCheckedValues(cls){ return Array.from(document.querySelectorAll('input.'+cls+':checked')).map(i => i.value.toLowerCase()); }
+
+  function reorderByGroups(){
+    if (!techList) return;
+    const lis = Array.from(techList.querySelectorAll('li.sc-item'));
+    const rank = (val, orderArr) => {
+      if (!orderArr || !orderArr.length) return 0;
+      const idx = orderArr.indexOf((val||'').toLowerCase());
+      return idx === -1 ? 9999 : idx;
+    };
+    lis.sort((a,b)=>{
+      const ma=a.dataset.macro||'', mb=b.dataset.macro||'';
+      const m1a=a.dataset.meso1||'', m1b=b.dataset.meso1||'';
+      const m2a=a.dataset.meso2||'', m2b=b.dataset.meso2||'';
+      const na=a.dataset.name||'', nb=b.dataset.name||'';
+      const rMacroA=rank(ma,macroOrder), rMacroB=rank(mb,macroOrder);
+      if(rMacroA!==rMacroB)return rMacroA-rMacroB;
+      const rM1A=rank(m1a,meso1Order), rM1B=rank(m1b,meso1Order);
+      if(rM1A!==rM1B)return rM1A-rM1B;
+      const rM2A=rank(m2a,meso2Order), rM2B=rank(m2b,meso2Order);
+      if(rM2A!==rM2B)return rM2A-rM2B;
+      return na.localeCompare(nb);
+    });
+    lis.forEach(li=>techList.appendChild(li));
   }
 
   function applyFilter(){
-    const q = (searchBox.value || '').toLowerCase();
+    if (!techList) return;
+    const q = (searchBox && searchBox.value || '').toLowerCase();
     const selMacros = new Set(getCheckedValues('f-macro'));
-    const selM1     = new Set(getCheckedValues('f-meso1'));
-    const selM2     = new Set(getCheckedValues('f-meso2'));
+    const selM1 = new Set(getCheckedValues('f-meso1'));
+    const selM2 = new Set(getCheckedValues('f-meso2'));
 
-    Array.from(techList.querySelectorAll('li.sc-item')).forEach(li=>{
-      const name  = li.dataset.name || '';
-      const macro = li.dataset.macro || '';
-      const m1    = li.dataset.meso1 || '';
-      const m2    = li.dataset.meso2 || '';
-      const active= (li.dataset.active === 'true' || li.dataset.active === 'True' || li.dataset.active === '1');
+    const buildMacroMesoMaps=()=>{
+      const m1Map=new Map(), m2Map=new Map();
+      techList.querySelectorAll('li.sc-item').forEach(li=>{
+        const macro=(li.dataset.macro||'').toLowerCase();
+        const m1=(li.dataset.meso1||'').toLowerCase();
+        const m2=(li.dataset.meso2||'').toLowerCase();
+        if(!m1Map.has(macro))m1Map.set(macro,new Set());
+        if(!m2Map.has(macro))m2Map.set(macro,new Set());
+        if(m1)m1Map.get(macro).add(m1);
+        if(m2)m2Map.get(macro).add(m2);
+      });
+      return{m1Map,m2Map};
+    };
+    const{m1Map,m2Map}=buildMacroMesoMaps();
+    const hasSelM1=selM1.size>0, hasSelM2=selM2.size>0;
+    const intersects=(a,b)=>{if(!a||!b||!a.size||!b.size)return false;for(const v of a)if(b.has(v))return true;return false;};
 
-      const textMatch = !q || name.includes(q) || macro.includes(q);
-      const macroPass = !selMacros.size || selMacros.has(macro);
-      const m1Pass    = !selM1.size     || selM1.has(m1);
-      const m2Pass    = !selM2.size     || selM2.has(m2);
-      const activePass= showInactive ? true : active;
-
-      li.style.display = (textMatch && macroPass && m1Pass && m2Pass && activePass) ? '' : 'none';
+    techList.querySelectorAll('li.sc-item').forEach(li=>{
+      const name=(li.dataset.name||''), macro=(li.dataset.macro||''),
+            m1=(li.dataset.meso1||''), m2=(li.dataset.meso2||''),
+            status=(li.dataset.status||'active');
+      const textMatch=!q||name.includes(q)||macro.includes(q);
+      const macroPass=!selMacros.size||selMacros.has(macro);
+      const activePass=showInactive?true:(status==='active');
+      const macroHasM1=hasSelM1&&intersects(m1Map.get(macro),selM1);
+      const macroHasM2=hasSelM2&&intersects(m2Map.get(macro),selM2);
+      const m1Pass=!hasSelM1||!macroHasM1||selM1.has(m1);
+      const m2Pass=!hasSelM2||!macroHasM2||selM2.has(m2);
+      li.style.display=(textMatch&&macroPass&&m1Pass&&m2Pass&&activePass)?'':'none';
     });
+
+    reorderByGroups();
   }
 
-  function updateCount(){ selCount.textContent = techList.querySelectorAll('.chk:checked').length; }
+  function updateCount(){
+    if (!selCount || !techList) return;
+    selCount.textContent = techList.querySelectorAll('.chk:checked').length;
+  }
 
-  // submit: send checked IDs in DOM order
-  document.getElementById('scForm').addEventListener('submit', (e)=>{
-    hidden.innerHTML = '';
-    const ordered = Array.from(techList.querySelectorAll('li.sc-item'))
-      .filter(li => li.querySelector('.chk').checked)
-      .map(li => li.getAttribute('data-id'));
-    if (!ordered.length){ e.preventDefault(); alert('Pick at least one technology.'); return; }
-    ordered.forEach(id => hidden.insertAdjacentHTML('beforeend', `<input type="hidden" name="order[]" value="${id}">`));
+  const form=document.getElementById('scForm');
+  if(form)form.addEventListener('submit',e=>{
+    if(!techList||!hidden)return;
+    hidden.innerHTML='';
+    const ordered=Array.from(techList.querySelectorAll('li.sc-item'))
+      .filter(li=>li.querySelector('.chk').checked)
+      .map(li=>li.getAttribute('data-id'));
+    if(!ordered.length){e.preventDefault();alert('Pick at least one technology.');return;}
+    ordered.forEach(id=>hidden.insertAdjacentHTML('beforeend',`<input type="hidden" name="order[]" value="${id}">`));
   });
 })();
 </script>
