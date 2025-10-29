@@ -327,18 +327,56 @@
     {% endif %}
 
     {% if is_paginated %}
+      {% with total=page_obj.paginator.num_pages current=page_obj.number %}
       <nav class="mt-3">
         <ul class="pagination mb-0">
-          {% if page_obj.has_previous %}
-            <li class="page-item"><a class="page-link" href="?{% if q %}q={{ q|urlencode }}&{% endif %}view={{ view_mode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for s in status_selected %}&status={{ s }}{% endfor %}&page={{ page_obj.previous_page_number }}">Prev</a></li>
+
+          {# Prev #}
+          <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+            <a class="page-link" href="{% if page_obj.has_previous %}?{% if q %}q={{ q|urlencode }}&{% endif %}view={{ view_mode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for s in status_selected %}&status={{ s }}{% endfor %}&page={{ page_obj.previous_page_number }}{% else %}#{% endif %}">Prev</a>
+          </li>
+
+          {# First page #}
+          <li class="page-item {% if current == 1 %}active{% endif %}">
+            <a class="page-link" href="?{% if q %}q={{ q|urlencode }}&{% endif %}view={{ view_mode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for s in status_selected %}&status={{ s }}{% endfor %}&page=1">1</a>
+          </li>
+
+          {# Left ellipsis #}
+          {% if current > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
           {% endif %}
-          <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-          {% if page_obj.has_next %}
-            <li class="page-item"><a class="page-link" href="?{% if q %}q={{ q|urlencode }}&{% endif %}view={{ view_mode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for s in status_selected %}&status={{ s }}{% endfor %}&page={{ page_obj.next_page_number }}">Next</a></li>
+
+          {# Window around current: current-2 .. current+2, excluding first/last #}
+          {% for i in page_obj.paginator.page_range %}
+            {% if i > 1 and i < total and i >= current|add:"-2" and i <= current|add:"2" %}
+              <li class="page-item {% if i == current %}active{% endif %}">
+                <a class="page-link" href="?{% if q %}q={{ q|urlencode }}&{% endif %}view={{ view_mode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for s in status_selected %}&status={{ s }}{% endfor %}&page={{ i }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+
+          {# Right ellipsis #}
+          {% if current < total|add:"-3" %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
           {% endif %}
+
+          {# Last page (only if >1) #}
+          {% if total > 1 %}
+            <li class="page-item {% if current == total %}active{% endif %}">
+              <a class="page-link" href="?{% if q %}q={{ q|urlencode }}&{% endif %}view={{ view_mode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for s in status_selected %}&status={{ s }}{% endfor %}&page={{ total }}">{{ total }}</a>
+            </li>
+          {% endif %}
+
+          {# Next #}
+          <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{% if page_obj.has_next %}?{% if q %}q={{ q|urlencode }}&{% endif %}view={{ view_mode }}&sort={{ sort }}{% for c in selected_categories %}&categories={{ c|urlencode }}{% endfor %}{% for s in status_selected %}&status={{ s }}{% endfor %}&page={{ page_obj.next_page_number }}{% else %}#{% endif %}">Next</a>
+          </li>
+
         </ul>
       </nav>
+      {% endwith %}
     {% endif %}
+
   {% else %}
     <div class="card enhanced-card">
       <div class="card-body text-center text-muted">

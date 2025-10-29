@@ -228,7 +228,7 @@ class TechnologyListView(LoginRequiredMixin, ListView):
     model = Technology
     template_name = "technology/list.html"
     context_object_name = "items"
-    paginate_by = 12
+    paginate_by = 24
 
     def get_queryset(self):
         return apply_filters_and_sort(self.request, super().get_queryset())

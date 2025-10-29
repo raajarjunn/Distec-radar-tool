@@ -1,5 +1,6 @@
 {% load static %}
 
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
 
 
 <style>
@@ -43,6 +44,26 @@
   .sc-card.sc-sticky .sc-btn {flex: 1 1 auto;font-size: 13px;padding: 6px 8px;border-radius: 6px;text-align: center;}
   .sc-card.sc-sticky .sc-actions {display: flex;gap: 6px;flex-wrap: nowrap;}
   .sc-inactive{color:#b91c1c;font-weight:600;margin-left:6px}
+  :root{
+  /* tweak these to your taste */
+  --sc-macro-color: #8b5cf6;            /* violet */
+  --sc-macro-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* style the macro label that appears after the technology name */
+.sc-name .sc-badge{
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--sc-macro-color);
+  font-family: var(--sc-macro-font);
+  background: rgba(139, 92, 246, 0.10);          /* soft tint behind text */
+  border: 1px solid rgba(139, 92, 246, 0.35);    /* subtle outline */
+}
+
   @media (max-width:860px){.sc-dialog{width:96vw}.sc-filters{flex-basis:260px}}
 </style>
 

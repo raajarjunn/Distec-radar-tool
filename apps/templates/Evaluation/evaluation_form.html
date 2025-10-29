@@ -951,9 +951,10 @@ function drawScorecardChart() {
 
     // 4. --- DRAW CONFIDENCE BAR (Right Vertical) ---
     let confGrad = ctx.createLinearGradient(confX, confY+confH, confX, confY);
-    confGrad.addColorStop(0, "#27ae60");
-    confGrad.addColorStop(0.5, "#ffe06d");
-    confGrad.addColorStop(1, "#e74c3c");
+    confGrad.addColorStop(0, "#e74c3c");   // bottom
+    confGrad.addColorStop(0.5, "#ffe06d"); // middle
+    confGrad.addColorStop(1, "#27ae60");   // top
+
     ctx.fillStyle = confGrad;
     ctx.fillRect(confX, confY, confW, confH);
     ctx.strokeStyle = "#204490";

@@ -87,6 +87,13 @@
   max-width:420px !important;   /* keep the bubble from stretching */
 }
 
+.alert-warning {
+  background: #ffffff;
+  border: 1px solid #fdfdfd;
+  color: #000000;
+}
+
+
   
 
   </style>
@@ -127,6 +134,11 @@
         <div class="d-flex flex-wrap">
           <button id="captureBtn" class="btn btn-dark btn-sm">Capture as PNG</button>
         </div>
+      </div>
+
+      <!-- Note: Mind map visualization notice -->
+      <div class="alert alert-warning py-2 px-3 mb-3" style="border-radius:8px; font-size:0.9rem;">
+        ⚠️ <strong>Note:</strong> The Mind Map is for visualization purposes only — any changes made here will not be saved.
       </div>
 
       <div id="mindMapContainer"></div>
