@@ -6,8 +6,8 @@
 
 
 {% block stylesheets %}
-  {# MindElixir CSS #}
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mind-elixir@0.8.2/dist/mind-elixir.min.css"/>
+{# MindElixir CSS #}
+ 
 
   <style>
     /* Breadcrumb chip: dark text on white chip over black header */
@@ -43,7 +43,9 @@
       min-height:560px;
       border:1px solid rgba(0,0,0,.12);
       border-radius:12px;
-      background:#fff;             /* keep map crisp on busy backgrounds */
+      background:#fff;  
+      margin: 0 auto !important;
+      transform: translateX(0) !important;           /* keep map crisp on busy backgrounds */
     }
 
     /* Make capture button compact and on-theme */
@@ -149,98 +151,198 @@
 {% endblock content %}
 
 {% block javascripts %}
-  {# MindElixir JS (served from your static folder) #}
   <script src="{% static 'js/MindElixir.min.js' %}"></script>
-  {# html2canvas for screenshots #}
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <script>
     let mind;
 
-    function generateUUID() {
-      return 'id-' + Math.random().toString(36).substr(2, 9);
-    }
+    // ----- Zoom config (tweak as you like) -----
+    const ZOOM_MIN  = 0.01;   // 1%
+    const ZOOM_MAX  = 10.0;   // 1000%
+    const ZOOM_STEP = 1.2;    // toolbar dblclick step (≈20%)
+    const WHEEL_STEP = 1.15;  // Ctrl/⌘+wheel step (≈15%)
 
-    function getNodeDepth(root, id, depth = 0) {
-      if (root.id === id) return depth;
-      if (root.children) {
-        for (let child of root.children) {
-          const d = getNodeDepth(child, id, depth + 1);
-          if (d !== -1) return d;
-        }
+    // ----- Helpers -----
+    const genId = () => 'id-' + Math.random().toString(36).slice(2);
+
+    function getDepth(root, id, d = 0){
+      if (root.id === id) return d;
+      for (const c of (root.children || [])) {
+        const r = getDepth(c, id, d + 1);
+        if (r !== -1) return r;
       }
       return -1;
     }
 
-    function assignIdsAndTypes(node, depth = 0) {
-      if (!node.id) node.id = generateUUID();
-      if (!node.data) node.data = {};
-      node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
-      if (!node.children) node.children = [];
-      node.children.forEach(child => assignIdsAndTypes(child, depth + 1));
+    function tagIdsTypes(node, depth = 0){
+      node.id ||= genId();
+      node.data ||= {};
+      node.data.type = ['macro','meso','micro'][depth] || 'unknown';
+      (node.children || []).forEach(ch => tagIdsTypes(ch, depth + 1));
     }
 
-    async function captureMindMap() {
+    async function capturePNG(){
       const el = document.getElementById('mindMapContainer');
-      const canvas = await html2canvas(el, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-        logging: false
-      });
-      const dataURL = canvas.toDataURL('image/png');
+      const canvas = await html2canvas(el, { backgroundColor:'#fff', scale:2, useCORS:true, logging:false });
       const a = document.createElement('a');
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      a.href = dataURL;
-      a.download = `mindmap-${timestamp}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.download = `mindmap-${new Date().toISOString().replace(/[:.]/g,'-')}.png`;
       a.click();
     }
 
+    // ----- Zoom control -----
+    function clampZoom(v){ return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, v)); }
+    function setScale(val){
+      mind.scale(clampZoom(val));
+      const z = document.getElementById('zoomLevel');
+      if (z) z.textContent = Math.round(mind.scaleVal * 100) + '%';
+    }
+
+    function installUnlimitedWheelZoom(){
+      const el = document.querySelector('#mindMapContainer .map-canvas') || document.getElementById('mindMapContainer');
+
+      // Intercept Ctrl/⌘+wheel to override library's caps
+      el.addEventListener('wheel', (evt)=>{
+        if (!(evt.ctrlKey || evt.metaKey)) return;
+        evt.preventDefault();
+        evt.stopPropagation();
+
+        const factor = evt.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP;
+        setScale(mind.scaleVal * factor);
+      }, { passive: false, capture: true });
+
+      // Double-click to zoom in; Shift+double-click to zoom out
+      el.addEventListener('dblclick', (evt)=>{
+        if (evt.shiftKey) setScale(mind.scaleVal / ZOOM_STEP);
+        else setScale(mind.scaleVal * ZOOM_STEP);
+      });
+    }
+
+    // ----- Toolbar (with fullscreen + zoom readout) -----
+    function makeToolbar(){
+      const bar = document.createElement('div');
+      bar.id = 'mindToolbar';
+      bar.innerHTML = `
+        <button data-act="left"      title="Left">⟵</button>
+        <button data-act="right"     title="Right">⟶</button>
+        <button data-act="side"      title="Side">⇄</button>
+        <span class="sep"></span>
+        <button data-act="center"    title="Center">◎</button>
+        <button data-act="fit"       title="Fit">▭</button>
+        <span class="sep"></span>
+        <button data-act="zoomout"   title="Zoom Out">−</button>
+        <span id="zoomLevel">100%</span>
+        <button data-act="zoomin"    title="Zoom In">＋</button>
+        <span class="sep"></span>
+        <button data-act="fullscreen" title="Fullscreen">⤢</button>
+      `;
+      document.body.appendChild(bar);
+
+      const container = document.querySelector('#mindMapContainer');
+
+      bar.addEventListener('click', (e)=>{
+        const act = e.target?.dataset?.act;
+        if (!act || !mind) return;
+
+        switch(act){
+          case 'left':      mind.initLeft();  mind.toCenter(); break;
+          case 'right':     mind.initRight(); mind.toCenter(); break;
+          case 'side':      mind.initSide();  mind.toCenter(); break;
+          case 'center':    mind.toCenter();  break;
+          case 'fit':       mind.scaleFit();  mind.toCenter(); break;
+          case 'zoomin':    setScale(mind.scaleVal * ZOOM_STEP); break;
+          case 'zoomout':   setScale(mind.scaleVal / ZOOM_STEP); break;
+          case 'fullscreen':
+            if (!document.fullscreenElement) container.requestFullscreen?.();
+            else document.exitFullscreen?.();
+            break;
+        }
+      });
+    }
+
+    // ----- Boot -----
     document.addEventListener('DOMContentLoaded', function () {
       const dataStr = '{{ mindmap_json|escapejs }}';
       const mindmapData = JSON.parse(dataStr);
+      tagIdsTypes(mindmapData.nodeData);
 
       mind = new MindElixir({
         el: '#mindMapContainer',
-        direction: MindElixir.LEFT,
+        direction: MindElixir.SIDE,  // balanced both sides
+        alignment: 'nodes',          // center whole graph
         draggable: true,
         contextMenu: true,
-        toolBar: true,
+        toolBar: false,              // we use custom toolbar
         nodeMenu: true,
         keypress: true,
+        scaleSensitivity: 0.1        // finer built-in step (doesn't cap us)
       });
 
-      assignIdsAndTypes(mindmapData.nodeData);
       mind.init(mindmapData);
-      const rootTitle = document.querySelector(`.me-node[data-nodeid="${mind.getData().nodeData.id}"] .me-title`);
-        if (rootTitle) {
-          rootTitle.style.setProperty('text-align', 'center', 'important');
-          rootTitle.style.removeProperty('text-justify');
-        }
+      mind.initSide();
+      mind.toCenter();
 
-      // after mind.init(mindmapData);
-      requestAnimationFrame(() => {
-        const el = document.querySelector('.me-root .me-title');
-        if (el) el.style.textAlign = 'center'; // CSS already does it; this just nudges.
+      // Keep centered on edits/resizes
+      mind.bus.addListener('operation', op => {
+        if (op.name === 'addChild' || op.name === 'addSibling') {
+          const node = op.obj;
+          node.id ||= genId();
+          node.data ||= {};
+          const depth = getDepth(mind.getData().nodeData, node.id);
+          node.data.type = ['macro','meso','micro'][depth] || 'unknown';
+        }
+        if (['addChild','addSibling','removeNode','moveNode','finishEdit'].includes(op.name)) {
+          requestAnimationFrame(() => mind.toCenter());
+        }
+      });
+      window.addEventListener('resize', () => mind.toCenter());
+
+      // Keep root title visually centered
+      requestAnimationFrame(()=>{
+        const t = document.querySelector('.me-root .me-title');
+        if (t) t.style.textAlign = 'center';
       });
 
+      // Existing PNG capture button
+      const cap = document.getElementById('captureBtn');
+      if (cap) cap.addEventListener('click', capturePNG);
 
+      // Build UI + install unlimited zoom
+      makeToolbar();
+      installUnlimitedWheelZoom();
+      setScale(1); // show 100% initially
+    });
+  </script>
 
-          mind.bus.addListener('operation', op => {
-            if (op.name === 'addChild' || op.name === 'addSibling') {
-              const node = op.obj;
-              if (!node.id) node.id = generateUUID();
-              if (!node.data) node.data = {};
-              const depth = getNodeDepth(mind.getData().nodeData, node.id);
-              node.data.type = ['macro', 'meso', 'micro'][depth] || 'unknown';
-            }
-          });
-
-          document.getElementById('captureBtn').addEventListener('click', captureMindMap);
-        });
-
-    // Tag the root node in the rendered DOM so CSS only hits that one
-    
-
-      </script>
+  <style>
+    /* Floating toolbar */
+    #mindToolbar{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 9999;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.1);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      padding: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    #mindToolbar .sep{ width:1px; height:20px; background:rgba(0,0,0,.12); margin:0 4px; }
+    #mindToolbar button{
+      border: 1px solid rgba(0,0,0,.12);
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    #mindToolbar button:hover{ filter: brightness(0.97); }
+    #mindToolbar button:active{ transform: translateY(1px); }
+    #zoomLevel{ min-width: 48px; text-align:center; font-size:13px; color:#333; }
+  </style>
 {% endblock javascripts %}

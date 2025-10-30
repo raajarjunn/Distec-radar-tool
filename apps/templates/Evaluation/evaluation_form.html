@@ -386,7 +386,8 @@
                {% if show_chart %}
               <form method="post" action="{% url 'export_excel' pk=tech_id %}" id="exportExcelForm">
                 {% csrf_token %}
-                 <button type="submit" class="btn" style="width: 200px;">Export to Excel</button> 
+                 <button type="submit" class="btn" style="width: 200px; " disabled>Export to Excel</button> 
+                 <!-- remove the disable tag from the above button to make it workable -->
                </form>
                {% endif %}
             </div>
