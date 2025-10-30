@@ -566,8 +566,14 @@
   .header-badges .badge { flex: 0 0 auto; }
 
   .tech-card-header {
-  display: flex;
-  flex-wrap: wrap;
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: .01em;
+  color: #111;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;  /* allow two lines */
+  -webkit-box-orient: vertical;
 }
 
   /* Thumbnail polish */
