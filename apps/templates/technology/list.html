@@ -613,10 +613,64 @@
   #deleteTechModal .form-control.is-valid{ border-color:#2dce89!important; box-shadow:0 0 0 .2rem rgba(45,206,137,.25); }
   #deleteTechModal .form-control.is-invalid{ border-color:#f5365c!important; box-shadow:0 0 0 .2rem rgba(245,54,92,.25); }
 
+
+  /* ---------- CARD HEADER: force uniform height + clamp title + pin badges ---------- */
+.tech-card { display: flex; flex-direction: column; }
+.tech-card .card-body { flex: 1 1 auto; }
+
+/* Override any previous flex/wrap rules */
+.tech-card-header{
+  position: relative;
+  display: grid !important;                /* beat earlier flex rules */
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: .5rem;
+  padding: .75rem 1rem;
+  height: 72px !important;                 /* FIXED height = all images align */
+  border-bottom: 1px solid #f0f2f5;
+  background: #fff;
+  overflow: hidden;                         /* hide anything beyond 2 lines */
+}
+
+/* Title: two-line clamp; smaller size */
+.tech-title{
+  font-weight: 800;
+  font-size: 1.02rem !important;           /* smaller than before */
+  line-height: 1.25;
+  letter-spacing: .01em;
+  color: #111;
+  margin: 0;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2;                    /* cap to 2 lines */
+  -webkit-box-orient: vertical;
+  /* Safety in non-webkit: cap by max-height (2 lines) */
+  max-height: calc(1.25em * 2);
+}
+
+/* Badges: never wrap, never shrink, stay top-right */
+.header-badges{
+  display: flex !important;
+  gap: .35rem;
+  align-items: flex-start;
+  white-space: nowrap;
+  flex-shrink: 0 !important;
+}
+
+/* Make sure previous rules that caused wrapping can't apply */
+.tech-card-header .header-badges .badge{ flex: 0 0 auto; }
+@media (max-width: 575.98px){
+  .tech-card-header{ height: 64px !important; padding: .65rem .9rem; }
+  .tech-title{ font-size: .96rem !important; line-height: 1.2; max-height: calc(1.2em * 2); }
+}
+
+
   /* Mobile nits */
   @media (max-width:575.98px){
     .input-group-text{ padding:.375rem .5rem; }
     .tech-title { font-size: 1.15rem; }
+
+    
   }
 </style>
 {% endblock stylesheets %}
